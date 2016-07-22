@@ -26,7 +26,10 @@ from flask import request, render_template
 from flask_wtf.csrf import CsrfProtect
 
 from robotreviewer.robots.bias_robot import BiasRobot
+from robotreviewer.robots.pico_robot import PICORobot
 from robotreviewer.robots.rct_robot import RCTRobot 
+from robotreviewer.robots.pubmed_robot import PubmedRobot
+from robotreviewer.data_structures import MultiDict
 
 from robotreviewer.textprocessing.pdfreader import PdfReader
 
@@ -58,7 +61,10 @@ pdf_reader = PdfReader() # set up Grobid connection
 
 # nlp = English() is imported in __init__ to share among all
 
-bots = {"bias_bot": BiasRobot(top_k=3)}
+bots = {"bias_bot": BiasRobot(top_k=3),
+        "pico_bot": PICORobot(),
+        "pubmed_bot": PubmedRobot(),
+        "rct_bot": RCTRobot()}
 log.info("Robots loaded successfully! Ready...")
 
 @app.route('/')
@@ -89,13 +95,17 @@ def generate_report():
     with open(tmp_filename, 'wb') as f:
         f.write(request.data)
 
-    annotations = annotate(data)
-
-    return json.dumps(annotations)
+    data = annotate(data)
+    return json.dumps(data)
 
 
 @app.route('/annotate_pdf', methods=['POST'])
 def pdf_annotate():
+    """
+    API endpoint for PDF annotation from the Spa viewer
+    Therefore returns only the processed annotations and
+    not any of the structured data
+    """
     # TODO fix this into something better before making live
     # note, that the proper way to do this is via request.files
     # There seems to be something being done unconventionally
@@ -109,9 +119,9 @@ def pdf_annotate():
         f.write(request.data)
 
     data = pdf_reader.convert(tmp_filename)
-    annotations = annotate(data)
-
-    return json.dumps(annotations)
+    data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
+    print {'marginalia': data['marginalia']}
+    return json.dumps({'marginalia': data['marginalia']})
 
 @csrf.exempt
 @app.route('/annotate', methods=['POST'])
@@ -123,7 +133,6 @@ def json_annotate():
     annotations = annotate(json_data)
     return json.dumps(annotations)
     
-    
 def annotate(data, bot_names=["bias_bot"]):
     #
     # ANNOTATION TAKES PLACE HERE
@@ -133,16 +142,13 @@ def annotate(data, bot_names=["bias_bot"]):
     annotations = annotation_pipeline(bot_names, data)
     return annotations
 
-
-
-def annotation_pipeline(bot_names, text):
-    output = {"marginalia": []}
+def annotation_pipeline(bot_names, data):
+    
     for bot_name in bot_names:
         log.debug("Sending doc to {} for annotation...".format(bots[bot_name].__class__.__name__))
-        annotations = bots[bot_name].annotate(text)
-        output["marginalia"].extend(annotations["marginalia"])
+        data = bots[bot_name].annotate(data)
         log.debug("{} done!".format(bots[bot_name].__class__.__name__))
-    return output
+    return data
 
 
 if __name__ == '__main__':

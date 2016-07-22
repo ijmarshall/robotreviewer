@@ -21,8 +21,6 @@ import os
 
 import pickle 
 
-from nltk.tokenize import sent_tokenize
-
 import robotreviewer
 from robotreviewer.ml.classifier import MiniClassifier
 from sklearn.feature_extraction.text import HashingVectorizer
@@ -43,6 +41,11 @@ class RCTRobot:
 
         title_text = data['title']
         abstract_text = data['abstract']
+
+        if title_text is None or abstract_text is None:
+            # not much point in continuing unless we have a title and abstract
+            return data
+
         merged_words = []
         # special indicators for titles
         merged_words = ["TI_{0}".format(t) for t in title_text.split(" ") 
@@ -58,12 +61,16 @@ class RCTRobot:
         if y_hat > 0: 
             is_rct_str = "RCT"
 
-        marginalia = [{"type": "Trial Design",
+        marginalia = {"type": "Trial Design",
                       "title": "Is an RCT?",
                       "annotations": [],
-                      "description":  "{0} (p={1:0.2f})".format(is_rct_str, p_hat)}]
+                      "description":  "{0} (p={1:0.2f})".format(is_rct_str, p_hat)}
 
-        return {"marginalia": marginalia}
+        data.gold.setdefault("marginalia", []).append(marginalia) # gold for marginalia since this is shared
+        data.ml["rct"] = {"is_rct": p_hat >= 0.5,
+                           "prob_rct": p_hat}
+
+        return data
 
 
 

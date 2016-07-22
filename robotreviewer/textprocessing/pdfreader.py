@@ -6,6 +6,7 @@ This can be set in config.py
 """
 
 from robotreviewer import config
+from robotreviewer.data_structures import MultiDict
 import requests
 import xml.etree.cElementTree as ET
 import cStringIO
@@ -61,12 +62,11 @@ class PdfReader():
         log.info('Success! :)')
 
     def convert(self, pdf_filename):
+        """
+        returns MultiDict containing document information
+        """
         out = self.parse_xml(self.run_grobid(pdf_filename))
-        tmp_filename = os.path.join(config.TEMP_PDF, 'tmp.json')
-        with codecs.open(tmp_filename, 'w', 'utf-8') as f:
-            json.dump(out, f)
         return out
-
 
     def run_grobid(self, filename):
         files = {'input': open(filename, 'rb')}
@@ -80,7 +80,7 @@ class PdfReader():
         return r.text
 
     def parse_xml(self, xml_string):
-        output = {}
+        output = MultiDict()
         full_text_bits = []
         author_list = []
         author_bits = []
@@ -90,9 +90,9 @@ class PdfReader():
                 path.append(elem.tag)
             elif event == 'end':
                 if elem.tag=='{http://www.tei-c.org/ns/1.0}abstract':
-                    output['abstract'] = (self._extract_text(elem))
+                    output.grobid['abstract'] = (self._extract_text(elem))
                 elif elem.tag=='{http://www.tei-c.org/ns/1.0}title' and '{http://www.tei-c.org/ns/1.0}titleStmt' in path:
-                    output['title'] = self._extract_text(elem)
+                    output.grobid['title'] = self._extract_text(elem)
                 elif elem.tag in ['{http://www.tei-c.org/ns/1.0}head', '{http://www.tei-c.org/ns/1.0}p']:
                     full_text_bits.extend([self._extract_text(elem), '\n'])
                 elif elem.tag=='{http://www.tei-c.org/ns/1.0}forename':
@@ -103,15 +103,12 @@ class PdfReader():
                     author_bits = []
 
                 path.pop()
-        output['text'] = '\n'.join(full_text_bits)
-        output['authors'] = author_bits
-        
-
+        output.grobid['text'] = '\n'.join(full_text_bits)
+        output.grobid['authors'] = author_bits
         return output
 
     def _extract_text(self, elem):
         return ''.join([s.decode("utf-8") for s in ET.tostringlist(elem, method="text", encoding="utf-8") if s is not None]).strip() # don't ask...
-
 
 def main():
     pass

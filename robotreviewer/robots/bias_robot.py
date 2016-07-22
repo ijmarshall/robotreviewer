@@ -139,5 +139,7 @@ class BiasRobot:
                 "judgement": bias_class,
                 "justification": high_prob_sents})
 
-        return {"marginalia": marginalia,
-                "structured": {"bias": structured_data}}
+        data.gold.setdefault("marginalia", []).extend(marginalia) # gold for marginalia since this is shared
+        data.ml["bias"] = structured_data
+
+        return data
