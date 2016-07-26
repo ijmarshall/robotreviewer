@@ -112,10 +112,14 @@ class PICORobot:
         """
 
         
-        doc_text = robotreviewer.nlp(data["abstract"])
+        doc_text = robotreviewer.nlp(data["text"])
 
-        print "TEXT:"
-        print data["text"]
+        if not doc_text:
+            # we've got to know the text at least..
+            return data
+
+        # print "TEXT:"
+        # print data["text"]
 
         if top_k is None:
             top_k = self.top_k

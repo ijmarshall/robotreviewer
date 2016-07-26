@@ -48,7 +48,7 @@ class RCTRobot:
 
         merged_words = []
         # special indicators for titles
-        merged_words = ["TI_{0}".format(t) for t in title_text.split(" ") 
+        merged_words = [u"TI_{0}".format(t) for t in title_text.split(" ") 
                         if not t in stopwords]
         merged_words.extend(abstract_text.split(" "))
 
@@ -67,7 +67,7 @@ class RCTRobot:
                       "description":  "{0} (p={1:0.2f})".format(is_rct_str, p_hat)}
 
         data.gold.setdefault("marginalia", []).append(marginalia) # gold for marginalia since this is shared
-        data.ml["rct"] = {"is_rct": p_hat >= 0.5,
+        data.ml["rct"] = {"is_rct": bool(p_hat >= 0.5),
                            "prob_rct": p_hat}
 
         return data

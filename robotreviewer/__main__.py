@@ -19,17 +19,20 @@ which by deafult would be localhost at:
 #           Byron Wallce <byron.wallace@utexas.edu>
 
 import os, logging
-from flask import Flask, json
+from flask import Flask, json, make_response
 from flask import redirect, url_for, jsonify
 from flask import request, render_template
 
 from flask_wtf.csrf import CsrfProtect
+import zipfile
 
 from robotreviewer.robots.bias_robot import BiasRobot
 from robotreviewer.robots.pico_robot import PICORobot
 from robotreviewer.robots.rct_robot import RCTRobot 
 from robotreviewer.robots.pubmed_robot import PubmedRobot
 from robotreviewer.data_structures import MultiDict
+
+from robotreviewer import report_view 
 
 from robotreviewer.textprocessing.pdfreader import PdfReader
 
@@ -81,22 +84,37 @@ def is_rct_annotate():
     annotations = annotate(json_data, bot_names=['bias_bot'])
     return json.dumps(annotations)
     
+@csrf.exempt
 @app.route('/generate_report', methods=['POST'])
 def generate_report():
     # TODO fix this into something better before making live
     # note, that the proper way to do this is via request.files
-    # There seems to be something being done unconventionally
-    # in the Spa upload function, so that the upload is not
-    # recognised as a file as it should be
-    
+
     # save as a temporary zip file...
     tmp_filename = os.path.join(config.TEMP_ZIP, 'tmp.zip')
+    file = request.files['file']
+    file.save(tmp_filename)
+    articles = []
+    with zipfile.ZipFile(tmp_filename, "r") as f:
+        for name in f.namelist():
+            if name.startswith('__MACOSX/'):
+                continue
+            pdffilebin = f.read(name)
+        
+            tmp_filename = os.path.join(config.TEMP_PDF, 'tmp.pdf')
+            with open(tmp_filename, 'wb') as tf:
+                tf.write(pdffilebin)   
 
-    with open(tmp_filename, 'wb') as f:
-        f.write(request.data)
+            data = pdf_reader.convert(tmp_filename)    
+            data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
+            articles.append(data)
 
-    data = annotate(data)
-    return json.dumps(data)
+    html = report_view.compile(articles)
+    response = make_response(html)
+    response.headers["Content-Disposition"] = "attachment; filename=report.html"
+    return response
+                    
+
 
 
 @app.route('/annotate_pdf', methods=['POST'])
@@ -120,7 +138,6 @@ def pdf_annotate():
 
     data = pdf_reader.convert(tmp_filename)
     data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
-    print {'marginalia': data['marginalia']}
     return json.dumps({'marginalia': data['marginalia']})
 
 @csrf.exempt

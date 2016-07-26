@@ -51,13 +51,14 @@ class MultiDict():
             return None
         
     def __repr__(self):
-        return self.data
+        return self.data.__repr__()
         
     def __getattr__(self, authority):
         """
         to allow accessing the authorities as an attribute
         """
         return self.data[authority]
+
 
     def items(self):
         """
