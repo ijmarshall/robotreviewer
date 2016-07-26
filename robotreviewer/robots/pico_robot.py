@@ -102,7 +102,7 @@ class PICORobot:
         self.min_k = min_k
 
 
-    def annotate(self, data, top_k=None, min_k=None, alpha=.7):
+    def annotate(self, data, top_k=3, min_k=1, alpha=.7):
 
         """
         Annotate full text of clinical trial report
@@ -112,7 +112,10 @@ class PICORobot:
         """
 
         
-        doc_text = robotreviewer.nlp(data["text"])
+        doc_text = robotreviewer.nlp(data["abstract"])
+
+        print "TEXT:"
+        print data["text"]
 
         if top_k is None:
             top_k = self.top_k
@@ -157,41 +160,19 @@ class PICORobot:
 
             high_prob_sents = [sent.text for i, sent in enumerate(doc_text.sents) if i in high_prob_sent_indices]
 
-            # high_prob_sents = [doc_sents[i] for i in high_prob_sent_indices]
-
-            # ascii_high_prob_sents = [unidecode(abbr_resolver.sub(t)) for t in high_prob_sents]
-   
-            # METAMAPPING
-            # if config.USE_METAMAP:
-            #     try:
-            #         log.debug('Metamapping')
-            #         specific_concepts = self.metamap.extract_concepts([ascii_high_prob_sents], restrict_to_sts=self.umls_filter[domain], word_sense_disambiguation=True, data_source="2015AB", data_version="NLM", restrict_to_sources=["ATC", "MDR", "RXNORM", "SNOMEDCT_US"])
-            #         concepts = self.metamap.extract_concepts([ascii_high_prob_sents], word_sense_disambiguation=True, data_version="NLM", data_source="2015AB", restrict_to_sources=["ATC", "MDR", "RXNORM", "SNOMEDCT_US"])
-            #         format_name = lambda c: '{} <a href="http://bioportal.bioontology.org/search?utf8=%E2%9C%93&query={}" target="_blank">{}</a>'.format(c.preferred_name, c.cui, c.cui)
-            #         specific_concept_names = ', '.join([format_name(c) for c in specific_concepts[0] if "cui" in c._fields])
-            #         specific_cuis = set([c.cui for c in specific_concepts[0]])
-            #         concept_names = ', '.join([format_name(c) for c in concepts[0] if "cui" in c._fields and c.cui not in specific_cuis])
-            #         log.debug('Metamapping done!')
-            #     except Exception as e:
-            #         log.error('Error in metamapping: {}'.format(str(e)))
-            #         concept_names = ""
-            #         specific_concept_names = "No UMLS concepts identified"
-            # else:
-            #     concept_names = ""
-            #     specific_concept_names = "Concept extractor not configured"
-    
             marginalia.append({
                 "type": "PICO",
                 "title": domain,
-                "annotations": [{"content": sent, "uuid": str(uuid.uuid1())} for sent in high_prob_sents]#,
-                # "description": "**{}**; {}".format(specific_concept_names, concept_names)
+                "annotations": [{"content": sent, "uuid": str(uuid.uuid1())} for sent in high_prob_sents]
                 })
 
             structured_data.append({"domain":domain, "text": high_prob_sents})
 
 
-        return {"marginalia": marginalia,
-                "structured": structured_data}
+        data.gold.setdefault("marginalia", []).extend(marginalia) # gold for marginalia since this is shared
+        data.ml["pico_text"] = structured_data
+
+        return data
 
     @staticmethod
     def _get_positional_features(sentences):
@@ -302,10 +283,13 @@ class PICO_vectorizer:
 
         line_lens = [len(line) for line in sent_text.split("\n") if not line.strip()==""]
 
-        ## 
-        # maybe the *fraction* of lines less then... 10 chars?
-        num_short_lines = float(len([len_ for len_ in line_lens if len_ <= 10]))
-        frac_short_lines = float(num_short_lines)/float(len(line_lens))
+        if line_lens:
+            ## 
+            # maybe the *fraction* of lines less then... 10 chars?
+            num_short_lines = float(len([len_ for len_ in line_lens if len_ <= 10]))
+            frac_short_lines = float(num_short_lines)/float(len(line_lens))
+        else:
+            num_short_lines, frac_short_lines = 0, 0
 
         if frac_short_lines < .1:
             fv[4] = 1
