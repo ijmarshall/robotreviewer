@@ -3,6 +3,7 @@
 #
 
 from jinja2 import Template
+import pandas as pd
 
 
 tm = '''
@@ -10,7 +11,64 @@ tm = '''
 <html>
     <head>
         <title>RobotReviewer report</title>
-        <link rel="stylesheet" type="text/css" href="robotreviewer-report.css">
+        <style>
+            body {
+                    font-family: Helvetica;
+                    margin-left:auto; 
+                    margin-right:auto;
+                    width: 800px;
+                }
+
+            .bias-table {
+                width: 400px;
+                margin-left:auto; 
+                margin-right:auto;
+                padding: 0px;
+                border-collapse: collapse;
+                /*color: white;*/
+            }
+
+            .risk-low {
+                background-color: #87BB2A;
+                color: white;
+                text-align: center;
+                }
+
+            .risk-high {
+                background-color: #EA4747;
+                color: white;
+                text-align: center;
+                }
+
+            .trial-id-header {
+                vertical-align: bottom;
+                text-align: left;
+            }
+
+            th.rotate {
+              /* Something you can count on */
+              height: 300px;
+              white-space: nowrap;
+            }
+
+            th.rotate > div {
+              transform: translate(25px, 131px)
+              rotate(315deg);
+              width: 30px;
+            }
+
+            th.rotate > div > span {
+              border-bottom: 1px solid #ccc;
+              padding: 5px 10px;
+            }
+
+
+            table {
+                   padding:20px;
+                   margin: 20px 40px;
+
+            }
+        </style>
     </head>
     
     <body>
@@ -82,8 +140,28 @@ bias_domains = [u'Random sequence generation',
      u'Incomplete outcome data',
      u'Selective reporting']
 
-def compile(articles):
+def html(articles):
     t = Template(tm)
     return t.render(headers=bias_domains, articles=articles)
+
+def csv(articles):
+    column_headers = ["study ID", "domain", "judgement", "quote", "justification"]
+    bias_table = []
+    for article_i, article in enumerate(articles):
+        for domain_i, domain in enumerate(article["bias"]):
+            for sent_i, sent in enumerate(domain["justification"]):
+                row = {}
+                row["study ID"] = article["short_citation"] if domain_i==0 and sent_i==0 else ""
+                row["judgement"] = domain["judgement"] if sent_i==0 else ""
+                row["domain"] = domain["domain"] if sent_i==0 else ""
+                row["quote"] = sent
+                row["justification"] = ""
+                bias_table.append(row)
+            bias_table.append({}) # blank row
+        bias_table.extend([{}, {}]) # two blank rows
+
+    tab = pd.DataFrame(bias_table, columns=column_headers)
+    return tab.to_csv(encoding='utf-8', index=False)
+
 
     
