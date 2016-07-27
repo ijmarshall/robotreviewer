@@ -84,6 +84,8 @@ def is_rct_annotate():
     annotations = annotate(json_data, bot_names=['bias_bot'])
     return json.dumps(annotations)
     
+
+
 @csrf.exempt
 @app.route('/generate_report', methods=['POST'])
 def generate_report():
@@ -109,7 +111,7 @@ def generate_report():
             data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
             articles.append(data)
 
-    html = report_view.compile(articles)
+    html = report_view.html(articles)
     response = make_response(html)
     response.headers["Content-Disposition"] = "attachment; filename=report.html"
     return response
