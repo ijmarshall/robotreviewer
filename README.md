@@ -69,16 +69,18 @@ A BibTeX entry for LaTeX users is
 4. Install the Python libraries that RobotReviewer needs - do one of the following.
 
     a. If you are using Anaconda:
-        ```
-        conda config --add channels spacy  # only needed once
-        conda install flask numpy scipy scikit-learn spacy
-        pip install fuzzywuzzy # (this is not yet in the anaconda repo)
-        ```
+
+```bash
+conda config --add channels spacy  # only needed once
+conda install flask numpy scipy scikit-learn spacy
+pip install fuzzywuzzy # (this is not yet in the anaconda repo)
+```
 
     b. For everyone else:
-        ```
-        pip install flask numpy scipy scikit-learn spacy fuzzywuzzy
-        ```
+
+```bash
+pip install flask numpy scipy scikit-learn spacy fuzzywuzzy
+```
 
 5. Install the sentence processing data:
     ```bash
