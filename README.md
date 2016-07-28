@@ -117,8 +117,10 @@ will start a flask server running on `http://localhost:5000`. You can run the se
     Send a PDF by to: `/annotate_pdf`
     (Notes for Joël: 1. this works with my slightly edited version of Spa... I've pushed it not as a submodule for the moment since I don't want to mess with the proper Spa. 2. I had some trouble getting the file data from Spa using the conventional Flask method. I *believe* it's since Spa uploads the PDF as data, and not as a multi-part encoded file. It works now, but just so you know it's a bit different from the report view thing below.)
 
-3. To make a report:
+3. Report view!:
     Send a zip file containing RCT PDFs to: `/generate_report`
+
+    **N.B. [here](https://gist.github.com/ijmarshall/2298e68f780e7287a14fb97f97f62085#file-report_view_demo-ipynb) is a working notebook which demonstrates this function**
 
 
 ## Help
