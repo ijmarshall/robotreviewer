@@ -9,8 +9,17 @@ from robotreviewer import config
 from robotreviewer.data_structures import MultiDict
 import requests
 import xml.etree.cElementTree as ET
-import cStringIO
-import urlparse
+
+try:
+    from cStringIO import StringIO # py2
+except ImportError:
+    from io import StringIO # py3
+
+try:
+    import urlparse
+except ImportError:
+    from urllib import parse as urlparse
+
 import subprocess
 import os
 import logging
@@ -85,7 +94,7 @@ class PdfReader():
         author_list = []
         author_bits = []
         path = []
-        for event, elem in ET.iterparse(cStringIO.StringIO(xml_string.encode('utf-8')),events=("start", "end")):
+        for event, elem in ET.iterparse(StringIO(xml_string.encode('utf-8')),events=("start", "end")):
             if event == 'start':
                 path.append(elem.tag)
             elif event == 'end':
