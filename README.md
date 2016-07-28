@@ -49,11 +49,18 @@ A BibTeX entry for LaTeX users is
 
 2. Get a copy of the RobotReviewer repo, and go into that directory
     ```bash
-    git clone https://github.com/ijmarshall/robotreviewer.git
-    cd robotreviewer
+    git clone https://github.com/ijmarshall/robotreviewer3.git
+    cd robotreviewer3
     ```
 
-3. ignore point 3 for now... 
+3. Get the large data files (>1GB) via git lfs (`brew install git-lfs` if you don't have it)
+    ```bash
+    git lfs install
+    git lfs pull
+    ```
+
+
+<!-- 3. ignore point 3 for now...  -->
 <!-- 3. Install the PDF web viewer (optional --- this is not needed if you want to just use the REST API)
     ```bash
     git submodule update --init --recursive
