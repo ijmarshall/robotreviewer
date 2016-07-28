@@ -1,9 +1,7 @@
 # RobotReviewer
 Automatic extraction of data from clinical trial reports
 
-A simple webserver written in Python which accepts a clinical trial (in plain text/JSON), and returns risk of bias judgements.
-
-The current release has a DOI: [![DOI](https://zenodo.org/badge/15498/ijmarshall/robotreviewer.svg)](https://zenodo.org/badge/latestdoi/15498/ijmarshall/robotreviewer)
+A simple webserver written in Python which accepts a clinical trial (as a PDF), and returns risk of bias judgements.
 
 ## Systematic review author?
 
@@ -47,7 +45,7 @@ A BibTeX entry for LaTeX users is
 
 ## Installation
 
-1. Ensure you have a working version of Python 2.7. We recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience. However, if you have Python 2.7 already installed that will probably work fine too.
+1. Ensure you have a working version of Python 2.7. We recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience. However, if you have Python 2.7 already installed that will probably work fine too. (It's extremely close but won't yet work in Python 3 due to some weird unicode thing... don't laugh...)
 
 2. Get a copy of the RobotReviewer repo, and go into that directory
     ```bash
@@ -55,72 +53,73 @@ A BibTeX entry for LaTeX users is
     cd robotreviewer
     ```
 
-3. Install the PDF web viewer (optional --- this is not needed if you want to just use the REST API)
+3. ignore point 3 for now... 
+<!-- 3. Install the PDF web viewer (optional --- this is not needed if you want to just use the REST API)
     ```bash
     git submodule update --init --recursive
     ```
-
+ -->
 4. Install the Python libraries that RobotReviewer needs - do one of the following.
 
     a. If you are using Anaconda:
         ```
-        conda install flask numpy scipy scikit-learn nltk
+        conda config --add channels spacy  # only needed once
+        conda install flask numpy scipy scikit-learn spacy
+        pip install fuzzywuzzy # (this is not yet in the anaconda repo)
         ```
 
     b. For everyone else:
         ```
-        pip install flask numpy scipy scikit-learn nltk
+        pip install flask numpy scipy scikit-learn spacy fuzzywuzzy
         ```
 
 5. Install the sentence processing data:
     ```bash
-    python -m nltk.downloader punkt
+    python -m spacy.en.download
     ```
       
+6. This version of RobotReviewer requires Grobid, which runs on Java. Follow the instructions [here](https://grobid.readthedocs.io/en/latest/Install-Grobid/) to download and build it.
+
+7. Edit the `robotreviewer/config.py` file to contain the path to the directory where you have installed Grobid. (RobotReviewer will start it automatically in a subprocess).
 
 ## Running
 
 The following
 
 ```bash
-python robot.py
+python -m robotreviewer
 ```
 
 will start a flask server running on `http://localhost:5000`. You can run the server in development mode by passing `DEBUG=true python robot.py`.
 
 ## REST API
 
-Send some JSON by POST to /annotate such as:
-```json
-{"text": "Put the full text of a clinical trial extracted from the PDF in here"}
-```
+1. To annotate plain text:
+    Send some JSON by POST to `/annotate` such as:
+    ```json
+    {"text": "Put the full text of a clinical trial extracted from the PDF in here"}
+    ```
 
-and it will return something like:
+    and it will return something like:
 
-```json
-{"marginalia": [
-   {"title":"Random sequence generation",
-    "type":"Risk of Bias",
-    "description":"**Overall risk of bias prediction**: low",
-    "annotations":[
-       {"content":"A central pharmacy randomly assigned study medication in a 1:1 ratio using a computer-generated randomization sequence with variable-sized blocks ranging from 2 to 8 stratified by study site.",
-        "uuid":"6e97f8d0-2970-11e5-b5fe-0242ac110006"
-       }, ...
-```
+    ```json
+    {"marginalia": [
+       {"title":"Random sequence generation",
+        "type":"Risk of Bias",
+        "description":"**Overall risk of bias prediction**: low",
+        "annotations":[
+           {"content":"A central pharmacy randomly assigned study medication in a 1:1 ratio using a computer-generated randomization sequence with variable-sized blocks ranging from 2 to 8 stratified by study site.",
+            "uuid":"6e97f8d0-2970-11e5-b5fe-0242ac110006"
+           }, ...
+    ```
 
-## Running as a Python module
+2. To annotate a PDF:
+    Send a PDF by to: `/annotate_pdf`
+    (Notes for Joël: 1. this works with my slightly edited version of Spa... I've pushed it not as a submodule for the moment since I don't want to mess with the proper Spa. 2. I had some trouble getting the file data from Spa using the conventional Flask method. I *believe* it's since Spa uploads the PDF as data, and not as a multi-part encoded file. It works now, but just so you know it's a bit different from the report view thing below.)
 
-We will add full python module functionality to a future relase. However, the current code can easily be called directly from existing python code as follows:
+3. To make a report:
+    Send a zip file containing RCT PDFs to: `/generate_report`
 
-```python
-import biasrobot # from the robotreviewer root directory
-
-bot = biasrobot.BiasRobot()
-text = "Put the full text of a clinical trial in here..."
-annotations = bot.annotate(text)
-```
-
-Where the BiasRobot.annotate() method returns a "marginalia" dict of the same structure as the JSON example above.
 
 ## Help
 
