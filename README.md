@@ -58,8 +58,6 @@ A BibTeX entry for LaTeX users is
     git lfs install
     git lfs pull
     ```
-
-
 <!-- 3. ignore point 3 for now...  -->
 <!-- 3. Install the PDF web viewer (optional --- this is not needed if you want to just use the REST API)
     ```bash
@@ -99,7 +97,7 @@ The following
 python -m robotreviewer
 ```
 
-will start a flask server running on `http://localhost:5000`. You can run the server in development mode by passing `DEBUG=true python robot.py`.
+will start a flask server running on `http://localhost:5000`. You can run the server in development mode by passing `DEBUG=true python -m robotreviewer`.
 
 ## REST API
 
