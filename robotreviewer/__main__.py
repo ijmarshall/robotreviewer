@@ -43,6 +43,8 @@ def str2bool(v):
 
 DEBUG_MODE = str2bool(os.environ.get("DEBUG", "false"))
 
+LOCAL_PATH = "robotreviewer/uploads"
+
 # LOG_LEVEL = (logging.DEBUG if DEBUG_MODE else logging.INFO)
 LOG_LEVEL = logging.DEBUG
 logging.basicConfig(level=LOG_LEVEL, format='[%(levelname)s] %(name)s %(asctime)s: %(message)s')
@@ -75,6 +77,17 @@ def main():
     return render_template('index.html')
 
 @csrf.exempt
+@app.route('/file_upload', methods=['POST'])
+def file_upload():
+    print request.files
+    for f in request.files:
+        handler = request.files[f]
+        filename = handler.filename
+        path_to_file = os.path.join(LOCAL_PATH, filename)
+        handler.save(path_to_file)
+        return filename 
+
+@csrf.exempt
 @app.route('/annotate_abstract', methods=['POST'])
 def is_rct_annotate():
     """
@@ -87,7 +100,16 @@ def is_rct_annotate():
 
 
 @csrf.exempt
-@app.route('/generate_report', methods=['POST'])
+@app.route('/synthesize_uploaded', methods=['GET', 'POST'])
+def synthesize_pdfs():
+    pdfs = request.form.lists()[0]
+    assert(pdfs[0] == "pdfs[]")
+    pdfs = pdfs[1] # list of pdf names.
+    print "files to summarize: %s" % pdfs
+    return _generate_report_for_files(pdfs)
+
+@csrf.exempt
+@app.route('/generate_report', methods=['GET', 'POST'])
 def generate_report():
     # TODO fix this into something better before making live
     # note, that the proper way to do this is via request.files
@@ -96,8 +118,12 @@ def generate_report():
     tmp_filename = os.path.join(config.TEMP_ZIP, 'tmp.zip')
     file = request.files['file']
     file.save(tmp_filename)
+
+    return _generate_report_for_zip(tmp_filename)
+
+def _generate_report_for_zip(filename):
     articles = []
-    with zipfile.ZipFile(tmp_filename, "r") as f:
+    with zipfile.ZipFile(filename, "r") as f:
         for name in f.namelist():
             if name.startswith('__MACOSX/'):
                 continue
@@ -114,9 +140,27 @@ def generate_report():
     html = report_view.html(articles)
     response = make_response(html)
     response.headers["Content-Disposition"] = "attachment; filename=report.html"
+    print "response!"
+    print html
     return response
                     
 
+def _generate_report_for_files(files_list):
+    articles = []
+    
+    for file_name in files_list:
+        full_filename = os.path.join(LOCAL_PATH, file_name)
+        data = pdf_reader.convert(full_filename)    
+        data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
+        articles.append(data)
+
+    
+    html = report_view.html(articles)
+    response = make_response(html)
+    response.headers["Content-Disposition"] = "attachment; filename=report.html"
+    #print "response!"
+    #print html
+    return response
 
 
 @app.route('/annotate_pdf', methods=['POST'])
