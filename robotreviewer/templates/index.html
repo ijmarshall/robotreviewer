@@ -59,10 +59,13 @@
 
         var dz = new Dropzone("div#dropzone", {
              url: "/file_upload",                        
-             autoProcessQueue: false,
+             //autoProcessQueue: false,
+             //parallelUploads: 2,
+             //uploadMultiple: true,
         });
 
-        $('#submit-all').click(function(){           
+        $('#submit-all').click(function(){    
+
              dz.processQueue();
         });
 
