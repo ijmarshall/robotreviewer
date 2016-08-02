@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RobotReviewer: auto-synthesis</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google" content="notranslate">
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+
+    
+    <!-- <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/main.css') }}" /> -->
+    
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/dropzone.css') }}" />
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/robot.css') }}" /> 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='scripts/modernizr.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/dropzone.js') }}"></script>
+</head>
+
+
+
+<body>
+
+    <ul><li><img src="img/logo.png" /> </li></ul>
+    
+    
+
+    <!--
+    <form action="/file_upload"
+      method="post"
+      class="dropzone"
+      id="dropzone"></form>
+      -->
+    
+    <!--
+    <div id="dropzone">
+      <form action="/file_upload" class="dropzone" id="dropzone-form">
+      </form>
+    </div>
+    -->
+
+    <div id="dropzone" class="dropzone"></div>
+
+
+    <div id="main" class="main-button">
+        <button id="submit-all" class="button">Synthesize these PDFs!</button>
+    </div>
+
+    <div id="wait" class="wait"></div>
+
+    <div id="report" class="report"></div>
+
+    <script>
+
+        var uploaded_files = [] 
+
+        Dropzone.autoDiscover = false;
+
+        var dz = new Dropzone("div#dropzone", {
+             url: "/file_upload",                        
+             autoProcessQueue: false,
+        });
+
+        $('#submit-all').click(function(){           
+             dz.processQueue();
+        });
+
+
+        
+        // this is called once all files have been
+        // uploaded; we need to tell the server to
+        // synthesize the PDFs at this point.
+        dz.on('queuecomplete', function(){
+            $("#dropzone").hide("blind");
+            $("#wait").html("<p>synthesizing... </p> <img src='img/robot-band.gif'/>");
+            $("#submit-all").hide();
+
+            $.post("/synthesize_uploaded", {"pdfs":uploaded_files}, function(data, status)
+            {
+                // alert(data);
+                $("#wait").hide("explode");
+                
+                $("#report").html(data);
+                uploaded_files = []
+            });           
+        });
+
+        // gets called after every successful file
+        // upload; we just collect the file names.
+        dz.on('success', function(file, resp){
+            uploaded_files.push(resp)
+        });
+
+    </script>
+ 
+
+</body>
+</html>
