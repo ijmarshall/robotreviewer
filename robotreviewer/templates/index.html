@@ -43,13 +43,20 @@
     <div id="dropzone" class="dropzone"></div>
 
 
+    <!--
     <div id="main" class="main-button">
         <button id="submit-all" class="button">Synthesize these PDFs!</button>
     </div>
+    --> 
+
 
     <div id="wait" class="wait"></div>
 
-    <div id="report" class="report"></div>
+    
+    <!-- <div id="report" class="report">  </div> -->
+    <iframe id="iframe-report" class="iframe-report" height=400 width=400>
+    </iframe>
+
 
     <script>
 
@@ -59,9 +66,6 @@
 
         var dz = new Dropzone("div#dropzone", {
              url: "/file_upload",                        
-             //autoProcessQueue: false,
-             //parallelUploads: 2,
-             //uploadMultiple: true,
         });
 
         $('#submit-all').click(function(){    
@@ -83,8 +87,8 @@
             {
                 // alert(data);
                 $("#wait").hide("explode");
-                
-                $("#report").html(data);
+                //alert(data);
+                $("#iframe-report").contents().find("body").html(data);
                 uploaded_files = []
             });           
         });
