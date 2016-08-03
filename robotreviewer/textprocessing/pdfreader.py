@@ -70,6 +70,9 @@ class PdfReader():
         self.grobid_process = Grobid()
         log.info('Success! :)')
 
+    def cleanup(self):
+        self.grobid_process.cleanup() 
+
     def convert(self, pdf_filename):
         """
         returns MultiDict containing document information
@@ -77,15 +80,26 @@ class PdfReader():
         out = self.parse_xml(self.run_grobid(pdf_filename))
         return out
 
-    def run_grobid(self, filename):
-        files = {'input': open(filename, 'rb')}
+    def run_grobid(self, filename, MAX_TRIES=5):
+        f_in = open(filename, 'rb') 
+        files = {'input': f_in}
         r = requests.post(self.url, files=files)
-        r.raise_for_status() # raise error if not HTTP: 200
+        f_in.close()
+
+        try:
+            r.raise_for_status() # raise error if not HTTP: 200
+        except Exception:
+            log.info("oh dear... post request to grobid failed for %s. exception below." % filename)
+            log.info(r.text)
+            del f_in
+            raise
 
         # save output for debugging
         tmp_filename = os.path.join(config.TEMP_PDF, 'tmp.xml')
         with codecs.open(tmp_filename, 'w', 'utf-8') as f:
             f.write(r.text)
+
+        
         return r.text
 
     def parse_xml(self, xml_string):
