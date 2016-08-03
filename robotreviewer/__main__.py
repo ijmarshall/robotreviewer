@@ -105,7 +105,7 @@ def synthesize_pdfs():
     pdfs = request.form.lists()[0]
     assert(pdfs[0] == "pdfs[]")
     pdfs = pdfs[1] # list of pdf names.
-    print "files to summarize: %s" % pdfs
+    log.info("files to summarize: %s" % pdfs)
     return _generate_report_for_files(pdfs)
 
 @csrf.exempt
@@ -140,26 +140,42 @@ def _generate_report_for_zip(filename):
     html = report_view.html(articles)
     response = make_response(html)
     response.headers["Content-Disposition"] = "attachment; filename=report.html"
-    print "response!"
-    print html
+    log.debug(html)
     return response
                     
 
-def _generate_report_for_files(files_list):
+# @TODO 
+# this is an embarrassingly hacky method. the whole thing. sorry.
+def _generate_report_for_files(files_list, MAX_ATTEMPTS=25):
+    global pdf_reader  # lord forgive me
     articles = []
-    
     for file_name in files_list:
-        full_filename = os.path.join(LOCAL_PATH, file_name)
-        data = pdf_reader.convert(full_filename)    
-        data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
-        articles.append(data)
 
-    
+        num_attempts = 0
+        # as far as I can tell, grobid will periodically 
+        # and stochastically fail on the same PDF. 
+        # therefore, we simply try a bunch of times. 
+        #
+        # is this perhaps the best, most elegant "fix" ever?!?!?!
+        while num_attempts < MAX_ATTEMPTS:
+            try:
+                full_filename = os.path.join(LOCAL_PATH, file_name)
+                data = pdf_reader.convert(full_filename)    
+                data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
+                articles.append(data)
+                break  
+            except:
+                log.info("failed on %s for a mysterious reason!" % file_name)
+                log.info("on %s out of %s attempts" % (num_attempts+1, MAX_ATTEMPTS))
+                pdf_reader.cleanup()
+                pdf_reader = PdfReader() # re-init up Grobid connection
+                num_attempts += 1
+        
+
+
     html = report_view.html(articles)
     response = make_response(html)
     response.headers["Content-Disposition"] = "attachment; filename=report.html"
-    #print "response!"
-    #print html
     return response
 
 
