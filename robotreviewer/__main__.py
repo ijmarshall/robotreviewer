@@ -58,8 +58,6 @@ app.debug = DEBUG_MODE
 
 log.info("Welcome to RobotReviewer :)")
 
-
-
 log.info("Loading the robots...")
 
 pdf_reader = PdfReader() # set up Grobid connection
@@ -75,6 +73,11 @@ log.info("Robots loaded successfully! Ready...")
 @app.route('/')
 def main():
     return render_template('index.html')
+
+@app.route('/pdfview')
+def pdfviewer():
+    return render_template('pdfview.html')
+
 
 @csrf.exempt
 @app.route('/file_upload', methods=['POST'])
