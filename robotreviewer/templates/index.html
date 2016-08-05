@@ -41,10 +41,10 @@
 
         Dropzone.autoDiscover = false;
 
-        var dz = new ("div#dropzone", {
-             url: "/file_upload"}
+        var dz = new Dropzone("div#dropzone", {
+             url: "/file_upload",                        
         });
-
+        
         $('#submit-all').click(function(){    
              dz.processQueue();
         });
