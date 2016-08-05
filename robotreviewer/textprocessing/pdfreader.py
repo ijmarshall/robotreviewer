@@ -96,7 +96,7 @@ class PdfReader():
         # tmp_filename = os.path.join(config.TEMP_PDF, 'tmp.xml')
         # with codecs.open(tmp_filename, 'w', 'utf-8') as f:
         #     f.write(r.text)        
-        # return r.text
+        return r.text
 
     def parse_xml(self, xml_string):
         output = MultiDict()
