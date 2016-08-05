@@ -1,0 +1,54 @@
+#+BEGIN_QUOTE
+From the Old Norse word spá or spæ referring to prophesying and which is cognate with the present English word "spy," continuing Proto-Germanic *spah- and the Proto-Indo-European root *(s)peḱ (to see, to observe) --- [[http://en.wikipedia.org/wiki/V%C3%B6lva][vǫlva (wikipedia)]]
+#+END_QUOTE
+* Basic idea
+  Unstructured PDF documents remain the main vehicle for dissemination of scientific findings.
+  Those interested in gathering and assimilating data must therefore manually peruse published articles and extract from these the elements of interest.
+  Evidence-based medicine provides a compelling illustration of this: many person-hours are spent each year extracting summary information from articles that describe clinical trials.
+  Machine learning provides a potential means of mitigating this burden by automating extraction.
+
+  But, for automated approaches to be useful to end-users, we need tools that allow domain experts to interact with, and benefit from, model predictions.
+  To this end, we present an web-based tool called Spá that accepts as input an article and provides as output an automatically visually annotated rendering of this article.
+  More generally, Spá provides a framework for visualizing predictions, both at the document and sentence level, for full-text PDFs.
+
+* What is Spá concretely
+Spá is our client-side library for rendering and editing annotations on PDF documents.
+It was initially conceived to render predictions of machine learning systems trained on full-text literature from the biomedical domain.
+
+The original design was published as "Spá: A Web-Based Viewer for Text Mining in Evidence Based Medicine" in the Proceedings of the European Conference on Machine Learning and Principles and Practice of Knowledge (ECML-PKDD 2014)
+[[[http://dx.doi.org/10.1007/978-3-662-44845-8_33][doi]], [[https://files.joelkuiper.eu/f/preprint/spa.pdf][preprint]]].
+
+Later Spá was changed to work as a [[http://csurs.csr.uky.edu/cgi-bin/man/man2html?1+git-submodule][git submodule]] for the [[https://github.com/vortext/vortext][Vortext Annotate]] and [[https://github.com/vortext/vortext-demo][Vortext Demo]] projects.
+* How does it work?
+The major components of Spá are:
+  - [[https://github.com/mozilla/pdf.js][Mozilla PDF.js]]
+  - [[https://facebook.github.io/react/][React]]
+  - [[http://backbonejs.org/][Backbone.js]]
+  - [[http://requirejs.org/][RequireJS]]
+  - [[dom-anchor-bitap (experimental)][Hypothesis dom-anchor-bitap]] (experimental)
+
+PDF.js is responsible for rendering the document.
+Normally PDF.js does this by rendering the document to =<canvas>= and putting a series of =<div>='s on top for text selection (the =textLayer=).
+We replaced the =textLayer= with our own custom React component, this way we have full control over what happens in the =textLayer= without resorting to hacks.
+
+To maintain state we use Backbone models and collections.
+We coordinate the model layer and the view layer by using contraptions we call dispatchers.
+Dispatchers are defined by the projects that include Spá, not here.
+The general idea is that a dispatcher listens for model changes (Backbone events) and updates the React components' state accordingly using =setState= or =forceUpdate= methods.
+The components receive the Backbone models as props, and are allowed to call their methods to initiate change.
+It's not as a pretty as Flux with immutable data structures (or ClojureScript) but it does the job for now.
+
+* How to use it?
+Spá can be used by including it in other projects and defining a dispatcher.
+It is not meant to be used directly.
+Currently the following projects use Spá:
+  - [[https://github.com/vortext/vortext-demo][Vortext demo]] (for running predictions)
+  - [[https://github.com/vortext/vortext][Vortext]]
+
+* Contributing
+  Currently this is a research object.
+  The API and organizational structure are subject to change.
+  Comments and suggestions are much appreciated.
+  For code contributions: fork, branch, and send a pull request.
+* License
+  Spa is open source, and licensed under [[http://gplv3.fsf.org/][GPLv3]]. See [[https://github.com/vortext/spa/blob/master/LICENSE][license]] for more information.

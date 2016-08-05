@@ -5,7 +5,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google" content="notranslate">
-
     <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/dropzone.css') }}" />
     <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/robot.css') }}" /> 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
@@ -18,7 +17,7 @@
     
 
     <div class="topbar"><img src="/img/header-logo2.png" width="190px" height="40px"></div>
-    
+    <p>User id: {{ user_id }}</p>
 
 
 
@@ -42,12 +41,11 @@
 
         Dropzone.autoDiscover = false;
 
-        var dz = new Dropzone("div#dropzone", {
-             url: "/file_upload",                        
+        var dz = new ("div#dropzone", {
+             url: "/file_upload"}
         });
 
         $('#submit-all').click(function(){    
-
              dz.processQueue();
         });
 
@@ -60,7 +58,6 @@
             $("#dropzone").hide("blind");
             $("#wait").html("<p>synthesizing... </p> <img src='img/robot-band.gif'/>");
             $("#submit-all").hide();
-
             $.post("/synthesize_uploaded", {"pdfs":uploaded_files}, function(data, status)
             {
                 // alert(data);
