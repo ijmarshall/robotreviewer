@@ -1,17 +1,5 @@
 """
 RobotReviewer server
-
-Simple Flask server, which takes in the full text of a clinical
-trial in JSON format, e.g.:
-
-{"text": "Streptomycin Treatment of Pulmonary Tuberculosis: A Medical Research Council Investigation..."}
-
-and outputs annotations in JSON format.
-
-The JSON query should be sent as a POST query to:
-`SERVER-NAME/annotate`
-which by deafult would be localhost at:
-`http://localhost:5000/annotate`
 """
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
@@ -39,6 +27,7 @@ import robotreviewer
 import uuid
 import sqlite3
 from datetime import datetime
+import hashlib
 
 def str2bool(v):
   return v.lower() in ("yes", "true", "t", "1")
@@ -74,9 +63,11 @@ log.info("Robots loaded successfully! Ready...")
 #####
 ## connect to and set up database 
 #####
+
+# TODO: need to make sure directory is there on new install
 rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES)
 c = rr_sql_conn.cursor()
-c.execute('CREATE TABLE IF NOT EXISTS article(user TEXT, pdf_file BLOB, timestamp TIMESTAMP)')
+c.execute('CREATE TABLE IF NOT EXISTS article(id INTEGER PRIMARY KEY, session_id TEXT, pdf_hash TEXT, pdf_file BLOB, annotations TEXT, timestamp TIMESTAMP)')
 c.close()
 rr_sql_conn.commit()
 
@@ -97,12 +88,12 @@ def pdfviewer():
 @csrf.exempt
 @app.route('/file_upload', methods=['POST'])
 def file_upload():
-    robotreviewer_session_id = request.cookies['robotreviewer_session_id']
-    print "**** /file_upload received uuid {} ****".format(robotreviewer_session_id) # remove this later
+    robotreviewer_session_id = request.cookies['robotreviewer_session_id']    
     c = rr_sql_conn.cursor()
-    for f in request.files:
+    for i, f in enumerate(request.files):
         blob = request.files[f].read()
-        c.execute("INSERT INTO article (user, pdf_file, timestamp) VALUES(?, ?, ?)", [robotreviewer_session_id, sqlite3.Binary(blob), datetime.now()])
+        pdf_hash = hashlib.md5(blob).hexdigest()
+        c.execute("INSERT INTO article (session_id, pdf_hash, pdf_file, timestamp) VALUES(?, ?, ?, ?)", [robotreviewer_session_id, pdf_hash, sqlite3.Binary(blob), datetime.now()])
         rr_sql_conn.commit()
     c.close()
     return "success"
@@ -112,43 +103,23 @@ def file_upload():
 def synthesize_pdfs():
     # synthesise all PDFs uploaded with the same UID
     robotreviewer_session_id = request.cookies['robotreviewer_session_id']
-    print "**** /synthesize_uploaded received uuid {} ****".format(robotreviewer_session_id) # remove this later
     return _generate_report_for_files(robotreviewer_session_id)
 
 
-# @TODO 
-# this is an embarrassingly hacky method. the whole thing. sorry.
-def _generate_report_for_files(robotreviewer_session_id, MAX_ATTEMPTS=25):
-    
-    c = rr_sql_conn.cursor()
-    
-    
 
-    # global pdf_reader  # lord forgive me
-
+def _generate_report_for_files(robotreviewer_session_id, MAX_ATTEMPTS=25):    
+    c1 = rr_sql_conn.cursor()
+    c2 = rr_sql_conn.cursor()
     articles = []
-    
-    for blob in c.execute("SELECT pdf_file FROM article WHERE user=?", (robotreviewer_session_id,)):
 
-        num_attempts = 0
-        # as far as I can tell, grobid will periodically 
-        # and stochastically fail on the same PDF. 
-        # therefore, we simply try a bunch of times. 
-        #
-        # is this perhaps the best, most elegant "fix" ever?!?!?!
+    for i, row in enumerate(c1.execute("SELECT id, pdf_file FROM article WHERE session_id=?", (robotreviewer_session_id,))):
 
-        # while num_attempts < MAX_ATTEMPTS:
-            # try:
-        data = pdf_reader.convert(blob[0])    
+        data = pdf_reader.convert(row[1])    
         data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
         articles.append(data)
-        # break  
-            # except:
-            #     log.info("failed on %s for a mysterious reason!" % file_name)
-            #     log.info("on %s out of %s attempts" % (num_attempts+1, MAX_ATTEMPTS))
-            #     pdf_reader.cleanup()
-            #     pdf_reader = PdfReader() # re-init up Grobid connection
-            #     num_attempts += 1
+        # here - save the annotations in the database as json
+        c2.execute("UPDATE article SET annotations = ? WHERE id = ?", (data.to_json(), row[0]))
+        rr_sql_conn.commit()
         
     c.close()
     html = report_view.html(articles)
