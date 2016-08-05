@@ -17,7 +17,7 @@
     
 
     <div class="topbar"><img src="/img/header-logo2.png" width="190px" height="40px"></div>
-    <p>User id: {{ user_id }}</p>
+
 
 
 
@@ -44,7 +44,7 @@
         var dz = new Dropzone("div#dropzone", {
              url: "/file_upload",                        
         });
-        
+
         $('#submit-all').click(function(){    
              dz.processQueue();
         });
