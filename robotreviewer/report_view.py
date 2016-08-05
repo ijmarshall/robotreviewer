@@ -5,6 +5,11 @@
 from jinja2 import Template
 import pandas as pd
 
+# TODO
+#  fix the rest of the defaults here
+#  (problem is accessing [0] in an empty list - need to explicitly test + find defaults)
+
+# + ALSO improve Grobid/pdf reader code since we're not currently accessing the authors there and Grobid *does* actually retrieve these
 
 tm = '''
 <!DOCTYPE html>
@@ -100,7 +105,7 @@ tm = '''
         <h2>Characteristics of studies</h2>
         
         {% for study in articles %}
-        <h3>{{ study['authors'][0]['lastname'] }} {{ study['authors'][0]['initials'] }}, {{ study['year'] }} [{{ loop.index }}]</h3>
+        <h3>{{ study['short_citation'] }}</h3>
         
         <table>
             {% for domain in study['pico_text'] %}            
