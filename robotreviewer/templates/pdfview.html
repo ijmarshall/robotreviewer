@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google" content="notranslate">
 
-    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
-
-    <link href="/css/main.css" rel="stylesheet">
-    <script src="/scripts/modernizr.js"></script>
-
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/dropzone.css') }}" />
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/robot.css') }}" /> 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='scripts/modernizr.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/dropzone.js') }}"></script>
     <script data-main="/scripts/main" src="/scripts/require.js"></script>
     <script>
     CSRF_TOKEN = "{{ csrf_token() }}";
@@ -19,8 +19,9 @@
 
   <body class="antialiased">
 
-    <nav id="top-bar" class="top-bar" data-topbar role="navigation">
-    </nav>
+    <div class="topbar"><img src="/img/header-logo2.png" width="190px" height="40px"></div>
+
+
 
     <main>
       <div id="viewer"></div>
