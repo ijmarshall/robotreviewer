@@ -94,7 +94,7 @@ tm = '''
                 {% for study in articles %}
                 <tr>
                     <td class ="risk-studyid">{{ study['short_citation'] }}</td>
-                    {% for domain in study['bias'] %}
+                    {% for domain in study['bias']['structured'] %}
                     <td class="{% if domain['judgement'] == 'low' %}risk-low{% elif domain['judgement'] == 'high/unclear' %}risk-high{% endif %}">{{ '+' if domain['judgement'] == 'low' else '?' }}</td>
                     {% endfor %}
                 </tr>
@@ -108,7 +108,7 @@ tm = '''
         <h3>{{ study['short_citation'] }}</h3>
         
         <table>
-            {% for domain in study['pico_text'] %}            
+            {% for domain in study['pico_text']['structured'] %}            
             <tr>
                 <td>{{ domain['domain'] }}</td><td>{{ domain['text'][0] }}</td>
                 </tr>
@@ -119,7 +119,7 @@ tm = '''
             <tr> 
             <th>Bias</th><th>Judgement</th><th>Support for judgement</th>
             </tr>
-            {% for domain in study['bias'] %}
+            {% for domain in study['bias']['structured'] %}
             <tr>
                 <td>{{ domain['domain'] }}</td><td>{{ domain['judgement'] }}</td><td>{{ domain['justification'][0] }}</td>
             </tr>

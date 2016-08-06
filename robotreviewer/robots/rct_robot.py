@@ -66,9 +66,11 @@ class RCTRobot:
                       "annotations": [],
                       "description":  "{0} (p={1:0.2f})".format(is_rct_str, p_hat)}
 
-        data.gold.setdefault("marginalia", []).append(marginalia) # gold for marginalia since this is shared
-        data.ml["rct"] = {"is_rct": bool(p_hat >= 0.5),
+
+        structured_data = {"is_rct": bool(p_hat >= 0.5),
                            "prob_rct": p_hat}
+        data.ml["rct"] = {"structured": structured_data,
+                        "marginalia": marginalia}
 
         return data
 
