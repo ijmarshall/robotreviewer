@@ -94,7 +94,8 @@ class PubmedRobot:
                   "annotations": [],
                   "description": v_str})  
 
-        data.gold.setdefault("marginalia", []).extend(marginalia) # gold for marginalia since this is shared
+        data.gold["pubmed"] = {"marginalia": marginalia}
+
         return data
 
     def query_pubmed(self, pmid):

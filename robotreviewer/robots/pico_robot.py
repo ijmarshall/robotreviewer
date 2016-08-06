@@ -173,8 +173,9 @@ class PICORobot:
             structured_data.append({"domain":domain, "text": high_prob_sents})
 
 
-        data.gold.setdefault("marginalia", []).extend(marginalia) # gold for marginalia since this is shared
-        data.ml["pico_text"] = structured_data
+        # data.gold.setdefault("marginalia", []).extend(marginalia) # gold for marginalia since this is shared
+        data.ml["pico_text"] = {"structured": structured_data,
+                                "marginalia": marginalia}
 
         return data
 
