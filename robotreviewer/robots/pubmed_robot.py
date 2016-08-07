@@ -46,7 +46,7 @@ class PubmedRobot:
         # seems like a reasonable heuristic but not checked
         # (given that sometimes our query is a partial title
         # retrieved by Grobid)
-        match_quality = sum([match_pc, match_pc_overlap])
+        pubmed_data['pubmed_match_quality'] = sum([match_pc, match_pc_overlap]) 
 
         var_map = [('abstract', pubmed_data['abstract']),
                    ('pmid', pubmed_data['pmid']),
@@ -54,47 +54,12 @@ class PubmedRobot:
 
         pubmed_data['citation'] = self.format_citation(pubmed_data)
         pubmed_data['short_citation'] = self.short_citation(pubmed_data)
-
-        marginalia = [{"type": "PubMed",
-        "title": "Citation",
-        "annotations": [],
-        "description": pubmed_data['citation']}
-        ]
-
-        if match_quality > 1.8:
-            data.data['pubmed'] = pubmed_data # at least until i work out the setattr thing better
-            for k, v in var_map:
-                
-                
-                if k=='authors':
-                    v_str = ', '.join(['{lastname} {initials}'.format(**n) for n in v])
-                elif isinstance(v, list):
-                    v_str = ', '.join(v)
-                else:
-                    v_str = unicode(v)
-                marginalia.append ({"type": "PubMed",
-                                  "title": k.capitalize(),
-                                  "annotations": [],
-                                  "description": v_str})  
+        
+        if pubmed_data['pubmed_match_quality'] > 1.8:
+            data.data['pubmed'] = pubmed_data # until setattr is worked out 
         else:
             # keep it just in case, but don't replace better quality match
-
-            data.data['dubious'] = pubmed_data # until the setattr thing again...
-
-            for k, v in var_map:
-
-                if k=='authors':
-                    v_str = ', '.join(['{LastName} {Initials}'.format(**n) for n in v])
-                elif isinstance(v, list):
-                    v_str = ', '.join(v)                
-                else:
-                    v_str = unicode(v)
-                marginalia.append ({"type": "PubMed (low quality match)",
-                  "title": k.capitalize(),
-                  "annotations": [],
-                  "description": v_str})  
-
-        data.gold["pubmed"] = {"marginalia": marginalia}
+            data.data['dubious'] = pubmed_data # until setattr is worked out
 
         return data
 
@@ -133,4 +98,41 @@ class PubmedRobot:
         if et_al:
             authors += " et al"
         return authors
+
+    @staticmethod
+    def get_marginalia(data):
+        """
+        Get marginalia formatted for Spa from structured data
+        """
+        marginalia = [{"type": "PubMed",
+            "title": "Citation",
+            "annotations": [],
+            "description": data['citation']}
+        ]
+
+        var_map = [('abstract', data['abstract']),
+                   ('pmid', data['pmid']),
+                   ('mesh', data['mesh'])]
+
+        if data['pubmed_match_quality'] > 1.8:
+            for k, v in var_map:
+                if isinstance(v, list):
+                    v_str = ', '.join(v)
+                else:
+                    v_str = unicode(v)
+                marginalia.append ({"type": "PubMed",
+                                  "title": k.capitalize(),
+                                  "annotations": [],
+                                  "description": v_str})  
+        else:
+            for k, v in var_map:
+                if isinstance(v, list):
+                    v_str = ', '.join(v)
+                else:
+                    v_str = unicode(v)
+                marginalia.append ({"type": "PubMed (*low quality match*)",
+                                  "title": k.capitalize(),
+                                  "annotations": [],
+                                  "description": v_str})  
+        return marginalia
     

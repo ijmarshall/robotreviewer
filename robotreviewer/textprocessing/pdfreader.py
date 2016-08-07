@@ -87,8 +87,8 @@ class PdfReader():
         try:
             r.raise_for_status() # raise error if not HTTP: 200
         except Exception:
-            log.info("oh dear... post request to grobid failed for %s. exception below." % filename)
-            log.info(r.text)
+            log.info("oh dear... post request to grobid failed. exception below.")
+            log.error(r.text)
             raise
 
         # TEMPOARY (MAYBE) TODO - remove

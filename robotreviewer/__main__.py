@@ -50,7 +50,6 @@ log.info("Loading the robots...")
 pdf_reader = PdfReader() # set up Grobid connection
 # nlp = English() is imported in __init__ to share among all
 
-
 ######
 ## default annotation pipeline defined here
 ######
@@ -73,6 +72,10 @@ rr_sql_conn.commit()
 
 @app.route('/')
 def main():
+    return redirect('/upload_pdfs')
+
+@app.route('/upload_pdfs')
+def dropzone():
     # create new unique user ID (for the demo)
     robotreviewer_session_id = uuid.uuid4().hex
     resp = make_response(render_template('index.html'))
@@ -80,13 +83,23 @@ def main():
     return resp
     
 
-@app.route('/pdfview')
+@app.route('/pdfview', methods=['GET'])
 def pdfviewer():
-    return render_template('pdfview.html')
-
+    # processes the pdf view for individual study/annotation types
+    robotreviewer_session_id = request.cookies['robotreviewer_session_id']
+    db_id = request.args["study_id"]
+    annotation_type = request.args["annotation_type"]
+    c = rr_sql_conn.cursor()
+    c.execute("SELECT pdf_file, annotations FROM article WHERE session_id=? AND id=?", (robotreviewer_session_id, db_id)) # each row_id should be unique; but to ensure that it is the correct session holder retrieving this data
+    pdf_file, annotation_json = c.fetchone()
+    data = MultiDict()
+    data.load_json(annotation_json)
+    marginalia = bots[annotation_type].get_marginalia(data)
+    return json.dumps(marginalia)
+    # return render_template('pdfview.html')
 
 @csrf.exempt
-@app.route('/file_upload', methods=['POST'])
+@app.route('/add_pdfs_to_db', methods=['POST'])
 def file_upload():
     robotreviewer_session_id = request.cookies['robotreviewer_session_id']    
     c = rr_sql_conn.cursor()
@@ -96,36 +109,39 @@ def file_upload():
         c.execute("INSERT INTO article (session_id, pdf_hash, pdf_file, timestamp) VALUES(?, ?, ?, ?)", [robotreviewer_session_id, pdf_hash, sqlite3.Binary(blob), datetime.now()])
         rr_sql_conn.commit()
     c.close()
-    return "success"
+    return "OK!"
     
 @csrf.exempt # TODO: add csrf back in
 @app.route('/synthesize_uploaded', methods=['POST'])
 def synthesize_pdfs():
     # synthesise all PDFs uploaded with the same UID
     robotreviewer_session_id = request.cookies['robotreviewer_session_id']
-    return _generate_report_for_files(robotreviewer_session_id)
-
-
-
-def _generate_report_for_files(robotreviewer_session_id, MAX_ATTEMPTS=25):    
-    c1 = rr_sql_conn.cursor()
-    c2 = rr_sql_conn.cursor()
+    c = rr_sql_conn.cursor()
     articles = []
-
-    for i, row in enumerate(c1.execute("SELECT id, pdf_file FROM article WHERE session_id=?", (robotreviewer_session_id,))):
-
+    for i, row in enumerate(c.execute("SELECT id, pdf_file FROM article WHERE session_id=?", (robotreviewer_session_id,))):
+        print "ID number.. {}".format(row[0])
         data = pdf_reader.convert(row[1])    
         data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
+        data.gold['db_id'] = row[0]
         articles.append(data)
-        # here - save the annotations in the database as json
-        c2.execute("UPDATE article SET annotations = ? WHERE id = ?", (data.to_json(), row[0]))
+    # here - save the annotations in the database as json
+    for article in articles:
+        c.execute("UPDATE article SET annotations = ? WHERE id = ?", (article.to_json(), article['db_id']))
         rr_sql_conn.commit()
-        
     c.close()
-    html = report_view.html(articles)
-    response = make_response(html)
-    response.headers["Content-Disposition"] = "attachment; filename=report.html"
-    return response
+    return "OK!"
+
+@csrf.exempt # TODO: add csrf back in
+@app.route('/report_view')
+def show_report():
+    robotreviewer_session_id = request.cookies['robotreviewer_session_id']
+    c = rr_sql_conn.cursor()
+    articles = []
+    for i, row in enumerate(c.execute("SELECT annotations FROM article WHERE session_id=?", (robotreviewer_session_id,))):
+        data = MultiDict()
+        data.load_json(row[0])
+        articles.append(data)
+    return render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles)
 
 
 

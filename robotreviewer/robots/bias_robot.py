@@ -120,27 +120,52 @@ class BiasRobot:
 
             bias_pred = self.doc_clf.predict(X)
             bias_class = ["high/unclear", "low"][bias_pred[0]]
+            annotation_metadata = [{"content": sent[0],
+                                   "position": sent[1],
+                                   "prefix": sent[2],
+                                   "suffix": sent[3]} for sent in zip(high_prob_sents, high_prob_start_i,
+                                       high_prob_prefixes,
+                                       high_prob_suffixes)]
 
             marginalia.append({
                 "type": "Risk of Bias",
                 "title": domain,
-                "annotations": [{"content": sent[0],
-                                "position": sent[1],
-                                "prefix": sent[2],
-                                "suffix": sent[3],
-                                "uuid": str(uuid.uuid1())} for sent in zip(high_prob_sents, high_prob_start_i,
-                                    high_prob_prefixes,
-                                    high_prob_suffixes)],
+                "annotations": annotation_metadata,
                 "description": "**Overall risk of bias prediction**: " + bias_class
                 })
 
             structured_data.append({
                 "domain": domain,
                 "judgement": bias_class,
-                "justification": high_prob_sents})
+                "justification": high_prob_sents,
+                "annotation_metadata": annotation_metadata})
 
-        # data.gold.setdefault("marginalia", []).extend(marginalia) # gold for marginalia since this is shared
-        data.ml["bias"] = {"structured": structured_data,
-                           "marginalia": marginalia}
 
+        data.ml["bias"] = structured_data                           
         return data
+
+    @staticmethod
+    def get_marginalia(data):
+        """
+        Get marginalia formatted for Spa from structured data
+        """
+        marginalia = []
+
+        for row in data['bias']:
+            marginalia.append({
+                        "type": "Risk of Bias",
+                        "title": row['domain'],
+                        "annotations": row['annotation_metadata'],
+                        "description": "**Overall risk of bias prediction**: {}".format(row['judgement'])
+                        })
+        return marginalia
+
+    @staticmethod
+    def get_domains():
+        return [u'Random sequence generation',
+                u'Allocation concealment',
+                u'Blinding of participants and personnel',
+                u'Blinding of outcome assessment',
+                u'Incomplete outcome data',
+                u'Selective reporting']
+
