@@ -61,18 +61,24 @@ class RCTRobot:
         if y_hat > 0: 
             is_rct_str = "RCT"
 
-        marginalia = {"type": "Trial Design",
-                      "title": "Is an RCT?",
-                      "annotations": [],
-                      "description":  "{0} (p={1:0.2f})".format(is_rct_str, p_hat)}
+
 
 
         structured_data = {"is_rct": bool(p_hat >= 0.5),
                            "prob_rct": p_hat}
-        data.ml["rct"] = {"structured": structured_data,
-                        "marginalia": marginalia}
-
+        data.ml["rct"] = structured_data                         
         return data
+
+    @staticmethod
+    def get_marginalia(data):       
+        """
+        Get marginalia formatted for Spa from structured data
+        """ 
+        marginalia = [{"type": "Trial Design",
+                      "title": "Is an RCT?",
+                      "annotations": [],
+                      "description":  "{0} (p={1:0.2f})".format(data["rct"]["is_rct"], data["rct"]["prob_rct"])}]
+        return marginalia
 
 
 
