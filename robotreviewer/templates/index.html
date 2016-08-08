@@ -42,7 +42,7 @@
         Dropzone.autoDiscover = false;
 
         var dz = new Dropzone("div#dropzone", {
-             url: "/file_upload",                        
+             url: "/add_pdfs_to_db",                        
         });
 
         $('#submit-all').click(function(){    
@@ -63,16 +63,16 @@
                 // alert(data);
                 $("#wait").hide("explode");
                 //alert(data);
-                $("#iframe-report").contents().find("body").html(data);
-                uploaded_files = []
+                window.location.href = "/report_view";
+                // $("#iframe-report").contents().find("body").html(data);
             });           
         });
 
         // gets called after every successful file
         // upload; we just collect the file names.
-        dz.on('success', function(file, resp){
-            uploaded_files.push(resp)
-        });
+        // dz.on('success', function(file, resp){
+        //     uploaded_files.push(resp)
+        // });
 
     </script>
  

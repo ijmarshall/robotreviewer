@@ -164,18 +164,10 @@ class PICORobot:
 
             high_prob_sents = [sent.text for i, sent in enumerate(doc_text.sents) if i in high_prob_sent_indices]
 
-            marginalia.append({
-                "type": "PICO",
-                "title": domain,
-                "annotations": [{"content": sent, "uuid": str(uuid.uuid1())} for sent in high_prob_sents]
-                })
 
             structured_data.append({"domain":domain, "text": high_prob_sents})
-
-
-        data.gold.setdefault("marginalia", []).extend(marginalia) # gold for marginalia since this is shared
+        
         data.ml["pico_text"] = structured_data
-
         return data
 
     @staticmethod
@@ -191,6 +183,20 @@ class PICORobot:
             sentence_quintiles = [{"DocumentPositionQuintile%d" % (ii/quintile_cutoff): 1} for ii in range(num_sents)]
         return sentence_quintiles
 
+
+    @staticmethod
+    def get_marginalia(data):
+        """
+        Get marginalia formatted for Spa from structured data
+        """
+        marginalia = []        
+        for row in data['pico_text']:
+            marginalia.append({
+                "type": "PICO",
+                "title": row['domain'],
+                "annotations": [{"content": sent, "uuid": str(uuid.uuid1())} for sent in row['text']]
+                })
+        return marginalia
 
 class PICO_vectorizer:
 
