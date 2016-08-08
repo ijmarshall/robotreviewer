@@ -2,6 +2,7 @@
 RobotReviewer data structures
 """
 
+import json
 
 class MultiDict():
     """
@@ -81,6 +82,20 @@ class MultiDict():
         gets values across *all* authorities
         """
         return self.items().values()
+
+    def to_json(self):
+        """
+        saves all the annotations to json
+        """
+        return json.dumps(self.data)
+
+    def load_json(self, json_str):
+        """
+        loads data from json string
+        doesn't do any checking...
+        """
+        self.data = json.loads(json_str)
+
     
     # doesn't really iterate, but for compatibility
     iteritems = items 
