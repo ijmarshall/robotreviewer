@@ -7,12 +7,17 @@ RobotReviewer server
 #           Byron Wallce <byron.wallace@utexas.edu>
 
 import os, logging
-from flask import Flask, json, make_response
+from flask import Flask, json, make_response, send_file
 from flask import redirect, url_for, jsonify
 from flask import request, render_template
 
 from flask_wtf.csrf import CsrfProtect
 import zipfile
+
+try:
+    from cStringIO import StringIO # py2
+except ImportError:
+    from io import StringIO # py3
 
 from robotreviewer.robots.bias_robot import BiasRobot
 from robotreviewer.robots.pico_robot import PICORobot
@@ -66,83 +71,101 @@ log.info("Robots loaded successfully! Ready...")
 # TODO: need to make sure directory is there on new install
 rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES)
 c = rr_sql_conn.cursor()
-c.execute('CREATE TABLE IF NOT EXISTS article(id INTEGER PRIMARY KEY, session_id TEXT, pdf_hash TEXT, pdf_file BLOB, annotations TEXT, timestamp TIMESTAMP)')
+c.execute('CREATE TABLE IF NOT EXISTS article(id INTEGER PRIMARY KEY, session_id TEXT, pdf_hash TEXT, pdf_uuid TEXT, pdf_file BLOB, annotations TEXT, timestamp TIMESTAMP)')
 c.close()
 rr_sql_conn.commit()
 
 @app.route('/')
 def main():
-    return redirect('/upload_pdfs')
+    return redirect('/uploader')
 
-@app.route('/upload_pdfs')
-def dropzone():
+@app.route('/uploader')
+def uploader_page():
     # create new unique user ID (for the demo)
     robotreviewer_session_id = uuid.uuid4().hex
     resp = make_response(render_template('index.html'))
     resp.set_cookie('robotreviewer_session_id', robotreviewer_session_id)
     return resp
-    
-
-@app.route('/pdfview', methods=['GET'])
-def pdfviewer():
-    # processes the pdf view for individual study/annotation types
-    robotreviewer_session_id = request.cookies['robotreviewer_session_id']
-    db_id = request.args["study_id"]
-    annotation_type = request.args["annotation_type"]
-    c = rr_sql_conn.cursor()
-    c.execute("SELECT pdf_file, annotations FROM article WHERE session_id=? AND id=?", (robotreviewer_session_id, db_id)) # each row_id should be unique; but to ensure that it is the correct session holder retrieving this data
-    pdf_file, annotation_json = c.fetchone()
-    data = MultiDict()
-    data.load_json(annotation_json)
-    marginalia = bots[annotation_type].get_marginalia(data)
-    return json.dumps(marginalia)
-    # return render_template('pdfview.html')
 
 @csrf.exempt
 @app.route('/add_pdfs_to_db', methods=['POST'])
-def file_upload():
+def add_pdfs_to_db():
+    # receives the PDFs and adds to DB
     robotreviewer_session_id = request.cookies['robotreviewer_session_id']    
     c = rr_sql_conn.cursor()
     for i, f in enumerate(request.files):
         blob = request.files[f].read()
         pdf_hash = hashlib.md5(blob).hexdigest()
-        c.execute("INSERT INTO article (session_id, pdf_hash, pdf_file, timestamp) VALUES(?, ?, ?, ?)", [robotreviewer_session_id, pdf_hash, sqlite3.Binary(blob), datetime.now()])
+        c.execute("INSERT INTO article (session_id, pdf_uuid, pdf_hash, pdf_file, timestamp) VALUES(?, ?, ?, ?, ?)", [robotreviewer_session_id, uuid.uuid4().hex, pdf_hash, sqlite3.Binary(blob), datetime.now()])
         rr_sql_conn.commit()
     c.close()
     return "OK!"
+
     
 @csrf.exempt # TODO: add csrf back in
 @app.route('/synthesize_uploaded', methods=['POST'])
 def synthesize_pdfs():
-    # synthesise all PDFs uploaded with the same UID
+    # synthesise all PDFs uploaded with the same session ID
     robotreviewer_session_id = request.cookies['robotreviewer_session_id']
     c = rr_sql_conn.cursor()
     articles = []
-    for i, row in enumerate(c.execute("SELECT id, pdf_file FROM article WHERE session_id=?", (robotreviewer_session_id,))):
-        print "ID number.. {}".format(row[0])
+    for i, row in enumerate(c.execute("SELECT pdf_uuid, pdf_file FROM article WHERE session_id=?", (robotreviewer_session_id,))):
         data = pdf_reader.convert(row[1])    
         data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
-        data.gold['db_id'] = row[0]
+        data.gold['pdf_uuid'] = row[0]
         articles.append(data)
     # here - save the annotations in the database as json
     for article in articles:
-        c.execute("UPDATE article SET annotations = ? WHERE id = ?", (article.to_json(), article['db_id']))
+        c.execute("UPDATE article SET annotations = ? WHERE pdf_uuid = ?", (article.to_json(), article['pdf_uuid']))
         rr_sql_conn.commit()
     c.close()
     return "OK!"
 
-@csrf.exempt # TODO: add csrf back in
+@csrf.exempt # TODO: add csrf back in 
 @app.route('/report_view')
 def show_report():
     robotreviewer_session_id = request.cookies['robotreviewer_session_id']
     c = rr_sql_conn.cursor()
-    articles = []
-    for i, row in enumerate(c.execute("SELECT annotations FROM article WHERE session_id=?", (robotreviewer_session_id,))):
+    articles, article_ids = [], []
+    for i, row in enumerate(c.execute("SELECT pdf_uuid, annotations FROM article WHERE session_id=?", (robotreviewer_session_id,))):
         data = MultiDict()
-        data.load_json(row[0])
+        print row
+        data.load_json(row[1])
         articles.append(data)
-    return render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles)
+        article_ids.append(row[0])
+    return json.dumps({"document_ids": article_ids,
+                       "report": render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles),
+                        "report_id": uuid.uuid4().hex})
 
+@app.route('/pdf/<pdf_uuid>')
+def get_pdf(pdf_uuid):
+    # returns PDF binary from database by pdf_uuid
+    # where the session id also matches
+    robotreviewer_session_id = request.cookies['robotreviewer_session_id']
+    c = rr_sql_conn.cursor()
+    c.execute("SELECT pdf_file FROM article WHERE session_id=? AND pdf_uuid=?", (robotreviewer_session_id, pdf_uuid)) # each row_id should be unique; but to ensure that it is the correct session holder retrieving this data
+    pdf_file = c.fetchone()
+    strIO = StringIO()
+    strIO.write(pdf_file[0])
+    strIO.seek(0)
+    return send_file(strIO,
+                     attachment_filename="filename=%s.pdf" % pdf_uuid,
+                     as_attachment=False)
+
+    
+@app.route('/marginalia/<pdf_uuid>', methods=['GET'])
+def get_marginalia(pdf_uuid):
+    # calculates marginalia from database by pdf_uuid
+    # where the session id also matches
+    robotreviewer_session_id = request.cookies['robotreviewer_session_id']
+    annotation_type = request.args["annotation_type"]
+    c = rr_sql_conn.cursor()
+    c.execute("SELECT annotations FROM article WHERE session_id=? AND pdf_uuid=?", (robotreviewer_session_id, pdf_uuid))
+    annotation_json = c.fetchone()
+    data = MultiDict()
+    data.load_json(annotation_json[0])
+    marginalia = bots[annotation_type].get_marginalia(data)
+    return json.dumps(marginalia)
 
 
 @csrf.exempt # TODO: add csrf back in
