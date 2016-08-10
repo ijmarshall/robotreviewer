@@ -121,8 +121,8 @@ def synthesize_pdfs():
     return "OK!"
 
 @csrf.exempt # TODO: add csrf back in
-@app.route('/report_view')
-def show_report():
+@app.route('/report_view/<format>')
+def show_report(format):
     robotreviewer_session_id = request.cookies['robotreviewer_session_id']
     c = rr_sql_conn.cursor()
     articles, article_ids = [], []
@@ -132,9 +132,14 @@ def show_report():
         data.load_json(row[1])
         articles.append(data)
         article_ids.append(row[0])
-    return json.dumps({"document_ids": article_ids,
+    if format=='html':
+        return render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles)
+    elif format=='json':
+        return json.dumps({"document_ids": article_ids,
                        "report": render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles),
                         "report_id": uuid.uuid4().hex})
+    else:
+        raise Exception('format "{}" was requested but not available')
 
 @app.route('/pdf/<pdf_uuid>')
 def get_pdf(pdf_uuid):
