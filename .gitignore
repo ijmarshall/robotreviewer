@@ -93,5 +93,5 @@ nbproject
 *.pyc
 *.out
 *.log
-robotreviewer/static/scripts/.tern-port
-robotreviewer/data/uploaded_pdfs/uploaded_pdfs.sqlite
+.tern-port
+robotreviewer/data/uploaded_pdfs/*

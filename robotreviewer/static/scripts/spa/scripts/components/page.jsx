@@ -95,9 +95,6 @@ define(function (require) {
     },
     componentWillReceiveProps: function(nextProps) {
       this.setState({renderingState: nextProps.page.get("state")});
-      if(this.state.renderingState < RenderingStates.FINISHED) {
-        this.setState({isRendered: false});
-      }
     },
     drawPage: function(page) {
       var self = this;
@@ -157,6 +154,7 @@ define(function (require) {
                                annotations={this.props.annotations}
                                page={this.props.page} />;
       }
+
       var loader = require.toUrl(".") + "/../../img/loading-spin.svg";
       return (
         <div className="page">
