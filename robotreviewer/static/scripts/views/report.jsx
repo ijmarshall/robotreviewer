@@ -3,12 +3,30 @@ define(function (require) {
   'use strict';
   var React = require("react");
 
-  var ReportView = React.createClass({
-    render: function() {
+  var Dropzone = require("react-dropzone");
 
-      return(<div>Add the DropZone and report logic here</div>);
+  var ReportView = React.createClass({
+    onDrop: function (files) {
+      console.log('Received files: ', files);
+    },
+    render: function() {
+      return (
+          <div>
+          <Dropzone onDrop={this.onDrop}
+                    accept="application/pdf"
+                    disablePreview={true}
+                    activeClassName="dropzone-active"
+                    className="dropzone">
+              <div>
+              RobotReviewer helps to automate systematic reviews in Evidence Based Medicine.
+              <br />
+              Try dropping Randomized Controlled Trial PDFs here, or click to select files to upload!
+              </div>
+            </Dropzone>
+          </div>
+      );
     }
   });
 
   return ReportView;
-})
+});

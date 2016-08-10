@@ -177,8 +177,7 @@ define(function (require) {
             <TextSegments page={page}
                           annotations={this.props.annotations}
                           factor={this.props.factor}
-                          $viewer={this.props.$viewer} />)
-        ;
+                          $viewer={this.props.$viewer} />);
       }
       return <div className="minimap-node" style={this.props.style}>{textSegments}</div>;
     }
