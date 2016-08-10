@@ -1,313 +1,335 @@
 html, body {
-    color: #505050;
+  color: #505050;
 }
 
 body {
-    background-color: #f5f5f5;
-    overflow: hidden;
+  background-color: #f5f5f5;
+  overflow: hidden;
 }
 
 .page, .block {
-    box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.1);
 }
 
 .viewer-container {
-    overflow: hidden;
+  overflow: hidden;
 }
 
 .viewer {
-    position: absolute;
-    width: calc(70% - 40px);
-    height: 100%;
-    overflow-y: scroll;
-    overflow-x: hidden;
-    left: 55px;
-    padding-right: 40px;
-    line-height: 1.2em;
+  position: absolute;
+  width: calc(70% - 40px);
+  height: 100%;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  left: 55px;
+  padding-right: 40px;
+  line-height: 1.2em;
 }
 
 
 #side {
-    padding: 0 20px 0 20px;
-    background-color: #f5f5f5;
-    position: absolute;
-    z-index: 1000;
-    left: calc(70% - 20px);
-    width: calc(30% + 20px);
-    height: 100%;
-    overflow: auto;
+  padding: 0 20px 0 20px;
+  background-color: #f5f5f5;
+  position: absolute;
+  z-index: 1000;
+  left: calc(70% - 20px);
+  width: calc(30% + 20px);
+  height: 100%;
+  overflow: auto;
 }
 
 .minimap {
-    -webkit-font-smoothing: none;
-    -moz-osx-font-smoothing: none;
-    text-rendering: optimizeSpeed;
-    position: absolute;
-    height: 100%;
-    margin: 0 0 0 20px;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: none;
+  text-rendering: optimizeSpeed;
+  position: absolute;
+  height: 100%;
+  margin: 0 0 0 20px;
 }
 
 .minimap-node {
-    width: 15px;
-    position: relative;
-    background-color: #f0f0f0;
-    margin-bottom: 1px;
+  width: 15px;
+  position: relative;
+  background-color: #f0f0f0;
+  margin-bottom: 1px;
 }
 
 .text-segment {
-    opacity: 1 !important;
-    position: absolute;
-    right: 0;
-    left: 0;
-    background-color: rgba(0,0,0,0.06);
+  opacity: 1 !important;
+  position: absolute;
+  right: 0;
+  left: 0;
+  background-color: rgba(0,0,0,0.06);
 }
 
 .minimap:hover,
 .minimap:active {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .minimap:hover .visible-area,
 .minimap:active .visible-area {
-    opacity: 0.4;
-    cursor: pointer;
+  opacity: 0.4;
+  cursor: pointer;
 }
 .minimap .visible-area:hover,
 .minimap .visible-area:active {
-    opacity: 0.5;
-    cursor: pointer;
+  opacity: 0.5;
+  cursor: pointer;
 }
 
 .minimap .visible-area {
-    background-color: #000;
-    opacity: 0.3;
-    z-index: 2;
-    width: 15px;
-    position: absolute;
-    left: 0;
-    right: 0;
+  background-color: #000;
+  opacity: 0.3;
+  z-index: 2;
+  width: 15px;
+  position: absolute;
+  left: 0;
+  right: 0;
 }
 
 #marginalia {
-    margin-top: 1em;
-    margin-bottom: 5em;
+  margin-top: 1em;
+  margin-bottom: 5em;
 }
 
 #side .group h6 {
-    font-weight: 300;
-    border-bottom: 1px solid #ddd;
-    text-shadow: 1px 1px 1px #fff;
+  font-weight: 300;
+  border-bottom: 1px solid #ddd;
+  text-shadow: 1px 1px 1px #fff;
 }
 
 .block {
-    margin-bottom: 1.0em;
-    border: solid 1px #ddd;
+  margin-bottom: 1.0em;
+  border: solid 1px #ddd;
 }
 
 .block ul.annotations li  {
-    margin-bottom: 0.6rem;
+  margin-bottom: 0.6rem;
 }
 
 .block ul.annotations li .wrap {
-    display: inline-block;
-    width: 95%;
-    white-space: nowrap;
-    overflow: hidden;
-    vertical-align: middle;
-    text-overflow: ellipsis;
+  display: inline-block;
+  width: 95%;
+  white-space: nowrap;
+  overflow: hidden;
+  vertical-align: middle;
+  text-overflow: ellipsis;
 }
 
 .block h4 {
-    margin: 0;
-    padding: 0;
-    cursor: pointer;
-    -webkit-user-select: none; /* Chrome/Safari */
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* IE10+ */
-    -o-user-select: none;
-    user-select: none;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-user-select: none; /* Chrome/Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE10+ */
+  -o-user-select: none;
+  user-select: none;
 
-    text-transform: capitalize;
+  text-transform: capitalize;
 }
 
 .block h4 {
-    color: #505050;
-    background-color: #e5e5e5;
+  color: #505050;
+  background-color: #e5e5e5;
 }
 
 .block h4 .right .annotations {
-    font-size: 8pt;
-    opacity: 0.6;
-    position: relative;
-    top: 3px;
-    left: 2px;
+  font-size: 8pt;
+  opacity: 0.6;
+  position: relative;
+  top: 3px;
+  left: 2px;
 }
 
 .block h4 i {
-    line-height: 1.4em;
-    opacity: 0.6;
+  line-height: 1.4em;
+  opacity: 0.6;
 }
 
 .block h4:hover {
-    background-color: #d9d9d9;
+  background-color: #d9d9d9;
 }
 
 .block h4 a {
-    font-weight: 600;
-    display: block;
-    background-color: inherit;
-    font-size: 14px;
-    padding: 10px 20px;
-    color: #505050;
-    margin: -1px;
+  font-weight: 600;
+  display: block;
+  background-color: inherit;
+  font-size: 14px;
+  padding: 10px 20px;
+  color: #505050;
+  margin: -1px;
 }
 
 .block h4 a:hover {
-    background-color: inherit;
+  background-color: inherit;
 }
 
 .block .content *  {
-    font-size: 0.8rem;
+  font-size: 0.8rem;
 }
 
 .block .content {
-    padding: 10px 20px;
-    border-top: none;
-    background-color: white;
+  padding: 10px 20px;
+  border-top: none;
+  background-color: white;
 }
 
 .block .content .remove {
-    float: right;
-    color: #505050;
-    opacity: 0.5;
-    line-height: 1.8em;
+  float: right;
+  color: #505050;
+  opacity: 0.5;
+  line-height: 1.8em;
 }
 
 .block .content .remove:hover {
-    opacity: 1.0;
+  opacity: 1.0;
 }
 
 div.editable:hover {
-    text-shadow: 0 0 5px #fff, 0 0 15px #ffff00;
-    cursor: pointer;
+  text-shadow: 0 0 5px #fff, 0 0 15px #ffff00;
+  cursor: pointer;
 }
 
 canvas {
-    -webkit-user-select: none; /* Chrome/Safari */
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* IE10+ */
-    -o-user-select: none;
-    user-select: none;
+  -webkit-user-select: none; /* Chrome/Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE10+ */
+  -o-user-select: none;
+  user-select: none;
 }
 
 .page {
-    direction: ltr;
-    background-color: white;
-    background-clip: content-box;
-    position: relative;
-    border: 1px solid #ddd;
-    margin-bottom: 1em;
+  direction: ltr;
+  background-color: white;
+  background-clip: content-box;
+  position: relative;
+  border: 1px solid #ddd;
+  margin-bottom: 1em;
 }
 
 .textLayer {
-    -webkit-font-smoothing: none;
-    -moz-osx-font-smoothing: none;
-    text-rendering: optimizeSpeed;
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    opacity: 0.3;
-    overflow: hidden;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: none;
+  text-rendering: optimizeSpeed;
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.3;
+  overflow: hidden;
 }
 
 .textLayer > div {
-    color: transparent;
-    position: absolute;
-    line-height: 1;
-    white-space: pre;
-    cursor: text;
-    background-color: transparent !important;
-    -webkit-transform-origin: 0% 0%;
-    -moz-transform-origin: 0% 0%;
-    -o-transform-origin: 0% 0%;
-    -ms-transform-origin: 0% 0%;
-    transform-origin: 0% 0%;
+  color: transparent;
+  position: absolute;
+  line-height: 1;
+  white-space: pre;
+  cursor: text;
+  background-color: transparent !important;
+  -webkit-transform-origin: 0% 0%;
+  -moz-transform-origin: 0% 0%;
+  -o-transform-origin: 0% 0%;
+  -ms-transform-origin: 0% 0%;
+  transform-origin: 0% 0%;
 }
 
 .textLayer .annotated {
-    cursor: pointer;
-    margin: -1px;
-    padding: 1px;
-    border-radius: 4px;
+  cursor: pointer;
+  margin: -1px;
+  padding: 1px;
+  border-radius: 4px;
 }
 
 .loading {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    -webkit-transition: opacity 0.5s ease-in-out;
-    -moz-transition: opacity 0.5s ease-in-out;
-    -o-transition: opacity 0.5s ease-in-out;
-    -ms-transition: opacity 0.5s ease-in-out;
-    transition: opacity 0.5s ease-in-out;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  -webkit-transition: opacity 0.5s ease-in-out;
+  -moz-transition: opacity 0.5s ease-in-out;
+  -o-transition: opacity 0.5s ease-in-out;
+  -ms-transition: opacity 0.5s ease-in-out;
+  transition: opacity 0.5s ease-in-out;
 }
 
 .loading span  {
-    margin-left: -2.5em;
-    display: inline-block;
+  margin-left: -2.5em;
+  display: inline-block;
 }
 
 .loading img {
-    position: relative;
-    left: 50%;
-    top: 50%;
+  position: relative;
+  left: 50%;
+  top: 50%;
 }
 
 ::selection {
-    background: rgba(0,0,255,0.3);
+  background: rgba(0,0,255,0.3);
 }
 
 ::-moz-selection {
-    background: rgba(0,0,255,0.3);
+  background: rgba(0,0,255,0.3);
 }
 
 .textLayer ::selection {
-    background: rgb(0,0,255);
+  background: rgb(0,0,255);
 }
 
 .textLayer ::-moz-selection {
-    background: rgb(0,0,255);
+  background: rgb(0,0,255);
 }
 
 .highlight {
-    opacity: 1.0 !important;
+  opacity: 1.0 !important;
 }
 
 .popup {
-    cursor: pointer;
-    background-color: #333;
-    color: white;
-    width: 38px;
-    height: 33px;
-    position: absolute;
-    z-index: 999;
-    text-align: center;
-    padding: 2px;
-    line-height: 1.7em;
-    opacity: 0.75;
-    box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  background-color: #333;
+  color: white;
+  width: 38px;
+  height: 33px;
+  position: absolute;
+  z-index: 999;
+  text-align: center;
+  padding: 2px;
+  line-height: 1.7em;
+  opacity: 0.75;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.1);
 }
 
 .popup:hover {
-    opacity: 1.0;
+  opacity: 1.0;
 }
 
 .popup .mask {
-    position: absolute;
-    z-index: 100;
-    width: 100%;
-    height: 100%;
-    background-color: transparent;
+  position: absolute;
+  z-index: 100;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+}
+
+.dropzone {
+  border-width: 2px;
+  border-color: rgb(102, 102, 102);
+  border-style: dashed;
+  border-radius: 5px;
+  height: 500px;
+  width: 90%;
+  margin: 2em auto;
+  display: table;
+}
+
+.dropzone > div {
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.dropzone-active {
+  border-style: solid;
+  border-color: black;
 }

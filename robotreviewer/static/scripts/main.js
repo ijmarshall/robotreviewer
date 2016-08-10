@@ -1,7 +1,5 @@
 'use strict';
 
-var spa = "spa/scripts/";
-
 require.config({
   jsx: {
     fileExtension: '.jsx'
@@ -16,6 +14,7 @@ require.config({
     'backbone': 'spa/scripts/vendor/backbone',
 
     'react': "spa/scripts/vendor/react-dev",
+    'react-dropzone': "spa/scripts/vendor/react-dropzone",
 
     'react-dom': "spa/scripts/vendor/react-dom",
     'immutable': "spa/scripts/vendor/immutable",
