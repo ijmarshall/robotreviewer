@@ -54,16 +54,16 @@ define(function (require) {
       "*path"    : "report"
     },
     report : function() {
-      ReactDOM.render(
-        new ReportView({}),
-        document.getElementById("main")
-      );
+      var node = document.getElementById("main");
+      ReactDOM.unmountComponentAtNode(node);
+      ReactDOM.render(new ReportView({}), node);
     },
     document : function() {
+      var node = document.getElementById("main");
+      ReactDOM.unmountComponentAtNode(node);
       ReactDOM.render(
         new DocumentView({document: documentModel, marginalia: marginaliaModel, isEditable: isEditable}),
-        document.getElementById("main")
-      );
+        node);
     }
   });
 

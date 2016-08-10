@@ -184,22 +184,37 @@ define(function (require) {
     }
   });
 
+
+  // FIXME really really hacky way of maintaining state
+  var lastHeight = {};
+
   var Minimap = React.createClass({
     render: function() {
       var $viewer = this.props.$viewer;
       if(!$viewer) return null; // wait for viewer to mount
 
-      var pages = this.props.pdf.get("pages");
+      var pdf = this.props.pdf;
+      var fingerprint = pdf.get("fingerprint");
+      var pages = pdf.get("pages");
       var numPages = pages.length;
 
       // We assume that each page has the same height.
       // This is not true sometimes, but often enough for academic papers.
-      var $firstPage = $viewer.find(".page:eq(0)");
-      var totalHeight = $firstPage.height() * numPages;
+      var $firstPage = $viewer.find(".page").first();
+      var pageHeight = $firstPage.height();
+      // We store this because React stateful rendering might be out of sync...
+      if(lastHeight[fingerprint] >= pageHeight) {
+        pageHeight = lastHeight[fingerprint];
+      } else {
+        lastHeight[fingerprint] = pageHeight;
+      }
+      var totalHeight = pageHeight * numPages;
 
       var offset = $viewer.offset().top;
-      var factor = totalHeight / ($viewer.height() - offset);
+      var viewerHeight = $viewer.height();
+      var factor = totalHeight / (viewerHeight - offset);
 
+      var height = viewerHeight / factor;
       var annotations = this.props.annotations;
 
       var pageElements = pages.map(function(page, pageIndex) {
@@ -213,7 +228,7 @@ define(function (require) {
       });
 
       return (<div className="minimap">
-                <VisibleArea height={$viewer.height() / factor} $viewer={$viewer} factor={factor} />
+                <VisibleArea height={height} $viewer={$viewer} factor={factor} />
                 {pageElements}
               </div>);
     }
