@@ -8,7 +8,6 @@ define(function (require) {
   var PDFJS = require("PDFJS");
 
   var TextSearcher = new (require("../vendor/dom-anchor-bitap/text_searcher"))();
-
   var RenderingStates = window.RenderingStates = {
     INITIAL: 0,
     RUNNING: 1,
@@ -95,9 +94,9 @@ define(function (require) {
               position,
               position + content.length,
               false, {
-                matchDistance: 250,
-                contextMatchThreshold: 0.4,
-                patternMatchThreshold: 0.4,
+                matchDistance: len * 2,
+                contextMatchThreshold: 0.5,
+                patternMatchThreshold: 0.5,
                 flexContext: true
               });
           } else {

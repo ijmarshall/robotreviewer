@@ -47,7 +47,7 @@ define(function (require) {
       $(window).on("highlight", this.toggleHighlights);
       this.props.marginalia.on("annotations:select", this.scrollTo);
 
-      var $viewer = $(this.refs.viewer.getDOMNode());
+      var $viewer = $(this.refs.viewer);
       this.setState({$viewer: $viewer});
     },
     render: function() {

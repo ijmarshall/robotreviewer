@@ -15,12 +15,12 @@ define(function (require) {
     },
     submit: function(e) {
       this.setState({ editable: false });
-      this.props.callback(this.refs.input.getDOMNode().value);
+      this.props.callback(this.refs.input.value);
       e.preventDefault();
     },
     componentDidUpdate: function() {
       if(this.state.editable) {
-        this.refs.input.getDOMNode().focus();
+        this.refs.input.focus();
       }
     },
     render: function() {

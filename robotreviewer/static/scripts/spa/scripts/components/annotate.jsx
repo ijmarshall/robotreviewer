@@ -28,12 +28,12 @@ define(function (require) {
       return { visible: false };
     },
     componentWillUnmount: function() {
-      var $container = $(this.refs.popup.getDOMNode()).parent();
+      var $container = $(this.refs.popup).parent();
       $container.off("mouseup.popup");
     },
     componentDidMount: function() {
       var self = this;
-      var $container = $(this.refs.popup.getDOMNode()).parent();
+      var $container = $(this.refs.popup).parent();
 
       $container.on("mouseup.popup", function(e) {
         window.clearTimeout(timeout);
@@ -50,7 +50,7 @@ define(function (require) {
     show: function(mouseX)  {
       if(this.state.visible) return;
 
-      var $popup = $(this.refs.popup.getDOMNode());
+      var $popup = $(this.refs.popup);
       var $container = $popup.parent();
 
       var selectionBox = window.document.getSelection().getRangeAt(0).getBoundingClientRect();
