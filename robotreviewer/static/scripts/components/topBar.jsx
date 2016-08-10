@@ -22,10 +22,10 @@ define(function (require) {
       request.send(null);
     },
     triggerFileUpload: function() {
-      this.refs.file.getDOMNode().click();
+      this.refs.file.click();
     },
     loadFile: function() {
-      var file = this.refs.file.getDOMNode().files[0];
+      var file = this.refs.file.files[0];
       if (file.type.match(this.props.mimeType)) {
         FileUtil.readFileAsBinary(file).then(this.props.callback);
       }
@@ -36,15 +36,16 @@ define(function (require) {
           <div>
             <ul className="title-area">
               <li className="name">
-                <h1><a href="/"><img src="/img/header-logo2.png" width="190px" height="40px"/></a></h1>
+                <h1><a href="/"><img src="/img/logo.png" />RobotReviewer</a></h1>
               </li>
             </ul>
 
             <section className="top-bar-section">
               <ul className="right">
                 <input accept={this.props.accept} style={{display:"none"}} name="file" type="file" ref="file" onChange={this.loadFile} />
-                <li className="active" onClick={this.triggerFileUpload}><a>Upload</a></li>
                 <li><a href="http://vortext.systems/robotreviewer">About</a></li>
+                <li><a onClick={this.loadExample}>Example</a></li>
+                <li className="active" onClick={this.triggerFileUpload}><a>Upload</a></li>
               </ul>
             </section>
           </div>
