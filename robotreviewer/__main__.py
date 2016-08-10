@@ -21,10 +21,10 @@ except ImportError:
 
 from robotreviewer.robots.bias_robot import BiasRobot
 from robotreviewer.robots.pico_robot import PICORobot
-from robotreviewer.robots.rct_robot import RCTRobot 
+from robotreviewer.robots.rct_robot import RCTRobot
 from robotreviewer.robots.pubmed_robot import PubmedRobot
 from robotreviewer.data_structures import MultiDict
-from robotreviewer import report_view 
+from robotreviewer import report_view
 from robotreviewer.textprocessing.pdfreader import PdfReader
 from robotreviewer import config
 import robotreviewer
@@ -46,6 +46,9 @@ logging.basicConfig(level=LOG_LEVEL, format='[%(levelname)s] %(name)s %(asctime)
 log = logging.getLogger(__name__)
 
 app = Flask(__name__,  static_url_path='')
+if(DEBUG_MODE):
+    app.run(debug=True)
+
 csrf = CsrfProtect()
 csrf.init_app(app)
 
@@ -65,7 +68,7 @@ bots = {"bias_bot": BiasRobot(top_k=3),
 log.info("Robots loaded successfully! Ready...")
 
 #####
-## connect to and set up database 
+## connect to and set up database
 #####
 
 # TODO: need to make sure directory is there on new install
@@ -77,10 +80,6 @@ rr_sql_conn.commit()
 
 @app.route('/')
 def main():
-    return redirect('/uploader')
-
-@app.route('/uploader')
-def uploader_page():
     # create new unique user ID (for the demo)
     robotreviewer_session_id = uuid.uuid4().hex
     resp = make_response(render_template('index.html'))
@@ -91,7 +90,7 @@ def uploader_page():
 @app.route('/add_pdfs_to_db', methods=['POST'])
 def add_pdfs_to_db():
     # receives the PDFs and adds to DB
-    robotreviewer_session_id = request.cookies['robotreviewer_session_id']    
+    robotreviewer_session_id = request.cookies['robotreviewer_session_id']
     c = rr_sql_conn.cursor()
     for i, f in enumerate(request.files):
         blob = request.files[f].read()
@@ -101,7 +100,7 @@ def add_pdfs_to_db():
     c.close()
     return "OK!"
 
-    
+
 @csrf.exempt # TODO: add csrf back in
 @app.route('/synthesize_uploaded', methods=['POST'])
 def synthesize_pdfs():
@@ -110,7 +109,7 @@ def synthesize_pdfs():
     c = rr_sql_conn.cursor()
     articles = []
     for i, row in enumerate(c.execute("SELECT pdf_uuid, pdf_file FROM article WHERE session_id=?", (robotreviewer_session_id,))):
-        data = pdf_reader.convert(row[1])    
+        data = pdf_reader.convert(row[1])
         data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
         data.gold['pdf_uuid'] = row[0]
         articles.append(data)
@@ -121,7 +120,7 @@ def synthesize_pdfs():
     c.close()
     return "OK!"
 
-@csrf.exempt # TODO: add csrf back in 
+@csrf.exempt # TODO: add csrf back in
 @app.route('/report_view')
 def show_report():
     robotreviewer_session_id = request.cookies['robotreviewer_session_id']
@@ -152,7 +151,7 @@ def get_pdf(pdf_uuid):
                      attachment_filename="filename=%s.pdf" % pdf_uuid,
                      as_attachment=False)
 
-    
+
 @app.route('/marginalia/<pdf_uuid>', methods=['GET'])
 def get_marginalia(pdf_uuid):
     # calculates marginalia from database by pdf_uuid
@@ -177,7 +176,7 @@ def json_annotate():
     json_data = request.json
     annotations = annotate(json_data)
     return json.dumps(annotations)
-    
+
 def annotate(data, bot_names=["bias_bot"]):
     #
     # ANNOTATION TAKES PLACE HERE

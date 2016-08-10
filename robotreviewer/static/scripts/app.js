@@ -4,6 +4,7 @@ define(function (require) {
 
   var Backbone = require("backbone");
   var React = require("react");
+  var ReactDOM = require("react-dom");
   var _ = require("underscore");
   var FileUtil = require("spa/helpers/fileUtil");
 
@@ -13,8 +14,6 @@ define(function (require) {
   Backbone.sync = function(method, model, options){
     options.beforeSend = function(xhr){
       xhr.setRequestHeader('X-CSRF-Token', CSRF_TOKEN);
-      // xhr.setRequestHeader('Content-Type', 'multipart/form-data');
-      // xhr.setRequestHeader('Hello', 'some data herer');
     };
     return _sync(method, model, options);
   };
@@ -29,7 +28,7 @@ define(function (require) {
   var Marginalia = React.createFactory(require("jsx!spa/components/marginalia"));
 
   var process = function(data) {
-    var upload = FileUtil.upload("/annotate_pdf", data);
+    var upload = FileUtil.upload("/topologies/ebm", data);
     documentModel.loadFromData(data);
     upload.then(function(result) {
       var marginalia = JSON.parse(result);
@@ -37,7 +36,7 @@ define(function (require) {
     });
   };
 
-  var topBarComponent = React.render(
+  var topBarComponent = ReactDOM.render(
     new TopBar({
       callback: process,
       accept: ".pdf",
@@ -48,12 +47,12 @@ define(function (require) {
 
   var isEditable = true;
 
-  var documentComponent = React.render(
+  var documentComponent = ReactDOM.render(
     new Document({pdf: documentModel, marginalia: marginaliaModel, isEditable: isEditable}),
     document.getElementById("viewer")
   );
 
-  var marginaliaComponent = React.render(
+  var marginaliaComponent = ReactDOM.render(
     new Marginalia({marginalia: marginaliaModel, isEditable: isEditable}),
     document.getElementById("marginalia")
   );
