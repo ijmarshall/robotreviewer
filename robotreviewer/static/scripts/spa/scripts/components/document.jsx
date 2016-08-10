@@ -24,7 +24,7 @@ define(function (require) {
 
   var Document = React.createClass({
     getInitialState: function() {
-      return { fingerprint: null, $viewer: null };
+      return { $viewer: null };
     },
     toggleHighlights: function(e, uuid) {
       var $annotations = this.state.$viewer.find("[data-uuid*="+uuid+"]");
@@ -54,7 +54,7 @@ define(function (require) {
       var pdf = this.props.pdf;
       var marginalia = this.props.marginalia;
 
-      var fingerprint = this.state.fingerprint;
+      var fingerprint = pdf.get("fingerprint");
       var pages = pdf.get("pages");
 
       var annotations = Immutable.fromJS(pages.map(function(page, index) {

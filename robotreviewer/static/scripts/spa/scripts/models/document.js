@@ -82,7 +82,6 @@ define(function (require) {
         // If no position is given, start in the middle of the document
         var position = annotation.get("position") || Math.floor(len / 2);
 
-
         var result = TextSearcher.searchExact(text, content);
         if(!result.matches.length && useFuzzy) {
           if(prefix && suffix) {
@@ -233,7 +232,8 @@ define(function (require) {
         var result = {};
         mappings.forEach(function(mapping) {
           result[mapping.pageIndex] = result[mapping.pageIndex] || {};
-          result[mapping.pageIndex][mapping.nodeIndex] = _.union(result[mapping.pageIndex][mapping.nodeIndex] || [], [mapping]);
+          result[mapping.pageIndex][mapping.nodeIndex] =
+            _.union(result[mapping.pageIndex][mapping.nodeIndex] || [], [mapping]);
         });
         return result;
       };
