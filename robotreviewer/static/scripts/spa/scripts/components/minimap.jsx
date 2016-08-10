@@ -5,8 +5,14 @@ define(function (require) {
   var _ = require("underscore");
   var $ = require("jquery");
   var React = require("react");
+  var ReactDOM = require("react-dom");
+
   var TextLayerBuilder = require("../helpers/textLayerBuilder");
   var Immutable = require("immutable");
+
+  var bounded = function(num) {
+    return isFinite(num) ? num : null;
+  };
 
   var VisibleArea = React.createClass({
     getInitialState: function() {
@@ -17,7 +23,8 @@ define(function (require) {
     },
     componentWillUnmount: function() {
       this.props.$viewer.off("scroll");
-      $(this.getDOMNode().parentNode).off("mousedown mousemove");
+      var node = ReactDOM.findDOMNode(this);
+      $(node.parentNode).off("mousedown mousemove");
       $("body").off("mouseup.minimap");
     },
     scrollTo: function(e, $minimap, $viewer) {
@@ -32,7 +39,8 @@ define(function (require) {
     componentDidMount: function() {
       var self = this;
       var $viewer =  this.props.$viewer;
-      var $minimap = $(this.getDOMNode().parentNode);
+      var node = ReactDOM.findDOMNode(this);
+      var $minimap = $(node.parentNode);
 
       $viewer.on("scroll", function() {
         self.setState({offset: $viewer.scrollTop() / self.props.factor});
@@ -57,8 +65,9 @@ define(function (require) {
         });
     },
     render: function() {
-      var style = { height: this.props.height,
-                    top: this.state.offset };
+      var style = { height: bounded(this.props.height),
+                    top: bounded(this.state.offset) };
+
       return (<div className="visible-area" style={style}></div>);
     }
   });
@@ -194,12 +203,13 @@ define(function (require) {
       var annotations = this.props.annotations;
 
       var pageElements = pages.map(function(page, pageIndex) {
+        var style = {height: bounded((totalHeight / numPages) / factor)};
         return <PageSegment key={pageIndex}
                             page={page}
                             $viewer={$viewer}
                             factor={factor}
                             annotations={annotations.get(pageIndex)}
-                            style={{height: (totalHeight / numPages) / factor}} />;
+                            style={style} />;
       });
 
       return (<div className="minimap">

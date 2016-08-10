@@ -16,6 +16,8 @@ require.config({
     'backbone': 'spa/scripts/vendor/backbone',
 
     'react': "spa/scripts/vendor/react-dev",
+
+    'react-dom': "spa/scripts/vendor/react-dom",
     'immutable': "spa/scripts/vendor/immutable",
 
     'JSXTransformer': "spa/scripts/vendor/JSXTransformer",
