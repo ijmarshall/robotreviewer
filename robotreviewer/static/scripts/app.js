@@ -22,36 +22,23 @@ define(function (require) {
   var marginaliaModel = new (require("spa/models/marginalia"))();
 
   // Components
-  var TopBar = React.createFactory(require("jsx!components/topBar"));
   var DocumentView = React.createFactory(require("jsx!views/document"));
+  var UploadView = React.createFactory(require("jsx!views/upload"));
   var ReportView = React.createFactory(require("jsx!views/report"));
-
-
-  var process = function(data) {
-    //var upload = FileUtil.upload("/topologies/ebm", data);
-    documentModel.loadFromData(data);
-    // upload.then(function(result) {
-    //  var marginalia = JSON.parse(result);
-    //  marginaliaModel.reset(marginaliaModel.parse(marginalia));
-    //});
-  };
-
-  var topBarComponent = ReactDOM.render(
-    new TopBar({
-      callback: process,
-      accept: ".pdf",
-      mimeType: /application\/(x-)?pdf|text\/pdf/
-    }),
-    document.getElementById("top-bar")
-  );
 
   var isEditable = true;
 
   var Router = Backbone.Router.extend({
     routes : {
+      "upload"   : "upload",
       "report"   : "report",
       "document" : "document",
-      "*path"    : "report"
+      "*path"    : "upload"
+    },
+    upload : function() {
+      var node = document.getElementById("main");
+      ReactDOM.unmountComponentAtNode(node);
+      ReactDOM.render(new UploadView({}), node);
     },
     report : function() {
       var node = document.getElementById("main");
@@ -67,7 +54,7 @@ define(function (require) {
     }
   });
 
-  new Router();
+  window.router = new Router();
 
 
   Backbone.history.start();
