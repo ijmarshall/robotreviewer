@@ -3,11 +3,36 @@ define(function (require) {
   'use strict';
   var React = require("react");
 
-  var Dropzone = require("react-dropzone");
+  var Dropzone = require("react-dropzone")
+  var FileUtil = require("spa/helpers/fileUtil");
+  var _ = require("underscore");
+  var Q = require("Q");
+  var $ = require("jquery");
+
+  var uploadUri = "/add_pdfs_to_db";
+  var synthesizeUri = "/synthesize_uploaded";
 
   var ReportView = React.createClass({
     onDrop: function (files) {
-      console.log('Received files: ', files);
+      var fd = new FormData();
+
+      _.forEach(files, function(file) {
+        fd.append('file', file);
+      });
+
+      $.ajax({
+        type: 'POST',
+        url: uploadUri,
+        data: fd,
+        contentType: false,
+        cache: false,
+        processData: false,
+        success: function(data) {
+          $.post(synthesizeUri, {}, function(data, status) {
+            console.log(data, status);
+          });
+        }
+      });
     },
     render: function() {
       return (
