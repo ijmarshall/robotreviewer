@@ -34,9 +34,11 @@ define(function (require) {
       var $viewer = this.state.$viewer;
       if($viewer) {
         var delta = $viewer.find("[data-uuid*="+ uuid + "]").offset().top;
-        var viewerHeight = $viewer.height();
-        var center = viewerHeight / 2;
-        $viewer.animate({scrollTop: $viewer.scrollTop() + delta - center});
+        if(delta) {
+          var viewerHeight = $viewer.height();
+          var center = viewerHeight / 2;
+          $viewer.animate({scrollTop: $viewer.scrollTop() + delta - center});
+        }
       }
     },
     componentWillUnmount: function() {
