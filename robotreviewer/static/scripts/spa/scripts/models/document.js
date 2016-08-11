@@ -93,9 +93,9 @@ define(function (require) {
               position,
               position + content.length,
               false, {
-                matchDistance: 250,
-                contextMatchThreshold: 0.4,
-                patternMatchThreshold: 0.4,
+                matchDistance: position + content.length * 2,
+                contextMatchThreshold: 0.95,
+                patternMatchThreshold: 0.95,
                 flexContext: true
               });
           } else {
@@ -104,7 +104,7 @@ define(function (require) {
               content,
               position,
               false, {
-                matchDistance: len * 2,
+                matchDistance: position + content.length * 2,
                 withFuzzyComparison: true
               });
           }
