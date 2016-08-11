@@ -125,7 +125,7 @@ def show_report(report_uuid, format):
         articles.append(data)
         article_ids.append(row[0])
     if format=='html':
-        return render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles)
+        return render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles, report_uuid=report_uuid)
     elif format=='json':
         return json.dumps({"document_ids": article_ids,
                        "report": render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles),
