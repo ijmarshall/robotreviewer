@@ -5,7 +5,6 @@ define(function (require) {
   var Q = require("Q");
   var _ = require("underscore");
   var Backbone = require("backbone");
-  var PDFJS = require("PDFJS");
 
   var TextSearcher = new (require("../vendor/dom-anchor-bitap/text_searcher"))();
   var RenderingStates = window.RenderingStates = {
