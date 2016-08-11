@@ -44,6 +44,7 @@ from robotreviewer import config
 from robotreviewer.ml.classifier import MiniClassifier
 from robotreviewer.lexicons.drugbank import Drugbank
 from robotreviewer.textprocessing.abbreviations import Abbreviations
+from robotreviewer.textprocessing import tokenizer
 
 from unidecode import unidecode
 
@@ -112,7 +113,7 @@ class PICORobot:
         """
 
         
-        doc_text = robotreviewer.nlp(data["text"])
+        doc_text = tokenizer.nlp(data["text"])
 
         if not doc_text:
             # we've got to know the text at least..

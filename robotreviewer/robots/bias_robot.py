@@ -21,9 +21,8 @@ import json
 import uuid
 import os
 
-# from nltk.tokenize import sent_tokenize
-
 import robotreviewer
+from robotreviewer.textprocessing import tokenizer
 from robotreviewer.ml.classifier import MiniClassifier
 from robotreviewer.ml.vectorizer import ModularVectorizer
 
@@ -64,7 +63,7 @@ class BiasRobot:
             top_k = self.top_k
 
         doc_len = len(data['text'])
-        doc_text = robotreviewer.nlp(data['text'])
+        doc_text = tokenizer.nlp(data['text'])
 
         marginalia = []
 
