@@ -17,10 +17,6 @@ define(function (require) {
     return _sync(method, model, options);
   };
 
-  // Models
-  var documentModel = new (require("spa/models/document"))();
-  var marginaliaModel = new (require("spa/models/marginalia"))();
-
   // Components
   var DocumentView = React.createFactory(require("jsx!views/document"));
   var UploadView = React.createFactory(require("jsx!views/upload"));
@@ -49,7 +45,9 @@ define(function (require) {
       var node = document.getElementById("main");
       ReactDOM.unmountComponentAtNode(node);
 
-      documentModel.set({binary: null, _cache: {}});
+      // Models
+      var documentModel = new (require("spa/models/document"))();
+      var marginaliaModel = new (require("spa/models/marginalia"))();
 
       var marginaliaUrl = "/marginalia/" + reportId + "/" + documentId + "?annotation_type=" + type;
       $.get(marginaliaUrl, function(data) {
