@@ -26,14 +26,14 @@ define(function (require) {
   var UploadView = React.createFactory(require("jsx!views/upload"));
   var ReportView = React.createFactory(require("jsx!views/report"));
 
-  var isEditable = true;
+  var isEditable = false;
 
   var Router = Backbone.Router.extend({
     routes : {
-      "upload"              : "upload",
-      "report/:reportId"    : "report",
-      "document"            : "document",
-      "*path"               : "upload"
+      "upload" : "upload",
+      "report/:reportId" : "report",
+      "document/:reportId/:documentId?annotation_type=:type" : "document",
+      "*path" : "upload"
     },
     upload : function() {
       var node = document.getElementById("main");
@@ -45,9 +45,19 @@ define(function (require) {
       ReactDOM.unmountComponentAtNode(node);
       ReactDOM.render(new ReportView({reportId: reportId}), node);
     },
-    document : function() {
+    document : function(reportId, documentId, type) {
       var node = document.getElementById("main");
       ReactDOM.unmountComponentAtNode(node);
+
+      var documentUrl = "/pdf/" + reportId + "/" + documentId;
+      documentModel.loadFromUrl(documentUrl);
+
+      var marginaliaUrl = "/marginalia/" + reportId + "/" + documentId + "?annotation_type=" + type;
+      $.get(marginaliaUrl, function(data) {
+        var marginalia = {marginalia: JSON.parse(data)};
+        marginaliaModel.reset(marginaliaModel.parse(marginalia));
+      });
+
       ReactDOM.render(
         new DocumentView({document: documentModel, marginalia: marginaliaModel, isEditable: isEditable}),
         node);
