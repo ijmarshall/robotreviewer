@@ -12,11 +12,9 @@ def str2bool(v):
   return v.lower() in ("yes", "true", "t", "1")
 
 
-DEBUG_MODE = str2bool(os.environ.get("DEBUG", "false"))
+DEBUG_MODE = str2bool(os.environ.get("DEBUG", "true"))
 LOCAL_PATH = "robotreviewer/uploads"
 LOG_LEVEL = (logging.DEBUG if DEBUG_MODE else logging.INFO)
-LOG_LEVEL = logging.DEBUG
-
 
 logging.basicConfig(level=LOG_LEVEL, format='[%(levelname)s] %(name)s %(asctime)s: %(message)s')
 log = logging.getLogger(__name__)
