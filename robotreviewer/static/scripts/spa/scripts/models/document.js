@@ -92,10 +92,10 @@ define(function (require) {
               content,
               position,
               position + content.length,
-              false, {
-                matchDistance: position + content.length * 2,
-                contextMatchThreshold: 0.95,
-                patternMatchThreshold: 0.95,
+              true, {
+                matchDistance: len * 2,
+                contextMatchThreshold: 0.25,
+                patternMatchThreshold: 0.25,
                 flexContext: true
               });
           } else {
@@ -103,8 +103,8 @@ define(function (require) {
               text,
               content,
               position,
-              false, {
-                matchDistance: position + content.length * 2,
+              true, {
+                matchDistance: len * 2,
                 withFuzzyComparison: true
               });
           }
