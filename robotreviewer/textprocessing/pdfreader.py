@@ -27,6 +27,9 @@ import time
 import atexit
 import codecs
 import json
+
+from multiprocessing.dummy import Pool as ThreadPool 
+
 # Author:  Iain Marshall <mail@ijmarshall.com>
 
 log = logging.getLogger(__name__)
@@ -75,7 +78,7 @@ class PdfReader():
         self.grobid_process.connect()
 
     def cleanup(self):
-        self.grobid_process.cleanup() 
+        self.grobid_process.cleanup()
 
     def convert(self, pdf_binary):
         """
@@ -83,6 +86,13 @@ class PdfReader():
         """
         out = self.parse_xml(self.run_grobid(pdf_binary))
         return out
+
+    def convert_batch(self, pdf_binary_list, num_threads=4):
+        """
+        threaded version
+        """
+        pool = ThreadPool(num_threads) 
+        return pool.map(self.convert, pdf_binary_list)
 
     def run_grobid(self, pdf_binary, MAX_TRIES=5):
         files = {'input': pdf_binary}
