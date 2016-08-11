@@ -33,7 +33,5 @@ require.config({
 
 
 define(function (require) {
-  window.React = require('react'); // for pref tools
-
   require("app");
 });

@@ -33,8 +33,9 @@ define(function (require) {
     scrollTo: function(uuid) {
       var $viewer = this.state.$viewer;
       if($viewer) {
-        var delta = $viewer.find("[data-uuid*="+ uuid + "]").offset().top;
-        if(delta) {
+        var annotation = $viewer.find("[data-uuid*="+ uuid + "]")
+        if(annotation) {
+          var delta = annotation.offset().top;
           var viewerHeight = $viewer.height();
           var center = viewerHeight / 2;
           $viewer.animate({scrollTop: $viewer.scrollTop() + delta - center});
