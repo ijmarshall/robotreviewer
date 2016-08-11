@@ -61,9 +61,6 @@ class RCTRobot:
         if y_hat > 0: 
             is_rct_str = "RCT"
 
-
-
-
         structured_data = {"is_rct": bool(p_hat >= 0.5),
                            "prob_rct": p_hat}
         data.ml["rct"] = structured_data                         
