@@ -92,13 +92,17 @@ def add_pdfs_to_db():
     # receives the PDFs and adds to DB
     robotreviewer_session_id = request.cookies['robotreviewer_session_id']
     c = rr_sql_conn.cursor()
-    for i, f in enumerate(request.files):
-        blob = request.files[f].read()
-        pdf_hash = hashlib.md5(blob).hexdigest()
-        c.execute("INSERT INTO article (session_id, pdf_uuid, pdf_hash, pdf_file, timestamp) VALUES(?, ?, ?, ?, ?)", [robotreviewer_session_id, uuid.uuid4().hex, pdf_hash, sqlite3.Binary(blob), datetime.now()])
-        rr_sql_conn.commit()
-    c.close()
-    return "OK!"
+    try:
+        uploaded_files = request.files.getlist("file")
+        for f in uploaded_files:
+            blob = f.read()
+            pdf_hash = hashlib.md5(blob).hexdigest()
+            c.execute("INSERT INTO article (session_id, pdf_uuid, pdf_hash, pdf_file, timestamp) VALUES(?, ?, ?, ?, ?)", [robotreviewer_session_id, uuid.uuid4().hex, pdf_hash, sqlite3.Binary(blob), datetime.now()])
+            rr_sql_conn.commit()
+        c.close()
+        return "OK!"
+    except:
+        return "FAILED!"
 
 
 @csrf.exempt # TODO: add csrf back in
@@ -108,7 +112,9 @@ def synthesize_pdfs():
     robotreviewer_session_id = request.cookies['robotreviewer_session_id']
     c = rr_sql_conn.cursor()
     articles = []
-    for i, row in enumerate(c.execute("SELECT pdf_uuid, pdf_file FROM article WHERE session_id=?", (robotreviewer_session_id,))):
+    pdfs = c.execute("SELECT pdf_uuid, pdf_file FROM article WHERE session_id=?", (robotreviewer_session_id,))
+    for i, row in enumerate(pdfs):
+        log.info("prediction")
         data = pdf_reader.convert(row[1])
         data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
         data.gold['pdf_uuid'] = row[0]

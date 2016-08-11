@@ -26,7 +26,7 @@ define(function (require) {
     xhr.upload.addEventListener("load", _.partial(transferComplete, deferred), false);
 
     xhr.open("POST", uri, true);
-    xhr.setRequestHeader('X-CSRF-Token', CSRF_TOKEN);
+    xhr.setRequestHeader('X-CSRF-Token', window.CSRF_TOKEN);
 
     xhr.onload = function (e) {
       if (xhr.status >= 200 && xhr.status < 400) {
