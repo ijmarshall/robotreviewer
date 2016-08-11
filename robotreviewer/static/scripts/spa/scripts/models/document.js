@@ -81,7 +81,6 @@ define(function (require) {
         var len = text.length;
         // If no position is given, start in the middle of the document
         var position = annotation.get("position") || Math.floor(len / 2);
-
         var result = TextSearcher.searchExact(text, content);
         if(!result.matches.length && useFuzzy) {
           if(prefix && suffix) {
@@ -94,9 +93,10 @@ define(function (require) {
               position + content.length,
               true, {
                 matchDistance: len * 2,
-                contextMatchThreshold: 0.25,
-                patternMatchThreshold: 0.25,
-                flexContext: true
+                contextMatchThreshold: 0.75,
+                patternMatchThreshold: 0.75,
+                flexContext: true,
+                withFuzzyComparison: true
               });
           } else {
             result = TextSearcher.searchFuzzy(
