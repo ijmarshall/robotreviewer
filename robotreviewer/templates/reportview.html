@@ -83,7 +83,7 @@
 
         {% for study in articles %}
         <tr>
-          <td class ="risk-studyid"><a href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=bias_bot" class="annotation-link">{{ study['short_citation'] }}</a></td>
+          <td class ="risk-studyid"><a target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=bias_bot" class="annotation-link">{{ study['short_citation'] }}</a></td>
           {% for domain in study['bias'] %}
           <td class="{% if domain['judgement'] == 'low' %}risk-low{% elif domain['judgement'] == 'high/unclear' %}risk-high{% endif %}">{{ '+' if domain['judgement'] == 'low' else '?' }}</td>
           {% endfor %}
@@ -100,7 +100,7 @@
       <table>
         {% for domain in study['pico_text'] %}
         <tr>
-          <td>{{ domain['domain'] }}</td><td><a href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=pico_bot" class="annotation-link">{{ domain['text'][0] }}</a></td>
+          <td>{{ domain['domain'] }}</td><td><a target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=pico_bot" class="annotation-link">{{ domain['text'][0] }}</a></td>
         </tr>
         {% endfor %}
 
@@ -110,7 +110,7 @@
           </tr>
           {% for domain in study['bias'] %}
           <tr>
-            <td>{{ domain['domain'] }}</td><td>{{ domain['judgement'] }}</td><td><a href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=bias_bot" class="annotation-link">{{ domain['justification'][0] }}</a></td>
+            <td>{{ domain['domain'] }}</td><td>{{ domain['judgement'] }}</td><td><a target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=bias_bot" class="annotation-link">{{ domain['justification'][0] }}</a></td>
           </tr>
           {% endfor %}
         </table>

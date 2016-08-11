@@ -20,6 +20,7 @@ define(function (require) {
         switch(e) {
         case "reset":
           documentModel.annotate(marginaliaModel.getActive());
+          self.forceUpdate();
           break;
         case "annotations:change":
           break;
@@ -30,6 +31,7 @@ define(function (require) {
           self.forceUpdate();
           break;
         case "annotations:select":
+          self.forceUpdate();
           break;
         default:
           break;
@@ -41,9 +43,6 @@ define(function (require) {
         case "change:raw":
           self.forceUpdate();
           break;
-        case "change:binary":
-          marginaliaModel.reset();
-          break;
         case "pages:change:state":
           if(obj.get("state") === window.RenderingStates.HAS_CONTENT) {
             documentModel.annotate(marginaliaModel.getActive());
@@ -51,10 +50,6 @@ define(function (require) {
           self.forceUpdate();
           break;
         case "pages:ready":
-          documentModel.annotate(marginaliaModel.getActive());
-          self.forceUpdate();
-          break;
-        case "pages:change:annotations":
           documentModel.annotate(marginaliaModel.getActive());
           self.forceUpdate();
           break;
