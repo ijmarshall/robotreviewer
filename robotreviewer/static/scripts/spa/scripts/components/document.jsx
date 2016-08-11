@@ -34,7 +34,7 @@ define(function (require) {
       var $viewer = this.state.$viewer;
       if($viewer) {
         var annotation = $viewer.find("[data-uuid*="+ uuid + "]")
-        if(annotation) {
+        if(annotation.offset()) {
           var delta = annotation.offset().top;
           var viewerHeight = $viewer.height();
           var center = viewerHeight / 2;
