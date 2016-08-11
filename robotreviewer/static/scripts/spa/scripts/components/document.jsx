@@ -13,15 +13,6 @@ define(function (require) {
 
   var Immutable = require("immutable");
 
-  var PDFJS = require("PDFJS");
-  var PDFJSUrl = require.toUrl('PDFJS');
-
-  PDFJS.cMapUrl = PDFJSUrl.replace(/\/pdf$/, '') + '/cmaps/';
-  PDFJS.cMapPacked = true;
-  PDFJS.disableWebGL = false;
-
-  PDFJS.workerSrc = PDFJSUrl + ".worker.js";
-
   var Document = React.createClass({
     getInitialState: function() {
       return { $viewer: null };
