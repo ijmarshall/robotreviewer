@@ -104,7 +104,7 @@ define(function (require) {
               content,
               position,
               false, {
-                matchDistance: len,
+                matchDistance: len * 2,
                 withFuzzyComparison: true
               });
           }
