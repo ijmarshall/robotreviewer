@@ -90,7 +90,8 @@ define(function (require) {
 
     this.projectAnnotations = function(textElement, annotations) {
       if(!annotations || textElement.isWhitespace) {
-        textElement.spans = textElement.annotations = null;
+        textElement.spans = null;
+        textElement.annotations = null;
       } else {
         var color = annotations[0].color;
         textElement.color = color;
@@ -134,6 +135,9 @@ define(function (require) {
 
     this.createAnnotatedElement = function(geom, styles, ann) {
       var textElement = this.createElement(geom, styles);
+      if(!textElement) {
+        return {isWhitespace: true};
+      }
       this.projectAnnotations(textElement, ann);
       return textElement;
     };
