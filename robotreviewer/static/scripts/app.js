@@ -51,14 +51,14 @@ define(function (require) {
 
       documentModel.set({binary: null, _cache: {}});
 
-      var documentUrl = "/pdf/" + reportId + "/" + documentId;
-      documentModel.loadFromUrl(documentUrl);
-
       var marginaliaUrl = "/marginalia/" + reportId + "/" + documentId + "?annotation_type=" + type;
       $.get(marginaliaUrl, function(data) {
         var marginalia = {marginalia: JSON.parse(data)};
         marginaliaModel.reset(marginaliaModel.parse(marginalia));
       });
+
+      var documentUrl = "/pdf/" + reportId + "/" + documentId;
+      documentModel.loadFromUrl(documentUrl);
 
       ReactDOM.render(
         new DocumentView({document: documentModel, marginalia: marginaliaModel, isEditable: isEditable}),
