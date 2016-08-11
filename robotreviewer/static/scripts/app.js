@@ -49,6 +49,8 @@ define(function (require) {
       var node = document.getElementById("main");
       ReactDOM.unmountComponentAtNode(node);
 
+      documentModel.set({binary: null, _cache: {}});
+
       var documentUrl = "/pdf/" + reportId + "/" + documentId;
       documentModel.loadFromUrl(documentUrl);
 
