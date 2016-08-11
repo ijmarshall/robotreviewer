@@ -7,8 +7,7 @@ define(function (require) {
   var _ = require("underscore");
   var $ = require("jquery");
 
-  var uploadUri = "/add_pdfs_to_db";
-  var synthesizeUri = "/synthesize_uploaded";
+  var uploadUri = "/upload_and_annotate";
 
   var UploadView = React.createClass({
     getInitialState: function() {
@@ -30,7 +29,11 @@ define(function (require) {
             if (evt.lengthComputable) {
               var percentComplete = evt.loaded / evt.total;
               percentComplete = parseInt(percentComplete * 100);
-              self.setState({progress: percentComplete + "%"});
+              if(percentComplete < 100) {
+                self.setState({progress: percentComplete + "%"});
+              } else {
+                self.setState({message: "Synthesizing predictions...", progress: ""});
+              }
             }
           }, false);
           return xhr;
@@ -42,11 +45,10 @@ define(function (require) {
         cache: false,
         processData: false,
         success: function(data) {
-          self.setState({message: "Synthesizing predictions...", progress: ""});
-          $.post(synthesizeUri, {}, function(data, status) {
-            self.setState({inProgress: false, message: ""});
-            window.router.navigate('report', {trigger: true});
-          });
+          self.setState({inProgress: false, message: ""});
+          var resp = JSON.parse(data);
+          var reportId = resp["report_uuid"];
+          window.router.navigate('report/' + reportId, {trigger: true});
         }
       });
     },
