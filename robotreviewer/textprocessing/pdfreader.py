@@ -81,7 +81,7 @@ class PdfReader():
         return out
 
     def run_grobid(self, pdf_binary, MAX_TRIES=5):
-        files = {'input': StringIO(pdf_binary)}
+        files = {'input': pdf_binary}
         r = requests.post(self.url, files=files)
         
         try:
