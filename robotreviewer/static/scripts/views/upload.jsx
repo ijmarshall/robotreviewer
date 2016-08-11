@@ -57,11 +57,13 @@ define(function (require) {
       var progress = this.state.progress;
       return (
           <div className="upload">
-            <div style={{opacity: inProgress ? 1 : 0}} className="infinity">
+          <div style={{opacity: inProgress ? 1 : 0}} className="infinity">
+            <div>
               <img src="/img/infinity.gif" width="120" height="120" />
               <br />
               {this.state.message + " " + progress}
             </div>
+          </div>
           <div style={{display: inProgress ? "none" : "block"}}>
             <Dropzone onDrop={this.onDrop}
                       accept="application/pdf"

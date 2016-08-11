@@ -11,6 +11,21 @@ define(function (require) {
   var Immutable = require("immutable");
 
 
+  var getOutputScale = function(ctx) {
+    var devicePixelRatio = window.devicePixelRatio || 1;
+    var backingStoreRatio = ctx.webkitBackingStorePixelRatio ||
+        ctx.mozBackingStorePixelRatio ||
+        ctx.msBackingStorePixelRatio ||
+        ctx.oBackingStorePixelRatio ||
+        ctx.backingStorePixelRatio || 1;
+    var pixelRatio = devicePixelRatio / backingStoreRatio;
+    return {
+      sx: pixelRatio,
+      sy: pixelRatio,
+      scaled: pixelRatio !== 1
+    };
+  }
+
   var TextNode = React.createClass({
     triggerHighlight: function(uuid) {
       $(window).trigger("highlight", uuid);

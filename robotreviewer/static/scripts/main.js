@@ -20,15 +20,7 @@ require.config({
     'immutable': "spa/scripts/vendor/immutable",
 
     'JSXTransformer': "spa/scripts/vendor/JSXTransformer",
-    'PDFJS': "spa/scripts/vendor/pdfjs/pdf"
-  },
-  shim: {
-    'PDFJS': {
-      exports: 'PDFJS',
-      deps: ['spa/vendor/compatibility',
-             'spa/vendor/ui_utils'] }
   }
-
 });
 
 

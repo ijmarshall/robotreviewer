@@ -25,7 +25,7 @@ define(function (require) {
       var text = annotation.get("content");
 
       var isEditable = this.props.isEditable;
-      var content = <a className="wrap" onClick={this.select}>{text}</a>;
+      var content = <a className="wrap" onClick={this.select} title={text}>{text}</a>;
 
       var remove = <i className="fa fa-remove remove" />;
 
