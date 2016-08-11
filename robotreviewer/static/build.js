@@ -28,7 +28,6 @@
         'immutable': "spa/scripts/vendor/immutable",
 
         'JSXTransformer': "spa/scripts/vendor/JSXTransformer",
-        'PDFJS': "spa/scripts/vendor/pdfjs/pdf"
     },
 
     modules: [

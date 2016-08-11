@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +14,8 @@
  */
 /* globals VBArray, PDFJS */
 
-'use strict';
+(function compatibilityWrapper() {
+  'use strict';
 
 // Initializing PDFJS global object here, it case if we need to change/disable
 // some PDF.js features, e.g. range requests
@@ -522,9 +521,9 @@ if (typeof PDFJS === 'undefined') {
 
     if (polyfill) {
       var contextPrototype = window.CanvasRenderingContext2D.prototype;
-      contextPrototype._createImageData = contextPrototype.createImageData;
+      var createImageData = contextPrototype.createImageData;
       contextPrototype.createImageData = function(w, h) {
-        var imageData = this._createImageData(w, h);
+        var imageData = createImageData.call(this, w, h);
         imageData.data.set = function(arr) {
           for (var i = 0, ii = this.length; i < ii; i++) {
             this[i] = arr[i];
@@ -532,6 +531,8 @@ if (typeof PDFJS === 'undefined') {
         };
         return imageData;
       };
+      // this closure will be kept referenced, so clear its vars
+      contextPrototype = null;
     }
   }
 })();
@@ -575,3 +576,21 @@ if (typeof PDFJS === 'undefined') {
     PDFJS.disableFullscreen = true;
   }
 })();
+
+// Provides document.currentScript support
+// Support: IE, Chrome<29.
+(function checkCurrentScript() {
+  if ('currentScript' in document) {
+    return;
+  }
+  Object.defineProperty(document, 'currentScript', {
+    get: function () {
+      var scripts = document.getElementsByTagName('script');
+      return scripts[scripts.length - 1];
+    },
+    enumerable: true,
+    configurable: true
+  });
+})();
+
+}).call((typeof window === 'undefined') ? this : window);
