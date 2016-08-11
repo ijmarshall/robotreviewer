@@ -10,7 +10,8 @@ define(function (require) {
   var ReportView = React.createClass({
     componentDidMount: function() {
       var $frame = $(this.refs.frame);
-      var html = $.get("report_view/html", function(data) {
+      var reportId = this.props.reportId;
+      var html = $.get("report_view/" + reportId + "/html", function(data) {
         $frame.contents().find("body").html(data);
       });
     },

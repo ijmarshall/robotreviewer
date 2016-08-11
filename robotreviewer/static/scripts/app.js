@@ -30,20 +30,20 @@ define(function (require) {
 
   var Router = Backbone.Router.extend({
     routes : {
-      "upload"   : "upload",
-      "report"   : "report",
-      "document" : "document",
-      "*path"    : "upload"
+      "upload"              : "upload",
+      "report/:reportId"    : "report",
+      "document"            : "document",
+      "*path"               : "upload"
     },
     upload : function() {
       var node = document.getElementById("main");
       ReactDOM.unmountComponentAtNode(node);
       ReactDOM.render(new UploadView({}), node);
     },
-    report : function() {
+    report : function(reportId) {
       var node = document.getElementById("main");
       ReactDOM.unmountComponentAtNode(node);
-      ReactDOM.render(new ReportView({}), node);
+      ReactDOM.render(new ReportView({reportId: reportId}), node);
     },
     document : function() {
       var node = document.getElementById("main");
