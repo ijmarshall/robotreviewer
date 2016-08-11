@@ -1,134 +1,127 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>RobotReviewer report</title>
-        <style>
-            body {
-                    font-family: Helvetica;
-                }
+  <head>
+    <title>RobotReviewer report</title>
+    <style>
+     body {
+       font-family: Helvetica;
+     }
 
-            .bias-table {
-                width: 400px;
-                margin-left:auto; 
-                margin-right:auto;
-                padding: 0px;
-                border-collapse: collapse;
-                /*color: white;*/
-            }
+     .bias-table {
+       width: 400px;
+       margin-left:auto;
+       margin-right:auto;
+       padding: 0px;
+       border-collapse: collapse;
+       /*color: white;*/
+     }
 
-            .risk-low {
-                background-color: #87BB2A;
-                color: white;
-                text-align: center;
-                }
+     .risk-low {
+       background-color: #87BB2A;
+       color: white;
+       text-align: center;
+     }
 
-            .risk-high {
-                background-color: #EA4747;
-                color: white;
-                text-align: center;
-                }
+     .risk-high {
+       background-color: #EA4747;
+       color: white;
+       text-align: center;
+     }
 
-            .trial-id-header {
-                vertical-align: bottom;
-                text-align: left;
-            }
+     .trial-id-header {
+       vertical-align: bottom;
+       text-align: left;
+     }
 
-            th.rotate {
-              /* Something you can count on */
-              height: 300px;
-              white-space: nowrap;
-            }
+     th.rotate {
+       /* Something you can count on */
+       height: 300px;
+       white-space: nowrap;
+     }
 
-            th.rotate > div {
-              transform: translate(25px, 131px)
-              rotate(315deg);
-              width: 30px;
-            }
+     th.rotate > div {
+       transform: translate(25px, 131px)
+       rotate(315deg);
+       width: 30px;
+     }
 
-            th.rotate > div > span {
-              border-bottom: 1px solid #ccc;
-              padding: 5px 10px;
-            }
-
-
-            table {
-                   padding:20px;
-                   margin: 20px 40px;
-
-            }
-
-            .reportcontainer {
-                    width: 800px;
-                    margin-left:auto; 
-                    margin-right:auto;
-
-            }
-        </style>
-        <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/robot.css') }}" /> 
-
-    </head>
-    
-    <body>
-
-        <div class="topbar"><img src="/img/header-logo2.png" width="190px" height="40px"></div>
-
-        <div class="reportcontainer">
+     th.rotate > div > span {
+       border-bottom: 1px solid #ccc;
+       padding: 5px 10px;
+     }
 
 
-        <h1>RobotReviewer report</h1>
-        
-        <h2>Risk of bias table</h2>
-        
-        <table class='bias-table'>
-            <tr class='bias-header-row'>
-                <th class='trial-id-header'>trial</th>
-                {% for header in headers %}
-                    <th class="rotate"><div><span>{{ header }}</span></div></th>
-                {% endfor %}
-            </tr>
-                
-            
-                {% for study in articles %}
-                <tr>
-                    <td class ="risk-studyid"><a href="/marginalia/{{ study['pdf_uuid'] }}?annotation_type=bias_bot" class="annotation-link">{{ study['short_citation'] }}</a></td>
-                    {% for domain in study['bias'] %}
-                    <td class="{% if domain['judgement'] == 'low' %}risk-low{% elif domain['judgement'] == 'high/unclear' %}risk-high{% endif %}">{{ '+' if domain['judgement'] == 'low' else '?' }}</td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-        </table>
-        
-        
-        <h2>Characteristics of studies</h2>
-        
+     table {
+       padding:20px;
+       margin: 20px 40px;
+
+     }
+
+     .reportcontainer {
+       width: 800px;
+       margin-left:auto;
+       margin-right:auto;
+
+     }
+    </style>
+  </head>
+
+  <body>
+    <div class="reportcontainer">
+      <h1>RobotReviewer report</h1>
+
+      <h2>Risk of bias table</h2>
+
+      <table class='bias-table'>
+        <tr class='bias-header-row'>
+          <th class='trial-id-header'>trial</th>
+          {% for header in headers %}
+          <th class="rotate"><div><span>{{ header }}</span></div></th>
+          {% endfor %}
+        </tr>
+
+
         {% for study in articles %}
-        <h3>{{ study['short_citation'] }}</h3>
-        
+        <tr>
+          <td class ="risk-studyid"><a href="/marginalia/{{ study['pdf_uuid'] }}?annotation_type=bias_bot" class="annotation-link">{{ study['short_citation'] }}</a></td>
+          {% for domain in study['bias'] %}
+          <td class="{% if domain['judgement'] == 'low' %}risk-low{% elif domain['judgement'] == 'high/unclear' %}risk-high{% endif %}">{{ '+' if domain['judgement'] == 'low' else '?' }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </table>
+
+
+      <h2>Characteristics of studies</h2>
+
+      {% for study in articles %}
+      <h3>{{ study['short_citation'] }}</h3>
+
+      <table>
+        {% for domain in study['pico_text'] %}
+        <tr>
+          <td>{{ domain['domain'] }}</td><td><a href="/marginalia/{{ study['pdf_uuid'] }}?annotation_type=pico_bot" class="annotation-link">{{ domain['text'][0] }}</a></td>
+        </tr>
+        {% endfor %}
+
         <table>
-            {% for domain in study['pico_text'] %}            
-            <tr>
-                <td>{{ domain['domain'] }}</td><td><a href="/marginalia/{{ study['pdf_uuid'] }}?annotation_type=pico_bot" class="annotation-link">{{ domain['text'][0] }}</a></td>
-                </tr>
-                {% endfor %}
-            
-        <table>
-            <tr> 
+          <tr>
             <th>Bias</th><th>Judgement</th><th>Support for judgement</th>
-            </tr>
-            {% for domain in study['bias'] %}
-            <tr>
-                <td>{{ domain['domain'] }}</td><td>{{ domain['judgement'] }}</td><td><a href="/marginalia/{{ study['pdf_uuid'] }}?annotation_type=bias_bot" class="annotation-link">{{ domain['justification'][0] }}</a></td>
-            </tr>
-            {% endfor %}
+          </tr>
+          {% for domain in study['bias'] %}
+          <tr>
+            <td>{{ domain['domain'] }}</td><td>{{ domain['judgement'] }}</td><td><a href="/marginalia/{{ study['pdf_uuid'] }}?annotation_type=bias_bot" class="annotation-link">{{ domain['justification'][0] }}</a></td>
+          </tr>
+          {% endfor %}
         </table>
         {% endfor %}
-        
+
         <h2>References</h2>
-        
+
         {% for study in articles %}
-            <p>{{ loop.index }}. {{ study['citation'] }}</p>
+        <p>{{ loop.index }}. {{ study['citation'] }}</p>
         {% endfor %}
-        
-        </div>
-    </body>
-</html>    
+
+    </div>
+  </body>
+</html>
