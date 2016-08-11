@@ -312,24 +312,64 @@ canvas {
   background-color: transparent;
 }
 
+.upload {
+}
+
+.upload .infinity {
+  position: absolute;
+  text-align: center;
+  z-index: 100;
+  left: 45%;
+  top: 275px;
+  -webkit-transition: opacity 0.5s ease-in-out;
+  -moz-transition: opacity 0.5s ease-in-out;
+  -o-transition: opacity 0.5s ease-in-out;
+  -ms-transition: opacity 0.5s ease-in-out;
+  transition: opacity 0.5s ease-in-out;
+}
+
 .dropzone {
   border-width: 2px;
   border-color: rgb(102, 102, 102);
   border-style: dashed;
   border-radius: 5px;
   height: 500px;
+  display: table;
   width: 90%;
   margin: 2em auto;
-  display: table;
 }
 
 .dropzone > div {
   display: table-cell;
   vertical-align: middle;
   text-align: center;
+  height: 100%;
 }
 
 .dropzone-active {
   border-style: solid;
   border-color: black;
+}
+
+.report {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.report iframe {
+  display: block;
+  width: 80%;
+  height: 90%;
+  top: 2em;
+  position: relative;
+  margin: 0 auto;
+  overflow-y: auto;
+  border: none;
+  -webkit-box-shadow: -1px -1px 10px 2px rgba(0,0,0,0.25);
+  -moz-box-shadow: -1px -1px 10px 2px rgba(0,0,0,0.25);
+  box-shadow: -1px -1px 10px 2px rgba(0,0,0,0.25);
+  background-color: white;
+
 }
