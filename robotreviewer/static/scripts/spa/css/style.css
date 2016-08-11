@@ -24,8 +24,18 @@ body {
   left: 55px;
   padding-right: 40px;
   line-height: 1.2em;
+
 }
 
+/* yeah I know ... */
+::-webkit-scrollbar {
+    width: 0px;  /* remove scrollbar space */
+    background: transparent;  /* optional: just make scrollbar invisible */
+}
+/* optional: show position indicator in red */
+::-webkit-scrollbar-thumb {
+    background: transparent;
+}
 
 #side {
   padding: 0 20px 0 20px;
