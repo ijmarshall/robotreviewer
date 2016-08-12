@@ -133,12 +133,12 @@ class BiasRobot:
                                        high_prob_prefixes,
                                        high_prob_suffixes)]
 
-            marginalia.append({
-                "type": "Risk of Bias",
-                "title": domain,
-                "annotations": annotation_metadata,
-                "description": "**Overall risk of bias prediction**: " + bias_class
-                })
+            # marginalia.append({
+            #     "type": "Risk of Bias",
+            #     "title": domain,
+            #     "annotations": annotation_metadata,
+            #     "description": "**Overall risk of bias prediction**: " + bias_class
+            #     })
 
             structured_data.append({
                 "domain": domain,
