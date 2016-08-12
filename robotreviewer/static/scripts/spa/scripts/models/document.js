@@ -102,9 +102,8 @@ define(function (require) {
               position,
               position + content.length,
               true, {
-                matchDistance: 250,
-                contextMatchThreshold: 0.45,
-                patternMatchThreshold: 0.45,
+                contextMatchThreshold: 0.95,
+                patternMatchThreshold: 0.95,
                 flexContext: true,
                 withFuzzyComparison: true
               });
@@ -114,7 +113,6 @@ define(function (require) {
               content,
               position,
               true, {
-                matchDistance: 250,
                 withFuzzyComparison: true
               });
           }
