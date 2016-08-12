@@ -87,10 +87,12 @@ class PdfReader():
         out = self.parse_xml(self.run_grobid(pdf_binary))
         return out
 
-    def convert_batch(self, pdf_binary_list, num_threads=4):
+    def convert_batch(self, pdf_binary_list, num_threads=None):
         """
         threaded version
         """
+        if num_threads is None:
+            num_threads = config.GROBID_THREADS
         pool = ThreadPool(num_threads) 
         return pool.map(self.convert, pdf_binary_list)
 
