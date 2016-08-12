@@ -114,6 +114,7 @@ class PICORobot:
 
         
         doc_text = data["parsed_text"]
+        doc_len = len(data['text'])
 
         if not doc_text:
             # we've got to know the text at least..
@@ -135,6 +136,8 @@ class PICORobot:
         # abbr_resolver = Abbreviations(doc_text.text) # Not being used at the moment
 
         doc_sents = [sent.text for sent in doc_text.sents]
+        doc_sent_start_i = [sent.start_char for sent in doc_text.sents]
+        doc_sent_end_i = [sent.end_char for sent in doc_text.sents]
 
         # quintile indicators (w.r.t. document) for sentences
         positional_features = PICORobot._get_positional_features(doc_sents)
@@ -151,7 +154,7 @@ class PICORobot:
             
             log.info('finding best predictive sents')
             high_prob_sent_indices = np.argsort(doc_sents_preds)[:-top_k-1:-1]
-            
+                       
             # filter
             filtered_high_prob_sent_indices = \
                 high_prob_sent_indices[doc_sents_preds[high_prob_sent_indices] >= alpha]
@@ -165,8 +168,22 @@ class PICORobot:
 
             high_prob_sents = [sent.text for i, sent in enumerate(doc_text.sents) if i in high_prob_sent_indices]
 
+            high_prob_start_i = [doc_sent_start_i[i] for i in high_prob_sent_indices]
+            high_prob_end_i = [doc_sent_end_i[i] for i in high_prob_sent_indices]
+            high_prob_prefixes = [doc_text.string[max(0, offset-20):offset] for offset in high_prob_start_i]
+            high_prob_suffixes = [doc_text.string[offset: min(doc_len, offset+20)] for offset in high_prob_end_i]
 
-            structured_data.append({"domain":domain, "text": high_prob_sents})
+            annotation_metadata = [{"content": sent[0],
+                                    "position": sent[1],
+                                    "uuid": str(uuid.uuid1()),
+                                    "prefix": sent[2],
+                                    "suffix": sent[3]} for sent in zip(high_prob_sents, high_prob_start_i,
+                                       high_prob_prefixes,
+                                       high_prob_suffixes)]
+
+            structured_data.append({"domain":domain,
+                    "text": high_prob_sents,
+                    "annotation_metadata": annotation_metadata})
         
         data.ml["pico_text"] = structured_data
         return data
@@ -195,7 +212,7 @@ class PICORobot:
             marginalia.append({
                 "type": "PICO",
                 "title": row['domain'],
-                "annotations": [{"content": sent, "uuid": str(uuid.uuid1())} for sent in row['text']]
+                "annotations": row['annotation_metadata']
                 })
         return marginalia
 
