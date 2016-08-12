@@ -6,6 +6,10 @@ define(function (require) {
   var _ = require("underscore");
   var Backbone = require("backbone");
 
+  var quoteRegex = function(str) {
+    return str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+  };
+
   var TextSearcher = new (require("../vendor/dom-anchor-bitap/text_searcher"))();
   var RenderingStates = window.RenderingStates = {
     INITIAL: 0,
@@ -80,7 +84,14 @@ define(function (require) {
         var len = text.length;
         // If no position is given, start in the middle of the document
         var position = annotation.get("position") || Math.floor(len / 2);
+
         var result = TextSearcher.searchExact(text, content);
+
+        if(!result.matches.length) {
+          var pattern = quoteRegex(content).replace(/\s+/g,"\\s*"); // whitespace insensitive
+          result = TextSearcher.searchRegex(text, pattern, false);
+        }
+
         if(!result.matches.length && useFuzzy) {
           if(prefix && suffix) {
             result = TextSearcher.searchFuzzyWithContext(
