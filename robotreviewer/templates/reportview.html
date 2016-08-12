@@ -2,18 +2,20 @@
 <html>
   <head>
     <title>RobotReviewer report</title>
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='scripts/spa/css/foundation.css') }}">
     <style>
-     body {
-       font-family: Helvetica;
-     }
-
      .bias-table {
        width: 400px;
        margin-left:auto;
        margin-right:auto;
-       padding: 0px;
        border-collapse: collapse;
        /*color: white;*/
+       border: none;
+       padding: 0;
+
+     }
+     .bias-table td {
+       padding: 0.5625rem 0.225rem;
      }
 
      .risk-low {
@@ -48,13 +50,6 @@
      th.rotate > div > span {
        border-bottom: 1px solid #ccc;
        padding: 5px 10px;
-     }
-
-
-     table {
-       padding:20px;
-       margin: 20px 40px;
-
      }
 
      .reportcontainer {
