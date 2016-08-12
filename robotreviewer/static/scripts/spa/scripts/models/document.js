@@ -93,21 +93,21 @@ define(function (require) {
         }
 
         if(!result.matches.length && useFuzzy) {
-          if(prefix && suffix) {
-            result = TextSearcher.searchFuzzyWithContext(
-              text,
-              prefix,
-              suffix,
-              content,
-              position,
-              position + content.length,
-              true, {
-                contextMatchThreshold: 0.95,
-                patternMatchThreshold: 0.95,
-                flexContext: true,
-                withFuzzyComparison: true
-              });
-          } else {
+          result = TextSearcher.searchFuzzyWithContext(
+            text,
+            prefix,
+            suffix,
+            content,
+            position,
+            position + content.length,
+            true, {
+              contextMatchThreshold: 0.95,
+              patternMatchThreshold: 0.95,
+              flexContext: true,
+              withFuzzyComparison: true
+            });
+
+          if(!result.matches.length) {
             result = TextSearcher.searchFuzzy(
               text,
               content,
