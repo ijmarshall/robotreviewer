@@ -120,8 +120,6 @@ class PICORobot:
             # we've got to know the text at least..
             return data
 
-        # print "TEXT:"
-        # print data["text"]
 
         if top_k is None:
             top_k = self.top_k
@@ -141,7 +139,6 @@ class PICORobot:
 
         # quintile indicators (w.r.t. document) for sentences
         positional_features = PICORobot._get_positional_features(doc_sents)
-
         
         for domain, model, idf in zip(self.PICO_domains, self.models, self.idfs):
 
@@ -166,8 +163,8 @@ class PICORobot:
             else:
                 high_prob_sent_indices = filtered_high_prob_sent_indices
 
-            high_prob_sents = [sent.text for i, sent in enumerate(doc_text.sents) if i in high_prob_sent_indices]
 
+            high_prob_sents = [doc_sents[i] for i in high_prob_sent_indices]
             high_prob_start_i = [doc_sent_start_i[i] for i in high_prob_sent_indices]
             high_prob_end_i = [doc_sent_end_i[i] for i in high_prob_sent_indices]
             high_prob_prefixes = [doc_text.string[max(0, offset-20):offset] for offset in high_prob_start_i]
