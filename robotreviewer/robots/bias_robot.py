@@ -63,7 +63,13 @@ class BiasRobot:
             top_k = self.top_k
 
         doc_len = len(data['text'])
-        doc_text = tokenizer.nlp(data['text'])
+        doc_text = data['parsed_text']
+        
+        if not doc_text:
+            # we've got to know the text at least..
+            return data
+
+
 
         marginalia = []
 

@@ -37,6 +37,7 @@ try:
 except ImportError:
     from io import StringIO # py3
 
+from robotreviewer.textprocessing.tokenizer import nlp
 from robotreviewer.robots.bias_robot import BiasRobot
 from robotreviewer.robots.pico_robot import PICORobot
 from robotreviewer.robots.rct_robot import RCTRobot
@@ -57,8 +58,6 @@ import hashlib
 app = Flask(__name__,  static_url_path='')
 app.secret_key = os.environ.get("SECRET", "super secret key")
 
-# if(DEBUG_MODE):
-    # app.run(debug=True, use_reloader=False)
 
 csrf = CsrfProtect()
 csrf.init_app(app)
@@ -108,6 +107,15 @@ def upload_and_annotate():
 
     blobs = [f.read() for f in uploaded_files]
     articles = pdf_reader.convert_batch(blobs)
+    parsed_articles = []
+    # tokenize full texts here
+    for doc in nlp.pipe((d['text'] for d in articles), batch_size=1, n_threads=config.SPACY_THREADS, tag=True, parse=True, entity=False):
+        parsed_articles.append(doc)
+   
+
+    # adjust the tag, parse, and entity values if these are needed later
+    for article, parsed_text in zip(articles, parsed_articles):
+        article._spacy['parsed_text'] = parsed_text
 
     for blob, data in zip(blobs, articles):        
         pdf_hash = hashlib.md5(blob).hexdigest()
