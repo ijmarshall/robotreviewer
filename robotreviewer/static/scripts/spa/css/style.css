@@ -32,7 +32,6 @@ body {
     width: 0px;  /* remove scrollbar space */
     background: transparent;  /* optional: just make scrollbar invisible */
 }
-/* optional: show position indicator in red */
 ::-webkit-scrollbar-thumb {
     background: transparent;
 }
@@ -387,13 +386,13 @@ canvas {
 
 .report iframe {
   display: block;
-  width: 80%;
-  height: 90%;
-  top: 2em;
+  width: 75%;
+  height: 100%;
   position: relative;
   margin: 0 auto;
   overflow-y: auto;
   border: none;
+  padding-bottom: 5em;
   -webkit-box-shadow: -1px -1px 10px 2px rgba(0,0,0,0.25);
   -moz-box-shadow: -1px -1px 10px 2px rgba(0,0,0,0.25);
   box-shadow: -1px -1px 10px 2px rgba(0,0,0,0.25);

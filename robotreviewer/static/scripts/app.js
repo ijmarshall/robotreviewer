@@ -17,7 +17,19 @@ define(function (require) {
     return _sync(method, model, options);
   };
 
-  // Components
+  // Breadcrumbs hack
+  var breadcrumbsModel = new (require("models/breadcrumbs"))();
+  var BreadcrumbsComponent = React.createFactory(require("jsx!components/breadcrumbs"));
+
+  var breadcrumbs =
+      ReactDOM.render(new BreadcrumbsComponent({breadcrumbs: breadcrumbsModel}),
+                                    document.getElementById("breadcrumbs"));
+
+  breadcrumbsModel.on("all", function(e, obj) {
+    breadcrumbs.forceUpdate();
+  });
+
+  // Component views
   var DocumentView = React.createFactory(require("jsx!views/document"));
   var UploadView = React.createFactory(require("jsx!views/upload"));
   var ReportView = React.createFactory(require("jsx!views/report"));
@@ -35,11 +47,17 @@ define(function (require) {
       var node = document.getElementById("main");
       ReactDOM.unmountComponentAtNode(node);
       ReactDOM.render(new UploadView({}), node);
+      breadcrumbsModel.reset(
+        [{link: "/#upload", title: "upload"}]);
     },
     report : function(reportId) {
       var node = document.getElementById("main");
       ReactDOM.unmountComponentAtNode(node);
       ReactDOM.render(new ReportView({reportId: reportId}), node);
+      breadcrumbsModel.reset(
+        [{link: "/#upload", title: "upload"},
+         {link: "/#report/" + reportId, title: "report"}
+        ]);
     },
     document : function(reportId, documentId, type) {
       var node = document.getElementById("main");
@@ -59,8 +77,16 @@ define(function (require) {
       documentModel.loadFromUrl(documentUrl);
 
       ReactDOM.render(
-        new DocumentView({document: documentModel, marginalia: marginaliaModel, isEditable: isEditable}),
+        new DocumentView({document: documentModel,
+                          marginalia: marginaliaModel,
+                          isEditable: isEditable}),
         node);
+
+      breadcrumbsModel.reset(
+        [{link: "/#upload", title: "upload"},
+         {link: "/#report/" + reportId, title: "report"},
+         {link: "/#document/" + reportId + "/" + documentId, title: "document"}
+        ]);
     }
   });
 
