@@ -87,9 +87,9 @@ define(function (require) {
 
         var result = TextSearcher.searchExact(text, content);
 
-        if(!result.matches.length) {
-          var pattern = quoteRegex(content).replace(/\s+/g,"\\s*"); // whitespace insensitive
-          result = TextSearcher.searchRegex(text, pattern, false);
+        if(!result.matches.length && !useFuzzy) {
+          var pattern = quoteRegex(content).replace(/\s+/g,"\\s{0,}"); // whitespace insensitive
+          result = TextSearcher.searchRegex(text, pattern, true);
         }
 
         if(!result.matches.length && useFuzzy) {
@@ -102,9 +102,9 @@ define(function (require) {
               position,
               position + content.length,
               true, {
-                matchDistance: len * 2,
-                contextMatchThreshold: 0.75,
-                patternMatchThreshold: 0.75,
+                matchDistance: 250,
+                contextMatchThreshold: 0.45,
+                patternMatchThreshold: 0.45,
                 flexContext: true,
                 withFuzzyComparison: true
               });
@@ -114,7 +114,7 @@ define(function (require) {
               content,
               position,
               true, {
-                matchDistance: len * 2,
+                matchDistance: 250,
                 withFuzzyComparison: true
               });
           }
