@@ -57,8 +57,8 @@ import hashlib
 app = Flask(__name__,  static_url_path='')
 app.secret_key = os.environ.get("SECRET", "super secret key")
 
-if(DEBUG_MODE):
-    app.run(debug=True)
+# if(DEBUG_MODE):
+    # app.run(debug=True, use_reloader=False)
 
 csrf = CsrfProtect()
 csrf.init_app(app)
