@@ -11,8 +11,6 @@ define(function (require) {
   var Page = require("jsx!./page");
   var TextUtil = require("../helpers/textUtil");
 
-  var Immutable = require("immutable");
-
   var Document = React.createClass({
     getInitialState: function() {
       return { $viewer: null };
@@ -24,7 +22,7 @@ define(function (require) {
     scrollTo: function(uuid) {
       var $viewer = this.state.$viewer;
       if($viewer) {
-        var annotation = $viewer.find("[data-uuid*="+ uuid + "]")
+        var annotation = $viewer.find("[data-uuid*="+ uuid + "]");
         if(annotation.offset()) {
           var delta = annotation.offset().top;
           var viewerHeight = $viewer.height();
@@ -51,12 +49,12 @@ define(function (require) {
       var fingerprint = pdf.get("fingerprint");
       var pages = pdf.get("pages");
 
-      var annotations = Immutable.fromJS(pages.map(function(page, index) {
+      var annotations = pages.map(function(page, index) {
         return page.get("annotations");
-      }));
+      });
 
       var pagesElements = pdf.get("pages").map(function(page, pageIndex) {
-        return (<Page page={page} key={fingerprint + pageIndex} annotations={annotations.get(pageIndex)} />);
+        return (<Page page={page} key={fingerprint + pageIndex} annotations={annotations[pageIndex]} />);
       });
 
       return(
