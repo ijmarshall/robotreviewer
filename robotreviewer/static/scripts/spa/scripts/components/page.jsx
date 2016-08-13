@@ -8,8 +8,6 @@ define(function (require) {
   var React = require("react");
   var ReactDOM = require("react-dom");
   var TextLayerBuilder = require("../helpers/textLayerBuilder");
-  var Immutable = require("immutable");
-
 
   var getOutputScale = function(ctx) {
     var devicePixelRatio = window.devicePixelRatio || 1;
@@ -31,14 +29,14 @@ define(function (require) {
       $(window).trigger("highlight", uuid);
     },
     shouldComponentUpdate: function(nextProps) {
-      return !Immutable.is(nextProps.annotations, this.props.annotations);
+      return !_.isEqual(nextProps.annotations, this.props.annotations);
     },
     render: function() {
       var p = this.props;
       var self = this;
       var annotations;
       if(this.props.annotations) {
-        annotations = this.props.annotations.toJS();
+        annotations = this.props.annotations;
       }
       var o = p.textLayerBuilder.createAnnotatedElement(p.item, p.styles, annotations);
 
@@ -75,7 +73,7 @@ define(function (require) {
 
   var TextLayer = React.createClass({
     shouldComponentUpdate: function(nextProps, nextState) {
-      return !Immutable.is(nextProps.annotations, this.props.annotations);
+      return !_.isEqual(nextProps.annotations, this.props.annotations);
     },
     getTextLayerBuilder: function(viewport) {
       return new TextLayerBuilder({viewport: viewport});
@@ -90,7 +88,7 @@ define(function (require) {
       var textNodes = content.items.map(function (item,i) {
         return <TextNode key={i}
                          item={item}
-                         annotations={annotations.get("" + i)}
+                         annotations={annotations[i]}
                          styles={styles}
                          textLayerBuilder={textLayerBuilder} />;
       });
