@@ -13,18 +13,9 @@ define(function (require) {
 
   var Immutable = require("immutable");
 
-  var PDFJS = require("PDFJS");
-  var PDFJSUrl = require.toUrl('PDFJS');
-
-  PDFJS.cMapUrl = PDFJSUrl.replace(/\/pdf$/, '') + '/cmaps/';
-  PDFJS.cMapPacked = true;
-  PDFJS.disableWebGL = false;
-
-  PDFJS.workerSrc = PDFJSUrl + ".worker.js";
-
   var Document = React.createClass({
     getInitialState: function() {
-      return { fingerprint: null, $viewer: null };
+      return { $viewer: null };
     },
     toggleHighlights: function(e, uuid) {
       var $annotations = this.state.$viewer.find("[data-uuid*="+uuid+"]");
@@ -33,10 +24,13 @@ define(function (require) {
     scrollTo: function(uuid) {
       var $viewer = this.state.$viewer;
       if($viewer) {
-        var delta = $viewer.find("[data-uuid*="+ uuid + "]").offset().top;
-        var viewerHeight = $viewer.height();
-        var center = viewerHeight / 2;
-        $viewer.animate({scrollTop: $viewer.scrollTop() + delta - center});
+        var annotation = $viewer.find("[data-uuid*="+ uuid + "]")
+        if(annotation.offset()) {
+          var delta = annotation.offset().top;
+          var viewerHeight = $viewer.height();
+          var center = viewerHeight / 2;
+          $viewer.animate({scrollTop: $viewer.scrollTop() + delta - center});
+        }
       }
     },
     componentWillUnmount: function() {
@@ -47,14 +41,14 @@ define(function (require) {
       $(window).on("highlight", this.toggleHighlights);
       this.props.marginalia.on("annotations:select", this.scrollTo);
 
-      var $viewer = $(this.refs.viewer.getDOMNode());
+      var $viewer = $(this.refs.viewer);
       this.setState({$viewer: $viewer});
     },
     render: function() {
       var pdf = this.props.pdf;
       var marginalia = this.props.marginalia;
 
-      var fingerprint = this.state.fingerprint;
+      var fingerprint = pdf.get("fingerprint");
       var pages = pdf.get("pages");
 
       var annotations = Immutable.fromJS(pages.map(function(page, index) {

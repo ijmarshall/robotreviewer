@@ -21,9 +21,8 @@ import json
 import uuid
 import os
 
-# from nltk.tokenize import sent_tokenize
-
 import robotreviewer
+from robotreviewer.textprocessing import tokenizer
 from robotreviewer.ml.classifier import MiniClassifier
 from robotreviewer.ml.vectorizer import ModularVectorizer
 
@@ -64,7 +63,13 @@ class BiasRobot:
             top_k = self.top_k
 
         doc_len = len(data['text'])
-        doc_text = robotreviewer.nlp(data['text'])
+        doc_text = data['parsed_text']
+        
+        if not doc_text:
+            # we've got to know the text at least..
+            return data
+
+
 
         marginalia = []
 
@@ -94,7 +99,7 @@ class BiasRobot:
             doc_sents_preds = self.sent_clf.decision_function(doc_sents_X)
 
             high_prob_sent_indices = np.argsort(doc_sents_preds)[:-top_k-1:-1] # top k, with no 1 first
-            high_prob_sents = [doc_sents[i] for i in high_prob_sent_indices]            
+            high_prob_sents = [doc_sents[i] for i in high_prob_sent_indices]
             high_prob_start_i = [doc_sent_start_i[i] for i in high_prob_sent_indices]
             high_prob_end_i = [doc_sent_end_i[i] for i in high_prob_sent_indices]
             high_prob_prefixes = [doc_text.string[max(0, offset-20):offset] for offset in high_prob_start_i]
@@ -121,18 +126,19 @@ class BiasRobot:
             bias_pred = self.doc_clf.predict(X)
             bias_class = ["high/unclear", "low"][bias_pred[0]]
             annotation_metadata = [{"content": sent[0],
-                                   "position": sent[1],
-                                   "prefix": sent[2],
-                                   "suffix": sent[3]} for sent in zip(high_prob_sents, high_prob_start_i,
+                                    "position": sent[1],
+                                    "uuid": str(uuid.uuid1()),
+                                    "prefix": sent[2],
+                                    "suffix": sent[3]} for sent in zip(high_prob_sents, high_prob_start_i,
                                        high_prob_prefixes,
                                        high_prob_suffixes)]
 
-            marginalia.append({
-                "type": "Risk of Bias",
-                "title": domain,
-                "annotations": annotation_metadata,
-                "description": "**Overall risk of bias prediction**: " + bias_class
-                })
+            # marginalia.append({
+            #     "type": "Risk of Bias",
+            #     "title": domain,
+            #     "annotations": annotation_metadata,
+            #     "description": "**Overall risk of bias prediction**: " + bias_class
+            #     })
 
             structured_data.append({
                 "domain": domain,
@@ -141,7 +147,7 @@ class BiasRobot:
                 "annotation_metadata": annotation_metadata})
 
 
-        data.ml["bias"] = structured_data                           
+        data.ml["bias"] = structured_data
         return data
 
     @staticmethod
@@ -168,4 +174,3 @@ class BiasRobot:
                 u'Blinding of outcome assessment',
                 u'Incomplete outcome data',
                 u'Selective reporting']
-

@@ -18,7 +18,7 @@ class MultiDict():
             self.authorities = authorities
         else:
             # list of authorities from most to least trusted
-            self.authorities = ["gold", "human", "pubmed", "ml", "grobid", "dubious"]
+            self.authorities = ["gold", "human", "pubmed", "ml", "grobid", "dubious", "_spacy"]
             
         
         if (default_authority is not None) and (default_authority not in self.authorities):
@@ -87,7 +87,7 @@ class MultiDict():
         """
         saves all the annotations to json
         """
-        return json.dumps(self.data)
+        return json.dumps({k: (v if not k.startswith('_') else {}) for k, v in self.data.items()})
 
     def load_json(self, json_str):
         """

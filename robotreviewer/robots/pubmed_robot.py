@@ -24,7 +24,6 @@ class PubmedRobot:
     def annotate(self, data):
 
         title_text = data['title']
-
         if not title_text:
             # unable to do pubmed unless we have a title, so just return the original data
             return data
@@ -33,7 +32,6 @@ class PubmedRobot:
         token_overlap = vec_q.dot(self.vec_ti.T)
         self.to = token_overlap
         best_ind = token_overlap.indices[token_overlap.data.argmax()]
-
         pmid = self.pmid_ind[best_ind]
 
         # checking both the overall similarity, and overlap similarity

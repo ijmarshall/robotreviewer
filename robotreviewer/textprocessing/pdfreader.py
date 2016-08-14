@@ -27,6 +27,9 @@ import time
 import atexit
 import codecs
 import json
+
+from multiprocessing.dummy import Pool as ThreadPool 
+
 # Author:  Iain Marshall <mail@ijmarshall.com>
 
 log = logging.getLogger(__name__)
@@ -36,15 +39,16 @@ class Grobid():
     starts up Grobid as a service on default port (should be 8080)
     checks to see if it's working before returning the open process
     """
-    def __init__(self, check_delay=2):
-
+    def __init__(self):
         self.devnull = open(os.devnull, 'wb')
         atexit.register(self.cleanup)
-        grobid_process = subprocess.Popen(['mvn', '-q', '-Dmaven.test.skip=true', 'jetty:run-war'], cwd=os.path.join(config.GROBID_PATH, 'grobid-service'), stdout=self.devnull, stderr=subprocess.STDOUT) # skip tests since they will not run properly from python subprocess
+        log.info('Launching Grobid process...')
+        self.connection = subprocess.Popen(['mvn', '-q', '-Dmaven.test.skip=true', 'jetty:run-war'], cwd=os.path.join(config.GROBID_PATH, 'grobid-service'), stdout=self.devnull, stderr=subprocess.STDOUT) # skip tests since they will not run properly from python subprocess
 
+    def connect(self, check_delay=2):
         connected = False
 
-        log.info('Waiting for Grobid to start up...')
+        log.info('Checking if Grobid live...')
         while connected == False:
             try:
                 r = requests.get('http://localhost:8080')
@@ -54,7 +58,7 @@ class Grobid():
                 time.sleep(check_delay)
 
         log.info('Grobid connection success :)')
-        self.connection = grobid_process # not explicitly needed... but maintains process open
+        
 
     def cleanup(self):
         self.connection.kill()
@@ -70,8 +74,11 @@ class PdfReader():
         self.grobid_process = Grobid()
         log.info('Success! :)')
 
+    def connect(self):
+        self.grobid_process.connect()
+
     def cleanup(self):
-        self.grobid_process.cleanup() 
+        self.grobid_process.cleanup()
 
     def convert(self, pdf_binary):
         """
@@ -80,8 +87,17 @@ class PdfReader():
         out = self.parse_xml(self.run_grobid(pdf_binary))
         return out
 
+    def convert_batch(self, pdf_binary_list, num_threads=None):
+        """
+        threaded version
+        """
+        if num_threads is None:
+            num_threads = config.GROBID_THREADS
+        pool = ThreadPool(num_threads) 
+        return pool.map(self.convert, pdf_binary_list)
+
     def run_grobid(self, pdf_binary, MAX_TRIES=5):
-        files = {'input': StringIO(pdf_binary)}
+        files = {'input': pdf_binary}
         r = requests.post(self.url, files=files)
         
         try:
@@ -127,7 +143,9 @@ class PdfReader():
         return output
 
     def _extract_text(self, elem):
-        return ''.join([s.decode("utf-8") for s in ET.tostringlist(elem, method="text", encoding="utf-8") if s is not None]).strip() # don't ask...
+        # note the whitespace on the join here. 
+        return ' '.join([s.decode("utf-8") for s in ET.tostringlist(
+                        elem, method="text", encoding="utf-8") if s is not None]).strip() # don't ask...
 
 def main():
     pass
