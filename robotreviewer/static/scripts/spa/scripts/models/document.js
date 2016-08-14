@@ -106,7 +106,6 @@ define(function (require) {
             withFuzzyComparison: true
           });
       }
-      console.log(result.matches);
       return result.matches[0];
     },
     annotate: function(annotation, color, useFuzzy) {
