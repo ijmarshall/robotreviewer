@@ -143,7 +143,9 @@ class PdfReader():
         return output
 
     def _extract_text(self, elem):
-        return ''.join([s.decode("utf-8") for s in ET.tostringlist(elem, method="text", encoding="utf-8") if s is not None]).strip() # don't ask...
+        # note the whitespace on the join here. 
+        return ' '.join([s.decode("utf-8") for s in ET.tostringlist(
+                        elem, method="text", encoding="utf-8") if s is not None]).strip() # don't ask...
 
 def main():
     pass
