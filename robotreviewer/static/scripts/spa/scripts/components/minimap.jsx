@@ -8,7 +8,6 @@ define(function (require) {
   var ReactDOM = require("react-dom");
 
   var TextLayerBuilder = require("../helpers/textLayerBuilder");
-  var Immutable = require("immutable");
 
   var bounded = function(num) {
     return isFinite(num) ? num : null;
@@ -74,7 +73,7 @@ define(function (require) {
 
   var TextSegment = React.createClass({
     shouldComponentUpdate: function(nextProps, nextState) {
-      return !Immutable.is(nextProps.annotation, this.props.annotation);
+      return !_.isEqual(nextProps.annotation, this.props.annotation);
     },
     render: function() {
       var segment = this.props.segment;
@@ -85,7 +84,7 @@ define(function (require) {
         };
 
       if(annotation) {
-        var color = annotation.getIn(["0", "color"]).join(",");
+        var color = annotation[0]["color"].join(",");
         style.backgroundColor = "rgb(" + color + ")";
       }
       return <div className="text-segment" style={style}></div>;
@@ -94,7 +93,7 @@ define(function (require) {
 
   var TextSegments = React.createClass({
     shouldComponentUpdate: function(nextProps, nextState) {
-      return !Immutable.is(nextProps.annotations, this.props.annotations);
+      return !_.isEqual(nextProps.annotations, this.props.annotations);
     },
     projectTextNodes: _.memoize(function(page, fingerprint, viewport, factor) {
       // The basic idea here is using a sweepline to
@@ -157,10 +156,10 @@ define(function (require) {
 
       var textNodes = this.projectTextNodes(page, fingerprint, viewport, factor);
 
-      var annotated = annotations.keySeq().toArray();
+      var annotated = _.keys(annotations);
       var textSegments = textNodes.map(function(segment, idx) {
         var ann = _.first(_.intersection(annotated, segment.idx));
-        return <TextSegment key={idx} segment={segment} annotation={annotations.get(ann)} />;
+        return <TextSegment key={idx} segment={segment} annotation={annotations[ann]} />;
       });
 
       return <div>{textSegments}</div>;
@@ -222,7 +221,7 @@ define(function (require) {
                             page={page}
                             $viewer={$viewer}
                             factor={factor}
-                            annotations={annotations.get(pageIndex)}
+                            annotations={annotations[pageIndex]}
                             style={style} />;
       });
 
