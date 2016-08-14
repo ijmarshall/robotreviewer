@@ -8,6 +8,7 @@ define(function (require) {
     defaults: {
       uuid: null,
       label: "",
+      position: null,
       content: "",
       prefix: "",
       suffix: "",

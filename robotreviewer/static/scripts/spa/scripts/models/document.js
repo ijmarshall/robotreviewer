@@ -69,15 +69,8 @@ define(function (require) {
           return content;
         });
     },
-    annotate: function(annotation, color, useFuzzy) {
-      var self = this;
-      var aggregate = this._aggregate;
-      if (!aggregate) {
-        return [];
-      }
-      var text = aggregate.text;
-
-      var findMatch = function(text, annotation, useFuzzy) {
+    __matchCache: {},
+    findMatch: function(annotation, text, useFuzzy) {
         var content = annotation.get("content");
         var prefix = annotation.get("prefix");
         var suffix = annotation.get("suffix");
@@ -88,8 +81,9 @@ define(function (require) {
         var result = TextSearcher.searchExact(text, content);
 
         if(!result.matches.length) {
-          var pattern = quoteRegex(content).replace(/\s+/g,"\\s{0,}"); // whitespace insensitive
-          result = TextSearcher.searchRegex(text, pattern, true);
+          var target = content.replace(/\s+/g, " ").trim();
+          var pattern = _.map(target.split(""), quoteRegex).join("[\\W]{0,3}");
+          result = TextSearcher.searchRegex(text, pattern, false);
         }
 
         if(!result.matches.length && useFuzzy) {
@@ -100,27 +94,33 @@ define(function (require) {
             content,
             position,
             position + content.length,
-            true, {
+            false, {
+              matchDistance: len * 2,
               contextMatchThreshold: 0.95,
               patternMatchThreshold: 0.95,
               flexContext: true,
               withFuzzyComparison: true
             });
-
-          if(!result.matches.length) {
-            result = TextSearcher.searchFuzzy(
-              text,
-              content,
-              position,
-              true, {
-                withFuzzyComparison: true
-              });
-          }
         }
         return result.matches[0];
-      };
+    },
+    annotate: function(annotation, color, useFuzzy) {
+      var self = this;
+      var aggregate = this._aggregate;
+      if (!aggregate) {
+        return [];
+      }
+      var text = aggregate.text;
 
-      var match = findMatch(text, annotation, useFuzzy);
+      var match = null;
+      var cacheKey = annotation.get("content");
+      if(this.__matchCache[cacheKey]) {
+        match = this.__matchCache[cacheKey]
+      } else {
+        var match = this.findMatch(annotation, text, useFuzzy);
+        this.__matchCache[cacheKey] = match;
+      }
+
       if(!match) {
         return [];
       } else {
