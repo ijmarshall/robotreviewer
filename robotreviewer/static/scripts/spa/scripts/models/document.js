@@ -71,38 +71,43 @@ define(function (require) {
     },
     __matchCache: {},
     findMatch: function(annotation, text, useFuzzy) {
-        var content = annotation.get("content");
-        var prefix = annotation.get("prefix");
-        var suffix = annotation.get("suffix");
-        var len = text.length;
-        // If no position is given, start in the middle of the document
-        var position = annotation.get("position") || Math.floor(len / 2);
+      var content = annotation.get("content");
+      var prefix = annotation.get("prefix");
+      var suffix = annotation.get("suffix");
+      var len = text.length;
+      // If no position is given, start in the middle of the document
+      var position = annotation.get("position") || Math.floor(len / 2);
 
-        var result = TextSearcher.searchExact(text, content);
+      var result = TextSearcher.searchExact(text, content);
 
-        if(!result.matches.length) {
-          var target = content.replace(/\s+/g, " ").trim();
-          var pattern = _.map(target.split(""), quoteRegex).join("[\\W]{0,3}");
-          result = TextSearcher.searchRegex(text, pattern, false);
-        }
+      if(!result.matches.length) {
+        var target = content
+          .replace(/\s(\W)\s/, "$1 ")
+          .replace(/\s+/g, " ")
+          .trim();
+        var pattern = _.map(target.split(""), quoteRegex).join("\\W{0,2}");
+        result = TextSearcher.searchRegex(text, pattern, true);
+      }
 
-        if(!result.matches.length && useFuzzy) {
-          result = TextSearcher.searchFuzzyWithContext(
-            text,
-            prefix,
-            suffix,
-            content,
-            position,
-            position + content.length,
-            false, {
-              matchDistance: len * 2,
-              contextMatchThreshold: 0.95,
-              patternMatchThreshold: 0.95,
-              flexContext: true,
-              withFuzzyComparison: true
-            });
-        }
-        return result.matches[0];
+
+      if(!result.matches.length && useFuzzy) {
+        result = TextSearcher.searchFuzzyWithContext(
+          text,
+          prefix,
+          suffix,
+          content,
+          position,
+          position + content.length,
+          true, {
+            matchDistance: len * 2,
+            contextMatchThreshold: 0.55,
+            patternMatchThreshold: 0.55,
+            flexContext: true,
+            withFuzzyComparison: true
+          });
+      }
+      console.log(result.matches);
+      return result.matches[0];
     },
     annotate: function(annotation, color, useFuzzy) {
       var self = this;
