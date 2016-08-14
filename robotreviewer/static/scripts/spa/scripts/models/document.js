@@ -81,8 +81,8 @@ define(function (require) {
         var result = TextSearcher.searchExact(text, content);
 
         if(!result.matches.length) {
-          var target = content.replace(/\W+/g, " ").trim();
-          var pattern = _.map(target.split(""), quoteRegex).join("[\\s\\S]{0,3}");
+          var target = content.replace(/\s+/g, " ").trim();
+          var pattern = _.map(target.split(""), quoteRegex).join("[\\W]{0,3}");
           result = TextSearcher.searchRegex(text, pattern, false);
         }
 
@@ -96,8 +96,8 @@ define(function (require) {
             position + content.length,
             false, {
               matchDistance: len * 2,
-              contextMatchThreshold: 0.55,
-              patternMatchThreshold: 0.55,
+              contextMatchThreshold: 0.95,
+              patternMatchThreshold: 0.95,
               flexContext: true,
               withFuzzyComparison: true
             });
