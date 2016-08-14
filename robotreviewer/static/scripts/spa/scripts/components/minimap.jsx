@@ -5,8 +5,14 @@ define(function (require) {
   var _ = require("underscore");
   var $ = require("jquery");
   var React = require("react");
+  var ReactDOM = require("react-dom");
+
   var TextLayerBuilder = require("../helpers/textLayerBuilder");
   var Immutable = require("immutable");
+
+  var bounded = function(num) {
+    return isFinite(num) ? num : null;
+  };
 
   var VisibleArea = React.createClass({
     getInitialState: function() {
@@ -17,7 +23,8 @@ define(function (require) {
     },
     componentWillUnmount: function() {
       this.props.$viewer.off("scroll");
-      $(this.getDOMNode().parentNode).off("mousedown mousemove");
+      var node = ReactDOM.findDOMNode(this);
+      $(node.parentNode).off("mousedown mousemove");
       $("body").off("mouseup.minimap");
     },
     scrollTo: function(e, $minimap, $viewer) {
@@ -32,7 +39,8 @@ define(function (require) {
     componentDidMount: function() {
       var self = this;
       var $viewer =  this.props.$viewer;
-      var $minimap = $(this.getDOMNode().parentNode);
+      var node = ReactDOM.findDOMNode(this);
+      var $minimap = $(node.parentNode);
 
       $viewer.on("scroll", function() {
         self.setState({offset: $viewer.scrollTop() / self.props.factor});
@@ -57,8 +65,9 @@ define(function (require) {
         });
     },
     render: function() {
-      var style = { height: this.props.height,
-                    top: this.state.offset };
+      var style = { height: bounded(this.props.height),
+                    top: bounded(this.state.offset) };
+
       return (<div className="visible-area" style={style}></div>);
     }
   });
@@ -168,42 +177,57 @@ define(function (require) {
             <TextSegments page={page}
                           annotations={this.props.annotations}
                           factor={this.props.factor}
-                          $viewer={this.props.$viewer} />)
-        ;
+                          $viewer={this.props.$viewer} />);
       }
       return <div className="minimap-node" style={this.props.style}>{textSegments}</div>;
     }
   });
+
+
+  // FIXME really really hacky way of maintaining state
+  var lastHeight = {};
 
   var Minimap = React.createClass({
     render: function() {
       var $viewer = this.props.$viewer;
       if(!$viewer) return null; // wait for viewer to mount
 
-      var pages = this.props.pdf.get("pages");
+      var pdf = this.props.pdf;
+      var fingerprint = pdf.get("fingerprint");
+      var pages = pdf.get("pages");
       var numPages = pages.length;
 
       // We assume that each page has the same height.
       // This is not true sometimes, but often enough for academic papers.
-      var $firstPage = $viewer.find(".page:eq(0)");
-      var totalHeight = $firstPage.height() * numPages;
+      var $firstPage = $viewer.find(".page").first();
+      var pageHeight = $firstPage.height();
+      // We store this because React stateful rendering might be out of sync...
+      if(lastHeight[fingerprint] >= pageHeight) {
+        pageHeight = lastHeight[fingerprint];
+      } else {
+        lastHeight[fingerprint] = pageHeight;
+      }
+      var totalHeight = pageHeight * numPages;
 
       var offset = $viewer.offset().top;
-      var factor = totalHeight / ($viewer.height() - offset);
+      var viewerHeight = $viewer.height();
+      var factor = totalHeight / (viewerHeight - offset);
 
+      var height = viewerHeight / factor;
       var annotations = this.props.annotations;
 
       var pageElements = pages.map(function(page, pageIndex) {
+        var style = {height: bounded((totalHeight / numPages) / factor)};
         return <PageSegment key={pageIndex}
                             page={page}
                             $viewer={$viewer}
                             factor={factor}
                             annotations={annotations.get(pageIndex)}
-                            style={{height: (totalHeight / numPages) / factor}} />;
+                            style={style} />;
       });
 
       return (<div className="minimap">
-                <VisibleArea height={$viewer.height() / factor} $viewer={$viewer} factor={factor} />
+                <VisibleArea height={height} $viewer={$viewer} factor={factor} />
                 {pageElements}
               </div>);
     }

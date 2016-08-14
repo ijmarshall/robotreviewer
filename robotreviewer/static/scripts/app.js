@@ -4,112 +4,94 @@ define(function (require) {
 
   var Backbone = require("backbone");
   var React = require("react");
+  var ReactDOM = require("react-dom");
   var _ = require("underscore");
   var FileUtil = require("spa/helpers/fileUtil");
-
 
   // Set CSRF
   var _sync = Backbone.sync;
   Backbone.sync = function(method, model, options){
     options.beforeSend = function(xhr){
-      xhr.setRequestHeader('X-CSRF-Token', CSRF_TOKEN);
-      // xhr.setRequestHeader('Content-Type', 'multipart/form-data');
-      // xhr.setRequestHeader('Hello', 'some data herer');
+      xhr.setRequestHeader('X-CSRF-Token', window.CSRF_TOKEN);
     };
     return _sync(method, model, options);
   };
 
-  // Models
-  var documentModel = new (require("spa/models/document"))();
-  var marginaliaModel = new (require("spa/models/marginalia"))();
+  // Breadcrumbs hack
+  var breadcrumbsModel = new (require("models/breadcrumbs"))();
+  var BreadcrumbsComponent = React.createFactory(require("jsx!components/breadcrumbs"));
 
-  // Components
-  var TopBar = React.createFactory(require("jsx!components/topBar"));
-  var Document = React.createFactory(require("jsx!spa/components/document"));
-  var Marginalia = React.createFactory(require("jsx!spa/components/marginalia"));
+  var breadcrumbs =
+      ReactDOM.render(new BreadcrumbsComponent({breadcrumbs: breadcrumbsModel}),
+                                    document.getElementById("breadcrumbs"));
 
-  var process = function(data) {
-    var upload = FileUtil.upload("/annotate_pdf", data);
-    documentModel.loadFromData(data);
-    upload.then(function(result) {
-      var marginalia = JSON.parse(result);
-      marginaliaModel.reset(marginaliaModel.parse(marginalia));
-    });
-  };
-
-  var topBarComponent = React.render(
-    new TopBar({
-      callback: process,
-      accept: ".pdf",
-      mimeType: /application\/(x-)?pdf|text\/pdf/
-    }),
-    document.getElementById("top-bar")
-  );
-
-  var isEditable = true;
-
-  var documentComponent = React.render(
-    new Document({pdf: documentModel, marginalia: marginaliaModel, isEditable: isEditable}),
-    document.getElementById("viewer")
-  );
-
-  var marginaliaComponent = React.render(
-    new Marginalia({marginalia: marginaliaModel, isEditable: isEditable}),
-    document.getElementById("marginalia")
-  );
-
-  // Dispatch logic
-  // Listen to model change callbacks -> trigger updates to components
-  marginaliaModel.on("all", function(e, obj) {
-    switch(e) {
-    case "reset":
-      documentModel.annotate(marginaliaModel.getActive());
-      marginaliaComponent.setState({loading: false});
-      break;
-    case "annotations:change":
-      break;
-    case "change:active":
-    case "annotations:add":
-    case "annotations:remove":
-      documentModel.annotate(marginaliaModel.getActive());
-      marginaliaComponent.forceUpdate();
-      break;
-    case "annotations:select":
-      documentComponent.setState({select: obj});
-      break;
-    default:
-      marginaliaComponent.forceUpdate();
-    }
+  breadcrumbsModel.on("all", function(e, obj) {
+    breadcrumbs.forceUpdate();
   });
 
-  documentModel.on("all", function(e, obj) {
-    switch(e) {
-    case "change:raw":
+  // Component views
+  var DocumentView = React.createFactory(require("jsx!views/document"));
+  var UploadView = React.createFactory(require("jsx!views/upload"));
+  var ReportView = React.createFactory(require("jsx!views/report"));
 
-      documentComponent.setState({
-        fingerprint: documentModel.get("fingerprint")
+  var isEditable = false;
+
+  var Router = Backbone.Router.extend({
+    routes : {
+      "upload" : "upload",
+      "report/:reportId" : "report",
+      "document/:reportId/:documentId?annotation_type=:type" : "document",
+      "*path" : "upload"
+    },
+    upload : function() {
+      var node = document.getElementById("main");
+      ReactDOM.unmountComponentAtNode(node);
+      ReactDOM.render(new UploadView({}), node);
+      breadcrumbsModel.reset(
+        [{link: "/#upload", title: "upload"}]);
+    },
+    report : function(reportId) {
+      var node = document.getElementById("main");
+      ReactDOM.unmountComponentAtNode(node);
+      ReactDOM.render(new ReportView({reportId: reportId}), node);
+      breadcrumbsModel.reset(
+        [{link: "/#upload", title: "upload"},
+         {link: "/#report/" + reportId, title: "report"}
+        ]);
+    },
+    document : function(reportId, documentId, type) {
+      var node = document.getElementById("main");
+      ReactDOM.unmountComponentAtNode(node);
+
+      // Models
+      var documentModel = new (require("spa/models/document"))();
+      var marginaliaModel = new (require("spa/models/marginalia"))();
+
+      var marginaliaUrl = "/marginalia/" + reportId + "/" + documentId + "?annotation_type=" + type;
+      $.get(marginaliaUrl, function(data) {
+        var marginalia = {marginalia: JSON.parse(data)};
+        marginaliaModel.reset(marginaliaModel.parse(marginalia));
       });
-      break;
-    case "change:binary":
-      marginaliaModel.reset();
-      marginaliaComponent.setState({loading: true});
-      break;
-    case "pages:change:state":
-      if(obj.get("state") === window.RenderingStates.HAS_CONTENT) {
-        documentModel.annotate(marginaliaModel.getActive());
-      }
-      documentComponent.forceUpdate();
-      break;
-    case "pages:ready":
-      documentModel.annotate(marginaliaModel.getActive());
-      marginaliaComponent.forceUpdate();
-      break;
-    case "pages:change:annotations":
-      documentModel.annotate(marginaliaModel.getActive());
-      documentComponent.forceUpdate();
-      break;
-    default:
-      break;
+
+      var documentUrl = "/pdf/" + reportId + "/" + documentId;
+      documentModel.loadFromUrl(documentUrl);
+
+      ReactDOM.render(
+        new DocumentView({document: documentModel,
+                          marginalia: marginaliaModel,
+                          isEditable: isEditable}),
+        node);
+
+      breadcrumbsModel.reset(
+        [{link: "/#upload", title: "upload"},
+         {link: "/#report/" + reportId, title: "report"},
+         {link: "/#document/" + reportId + "/" + documentId, title: "document"}
+        ]);
     }
   });
+
+  window.router = new Router();
+
+
+  Backbone.history.start();
 });

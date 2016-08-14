@@ -6,9 +6,25 @@ define(function (require) {
   var $ = require("jquery");
 
   var React = require("react");
+  var ReactDOM = require("react-dom");
   var TextLayerBuilder = require("../helpers/textLayerBuilder");
   var Immutable = require("immutable");
 
+
+  var getOutputScale = function(ctx) {
+    var devicePixelRatio = window.devicePixelRatio || 1;
+    var backingStoreRatio = ctx.webkitBackingStorePixelRatio ||
+        ctx.mozBackingStorePixelRatio ||
+        ctx.msBackingStorePixelRatio ||
+        ctx.oBackingStorePixelRatio ||
+        ctx.backingStorePixelRatio || 1;
+    var pixelRatio = devicePixelRatio / backingStoreRatio;
+    return {
+      sx: pixelRatio,
+      sy: pixelRatio,
+      scaled: pixelRatio !== 1
+    };
+  }
 
   var TextNode = React.createClass({
     triggerHighlight: function(uuid) {
@@ -94,14 +110,11 @@ define(function (require) {
     },
     componentWillReceiveProps: function(nextProps) {
       this.setState({renderingState: nextProps.page.get("state")});
-      if(this.props.key < RenderingStates.FINISHED) {
-        this.setState({isRendered: false});
-      }
     },
     drawPage: function(page) {
       var self = this;
-      var container = this.getDOMNode();
-      var canvas = this.refs.canvas.getDOMNode();
+      var container = ReactDOM.findDOMNode(this);
+      var canvas = this.refs.canvas;
       var ctx = canvas.getContext("2d");
 
       var viewport = page.getViewport(1.0);
@@ -156,6 +169,7 @@ define(function (require) {
                                annotations={this.props.annotations}
                                page={this.props.page} />;
       }
+
       var loader = require.toUrl(".") + "/../../img/loading-spin.svg";
       return (
         <div className="page">

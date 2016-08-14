@@ -5,10 +5,12 @@ define(function (require) {
   var Q = require("Q");
   var _ = require("underscore");
   var Backbone = require("backbone");
-  var PDFJS = require("PDFJS");
+
+  var quoteRegex = function(str) {
+    return str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+  };
 
   var TextSearcher = new (require("../vendor/dom-anchor-bitap/text_searcher"))();
-
   var RenderingStates = window.RenderingStates = {
     INITIAL: 0,
     RUNNING: 1,
@@ -83,30 +85,34 @@ define(function (require) {
         // If no position is given, start in the middle of the document
         var position = annotation.get("position") || Math.floor(len / 2);
 
-
         var result = TextSearcher.searchExact(text, content);
+
+        if(!result.matches.length) {
+          var pattern = quoteRegex(content).replace(/\s+/g,"\\s{0,}"); // whitespace insensitive
+          result = TextSearcher.searchRegex(text, pattern, true);
+        }
+
         if(!result.matches.length && useFuzzy) {
-          if(prefix && suffix) {
-            result = TextSearcher.searchFuzzyWithContext(
-              text,
-              prefix,
-              suffix,
-              content,
-              position,
-              position + content.length,
-              false, {
-                matchDistance: 250,
-                contextMatchThreshold: 0.4,
-                patternMatchThreshold: 0.4,
-                flexContext: true
-              });
-          } else {
+          result = TextSearcher.searchFuzzyWithContext(
+            text,
+            prefix,
+            suffix,
+            content,
+            position,
+            position + content.length,
+            true, {
+              contextMatchThreshold: 0.95,
+              patternMatchThreshold: 0.95,
+              flexContext: true,
+              withFuzzyComparison: true
+            });
+
+          if(!result.matches.length) {
             result = TextSearcher.searchFuzzy(
               text,
               content,
               position,
-              false, {
-                matchDistance: len * 2,
+              true, {
                 withFuzzyComparison: true
               });
           }
@@ -234,7 +240,8 @@ define(function (require) {
         var result = {};
         mappings.forEach(function(mapping) {
           result[mapping.pageIndex] = result[mapping.pageIndex] || {};
-          result[mapping.pageIndex][mapping.nodeIndex] = _.union(result[mapping.pageIndex][mapping.nodeIndex] || [], [mapping]);
+          result[mapping.pageIndex][mapping.nodeIndex] =
+            _.union(result[mapping.pageIndex][mapping.nodeIndex] || [], [mapping]);
         });
         return result;
       };
