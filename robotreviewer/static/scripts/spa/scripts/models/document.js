@@ -113,12 +113,12 @@ define(function (require) {
       var text = aggregate.text;
 
       var match = null;
-      var hash = annotation.get("content");
-      if(this.__matchCache[hash]) {
-        match = this.__matchCache[hash]
+      var cacheKey = annotation.get("content");
+      if(this.__matchCache[cacheKey]) {
+        match = this.__matchCache[cacheKey]
       } else {
         var match = this.findMatch(annotation, text, useFuzzy);
-        this.__matchCache[hash] = match;
+        this.__matchCache[cacheKey] = match;
       }
 
       if(!match) {
