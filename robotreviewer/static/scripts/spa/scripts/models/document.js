@@ -88,7 +88,7 @@ define(function (require) {
         var result = TextSearcher.searchExact(text, content);
 
         if(!result.matches.length) {
-          var pattern = quoteRegex(content).replace(/\s+/g,"\\s{0,}"); // whitespace insensitive
+          var pattern = quoteRegex(content.trim()).replace(/\s+/g,"\\s{0,}"); // whitespace insensitive
           result = TextSearcher.searchRegex(text, pattern, true);
         }
 
