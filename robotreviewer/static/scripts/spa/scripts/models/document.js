@@ -88,7 +88,7 @@ define(function (require) {
         var result = TextSearcher.searchExact(text, content);
 
         if(!result.matches.length) {
-          var pattern = quoteRegex(content.trim()).replace(/\s+/g,"\\s{0,}"); // whitespace insensitive
+          var pattern = _.map(content.trim().split(""), quoteRegex).join("[\\s\\S]{0,3}");
           result = TextSearcher.searchRegex(text, pattern, true);
         }
 
@@ -101,26 +101,17 @@ define(function (require) {
             position,
             position + content.length,
             true, {
-              contextMatchThreshold: 0.95,
-              patternMatchThreshold: 0.95,
+              matchDistance: 250,
+              contextMatchThreshold: 0.75,
               flexContext: true,
               withFuzzyComparison: true
             });
-
-          if(!result.matches.length) {
-            result = TextSearcher.searchFuzzy(
-              text,
-              content,
-              position,
-              true, {
-                withFuzzyComparison: true
-              });
-          }
         }
         return result.matches[0];
       };
 
       var match = findMatch(text, annotation, useFuzzy);
+      console.log(match);
       if(!match) {
         return [];
       } else {
