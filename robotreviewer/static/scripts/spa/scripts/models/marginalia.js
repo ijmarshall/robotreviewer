@@ -97,6 +97,19 @@ define(function (require) {
     getActive: function() {
       return this.where({active: true});
     },
+    setActiveByUuid: function(uuid) {
+      var active =  this.find(function(m) {
+        var annotations = m.get("annotations");
+        var uuids = annotations.map(function(a) { return a.get("uuid") });
+        return _.contains(uuids, uuid);
+      });
+      this.forEach(function(m) {
+        m.set({active: false});
+      });
+      this.toggleActive(active);
+      return active;
+
+    },
     addAnnotation: function(content) {
       var marginalia = this.getActive();
       marginalia.forEach(function(marginalis) {

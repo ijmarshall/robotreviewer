@@ -82,14 +82,12 @@ define(function (require) {
 
       if(!result.matches.length) {
         var target = content
-          .replace(/\s+(\W)\s+/, "$1")
           .replace(/\s+/g, " ")
+          .replace(/\s(\W)\s/, "$1 ")
           .trim();
         var pattern = _.map(target.split(""), quoteRegex).join("\\W{0,3}");
         result = TextSearcher.searchRegex(text, pattern, false);
       }
-
-
       if(!result.matches.length && useFuzzy) {
         result = TextSearcher.searchFuzzyWithContext(
           text,
@@ -99,9 +97,9 @@ define(function (require) {
           position,
           position + content.length,
           false, {
-            matchDistance: len * 2,
-            contextMatchThreshold: 0.75,
-            patternMatchThreshold: 0.75,
+            matchDistance: 500,
+            contextMatchThreshold: 0.55,
+            patternMatchThreshold: 0.55,
             flexContext: true,
             withFuzzyComparison: true
           });
@@ -112,10 +110,7 @@ define(function (require) {
             content,
             position,
             position + content.length,
-            false, {
-              contextMatchThreshold: 0.75,
-              patternMatchThreshold: 0.75
-            });
+            false);
         }
       }
       return result.matches[0];
@@ -270,9 +265,9 @@ define(function (require) {
     getText: function() {
       return this.get("pages")._aggregate.text;
     },
-    loadFromUrl: function(url) {
+    loadFromUrl: function(url, uuid) {
       var self = this;
-      self.set({binary: null, _cache: {}});
+      self.set({binary: null, _cache: {}, scrollTo: uuid});
       PDFJS.getDocument(url).then(function(pdf) {
         self.set({raw: pdf,
                   fingerprint: pdf.pdfInfo.fingerprint,
