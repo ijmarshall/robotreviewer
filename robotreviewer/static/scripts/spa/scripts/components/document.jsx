@@ -20,7 +20,7 @@ define(function (require) {
       var $annotations = this.state.$viewer.find("[data-uuid*="+uuid+"]");
       $annotations.toggleClass("highlight");
     },
-    scrollTo: function(uuid) {
+    scrollTo: function(uuid, callback) {
       var $viewer = this.state.$viewer;
       if($viewer) {
         var annotation = $viewer.find("[data-uuid*="+ uuid + "]");
@@ -28,7 +28,7 @@ define(function (require) {
           var delta = annotation.offset().top;
           var viewerHeight = $viewer.height();
           var center = viewerHeight / 2;
-          $viewer.animate({scrollTop: $viewer.scrollTop() + delta - center});
+          $viewer.animate({scrollTop: $viewer.scrollTop() + delta - center}, "swing", callback || _.identity);
           return true;
         }
       }
@@ -46,9 +46,15 @@ define(function (require) {
       this.setState({$viewer: $viewer});
     },
     componentDidUpdate: function() {
-      var scrollTo = this.props.pdf.get("scrollTo");
-      if(scrollTo && !this.hasScrolled) {
-        var scroll = this.scrollTo(scrollTo);
+      var self = this;
+      var uuid = this.props.pdf.get("scrollTo");
+      if(uuid && !this.hasScrolled) {
+        var scroll = this.scrollTo(uuid, function() {
+          self.toggleHighlights(null, uuid);
+          _.delay(function() {
+            self.toggleHighlights(null, uuid); // reset to off
+          }, 1000);
+        });
         if(scroll) {
           this.hasScrolled = true;
         }
