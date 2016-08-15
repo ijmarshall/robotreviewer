@@ -132,7 +132,6 @@ def upload_and_annotate():
         pdf_hash = hashlib.md5(blob).hexdigest()
         pdf_uuid = rand_id()
         pdf_uuids.append(pdf_uuid)
-        # data = pdf_reader.convert(blob)
         data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
         data.gold['pdf_uuid'] = pdf_uuid
 
