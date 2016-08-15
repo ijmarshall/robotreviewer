@@ -110,6 +110,7 @@ def upload_and_annotate():
     c = rr_sql_conn.cursor()
  
     '''
+    
     blobs = []
     for f in uploaded_files: 
         filename = secure_filename(f.filename)
