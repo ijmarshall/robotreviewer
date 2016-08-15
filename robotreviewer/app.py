@@ -49,6 +49,7 @@ from robotreviewer import config
 import robotreviewer
 
 import uuid
+from robotreviewer.util import rand_id
 import sqlite3
 from datetime import datetime
 import hashlib
@@ -99,7 +100,7 @@ def upload_and_annotate():
     # uploads a bunch of PDFs, do the RobotReviewer annotation
     # save PDFs + annotations to database
     # returns the report run uuid + list of article uuids
-    report_uuid = uuid.uuid4().hex
+    report_uuid = rand_id()
     pdf_uuids = []
 
     uploaded_files = request.files.getlist("file")
@@ -111,15 +112,15 @@ def upload_and_annotate():
     # tokenize full texts here
     for doc in nlp.pipe((d['text'] for d in articles), batch_size=1, n_threads=config.SPACY_THREADS, tag=True, parse=True, entity=False):
         parsed_articles.append(doc)
-   
+
 
     # adjust the tag, parse, and entity values if these are needed later
     for article, parsed_text in zip(articles, parsed_articles):
         article._spacy['parsed_text'] = parsed_text
 
-    for blob, data in zip(blobs, articles):        
+    for blob, data in zip(blobs, articles):
         pdf_hash = hashlib.md5(blob).hexdigest()
-        pdf_uuid = uuid.uuid4().hex
+        pdf_uuid = rand_id()
         pdf_uuids.append(pdf_uuid)
         # data = pdf_reader.convert(blob)
         data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
