@@ -7,6 +7,7 @@ RobotReviewer server
 #           Byron Wallce <byron.wallace@utexas.edu>
 
 import logging, os
+from datetime import datetime
 
 def str2bool(v):
   return v.lower() in ("yes", "true", "t", "1")
@@ -24,10 +25,11 @@ from robotreviewer.textprocessing.pdfreader import PdfReader
 pdf_reader = PdfReader() # launch Grobid process before anything else
 
 
-
 from flask import Flask, json, make_response, send_file
 from flask import redirect, url_for, jsonify
 from flask import request, render_template
+
+from werkzeug.utils import secure_filename
 
 from flask_wtf.csrf import CsrfProtect
 import zipfile
@@ -51,14 +53,15 @@ import robotreviewer
 import uuid
 from robotreviewer.util import rand_id
 import sqlite3
-from datetime import datetime
+
 import hashlib
 
 
 
 app = Flask(__name__,  static_url_path='')
 app.secret_key = os.environ.get("SECRET", "super secret key")
-
+# setting max file upload size 100 mbs
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 csrf = CsrfProtect()
 csrf.init_app(app)
@@ -105,6 +108,12 @@ def upload_and_annotate():
 
     uploaded_files = request.files.getlist("file")
     c = rr_sql_conn.cursor()
+ 
+    '''
+    blobs = []
+    for f in uploaded_files: 
+        filename = secure_filename(f.filename)
+    ''' 
 
     blobs = [f.read() for f in uploaded_files]
     articles = pdf_reader.convert_batch(blobs)
@@ -132,8 +141,11 @@ def upload_and_annotate():
 
     return json.dumps({"report_uuid": report_uuid,
                        "pdf_uuids": pdf_uuids})
-    # except:
-    #     return "FAILED!"
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    ''' @TODO not sure if we want to return something else here? '''
+    return json.dumps({'success':False, 'error':True}), 413, {'ContentType':'application/json'} 
 
 
 @csrf.exempt # TODO: add csrf back in

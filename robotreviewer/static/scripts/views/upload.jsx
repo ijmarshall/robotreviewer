@@ -17,6 +17,8 @@ define(function (require) {
       var self = this;
       var fd = new FormData();
 
+      
+
       _.forEach(files, function(file) {
         fd.append('file', file);
       });
@@ -49,6 +51,11 @@ define(function (require) {
           var resp = JSON.parse(data);
           var reportId = resp["report_uuid"];
           window.router.navigate('report/' + reportId, {trigger: true});
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+          // probably want to yell @ the user here? 
+          self.setState({inProgress: false});
+          $("#error-text").html("Sorry, the file you tried to upload was too big (upload limit: 100mb).");
         }
       });
     },
@@ -70,7 +77,11 @@ define(function (require) {
                       disablePreview={true}
                       activeClassName="dropzone-active"
                       className="dropzone">
-                <div>
+                
+                <div id="dropzone-text">
+
+                <div id="error-text" style={{color: 'red'}}></div>
+
                 RobotReviewer helps to automate systematic reviews in Evidence Based Medicine.
                 <br />
                 Try dropping Randomized Controlled Trial PDFs here, or click to select files to upload!
