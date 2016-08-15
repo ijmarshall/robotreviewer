@@ -17,8 +17,6 @@ define(function (require) {
       var self = this;
       var fd = new FormData();
 
-
-
       _.forEach(files, function(file) {
         fd.append('file', file);
       });
@@ -60,7 +58,6 @@ define(function (require) {
     },
     render: function() {
       var inProgress = this.state.inProgress;
-      var progress = this.state.progress;
       var error = this.state.error ? <div className="alert-box alert">{this.state.error}</div> : null;
       return (
           <div className="upload">
@@ -69,7 +66,7 @@ define(function (require) {
             <div>
               <img src="/img/infinity.gif" width="120" height="120" />
               <br />
-              {this.state.message + " " + progress}
+              {this.state.message + " " + this.state.progress}
             </div>
           </div>
           <div style={{display: inProgress ? "none" : "block"}}>
