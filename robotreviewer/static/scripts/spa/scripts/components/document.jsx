@@ -31,7 +31,6 @@ define(function (require) {
           $viewer.animate({scrollTop: $viewer.scrollTop() + delta - center});
           return true;
         }
-        return false;
       }
       return false;
     },
