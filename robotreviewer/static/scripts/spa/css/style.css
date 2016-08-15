@@ -1,14 +1,14 @@
 @-webkit-keyframes pulsate {
   from { opacity: 0.4; }
-  to { opacity 0.8; }
+  to { opacity 0.9; }
 }
 @-moz-keyframes pulsate {
   from { opacity: 0.4; }
-  to { opacity: 0.8; }
+  to { opacity: 0.9; }
 }
 @keyframes pulsate {
   from { opacity: 0.4; }
-  to { opacity: 0.8; }
+  to { opacity: 0.9; }
 }
 
 html, body {
@@ -304,10 +304,9 @@ canvas {
 }
 
 .highlight {
-  -webkit-animation: pulsate 0.25s 5 alternate;
-  -moz-animation: pulsate 0.25s 5 alternate;
-  -animation: pulsate 0.25s 5 alternate;
-
+  -webkit-animation: pulsate 0.25s 6 alternate;
+  -moz-animation: pulsate 0.25s 6 alternate;
+  -animation: pulsate 0.25s 6 alternate;
 }
 
 .popup {
