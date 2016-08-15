@@ -53,7 +53,7 @@ define(function (require) {
           self.toggleHighlights(null, uuid);
           _.delay(function() {
             self.toggleHighlights(null, uuid); // reset to off
-          }, 1000);
+          }, 2000); // after 2 seconds
         });
         if(scroll) {
           this.hasScrolled = true;
