@@ -100,8 +100,7 @@ define(function (require) {
             matchDistance: 500,
             contextMatchThreshold: 0.55,
             patternMatchThreshold: 0.55,
-            flexContext: true,
-            withFuzzyComparison: true
+            flexContext: true
           });
 
         if(!result.matches.length) {
@@ -275,9 +274,9 @@ define(function (require) {
         self.get("pages").populate(pdf);
       });
     },
-    loadFromData: function(data) {
+    loadFromData: function(data, uuid) {
       var self = this;
-      self.set({binary: data, _cache: {}});
+      self.set({binary: data, _cache: {}, scrollTo: uuid});
       PDFJS.getDocument(data).then(function(pdf) {
         self.set({fingerprint: pdf.pdfInfo.fingerprint,
                   raw: data,
