@@ -1,3 +1,16 @@
+@-webkit-keyframes pulsate {
+  from { opacity: 0.4; }
+  to { opacity 0.8; }
+}
+@-moz-keyframes pulsate {
+  from { opacity: 0.4; }
+  to { opacity: 0.8; }
+}
+@keyframes pulsate {
+  from { opacity: 0.4; }
+  to { opacity: 0.8; }
+}
+
 html, body {
   color: #505050;
 }
@@ -291,7 +304,10 @@ canvas {
 }
 
 .highlight {
-  opacity: 1.0 !important;
+  -webkit-animation: pulsate 0.25s 5 alternate;
+  -moz-animation: pulsate 0.25s 5 alternate;
+  -animation: pulsate 0.25s 5 alternate;
+
 }
 
 .popup {
@@ -319,19 +335,6 @@ canvas {
   width: 100%;
   height: 100%;
   background-color: transparent;
-}
-
-@-webkit-keyframes pulsate {
-  from { opacity: 0.4; }
-  to { opacity 0.8; }
-}
-@-moz-keyframes pulsate {
-  from { opacity: 0.4; }
-  to { opacity: 0.8; }
-}
-@keyframes pulsate {
-  from { opacity: 0.4; }
-  to { opacity: 0.8; }
 }
 
 .upload .infinity {
