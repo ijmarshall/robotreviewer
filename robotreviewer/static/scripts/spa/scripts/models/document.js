@@ -82,11 +82,11 @@ define(function (require) {
 
       if(!result.matches.length) {
         var target = content
-          .replace(/\s(\W)\s/, "$1 ")
+          .replace(/\s+(\W)\s+/, "$1")
           .replace(/\s+/g, " ")
           .trim();
-        var pattern = _.map(target.split(""), quoteRegex).join("\\W{0,2}");
-        result = TextSearcher.searchRegex(text, pattern, true);
+        var pattern = _.map(target.split(""), quoteRegex).join("\\W{0,3}");
+        result = TextSearcher.searchRegex(text, pattern, false);
       }
 
 
@@ -98,13 +98,25 @@ define(function (require) {
           content,
           position,
           position + content.length,
-          true, {
+          false, {
             matchDistance: len * 2,
-            contextMatchThreshold: 0.55,
-            patternMatchThreshold: 0.55,
+            contextMatchThreshold: 0.75,
+            patternMatchThreshold: 0.75,
             flexContext: true,
             withFuzzyComparison: true
           });
+
+        if(!result.matches.length) {
+          result = TextSearcher.searchFuzzy(
+            text,
+            content,
+            position,
+            position + content.length,
+            false, {
+              contextMatchThreshold: 0.75,
+              patternMatchThreshold: 0.75
+            });
+        }
       }
       return result.matches[0];
     },
