@@ -80,10 +80,10 @@ class PubmedRobot:
         return out
 
     def short_citation(self, data):
-        return "{} {}, {}".format(data['authors'][0]['lastname'], data['authors'][0]['initials'], data['year'])
+        return u"{} {}, {}".format(data['authors'][0]['lastname'], data['authors'][0]['initials'], data['year'])
 
     def format_citation(self, data):
-        bracket_issue = "({})".format(data['issue']) if data['issue'] else ""
+        bracket_issue = u"({})".format(data['issue']) if data['issue'] else u""
         return u"{}. {} {} {}. {}{}; {}".format(self.format_authors(data['authors']), data['title'], data['journal_abbr'], data['year'], data['volume'], bracket_issue, data['pages'])
 
 
