@@ -79,8 +79,8 @@ define(function (require) {
       return new TextLayerBuilder({viewport: viewport});
     },
     render: function() {
-      var page  = this.props.page;
       var self = this;
+      var page  = this.props.page;
       var content = page.get("content");
       var textLayerBuilder = this.getTextLayerBuilder(this.props.viewport);
       var annotations = this.props.annotations;

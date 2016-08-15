@@ -11,13 +11,13 @@ define(function (require) {
 
   var UploadView = React.createClass({
     getInitialState: function() {
-      return { progress: "", inProgress: false, message: ""};
+      return { progress: "", inProgress: false, message: "", error: ""};
     },
     onDrop: function (files) {
       var self = this;
       var fd = new FormData();
 
-      
+
 
       _.forEach(files, function(file) {
         fd.append('file', file);
@@ -53,17 +53,18 @@ define(function (require) {
           window.router.navigate('report/' + reportId, {trigger: true});
         },
         error: function (xhr, ajaxOptions, thrownError) {
-          // probably want to yell @ the user here? 
-          self.setState({inProgress: false});
-          $("#error-text").html("Sorry, the file you tried to upload was too big (upload limit: 100mb).");
+          // probably want to yell @ the user here?
+          self.setState({inProgress: false, error: "We're sorry, something went wrong!"});
         }
       });
     },
     render: function() {
       var inProgress = this.state.inProgress;
       var progress = this.state.progress;
+      var error = this.state.error ? <div className="alert-box alert">{this.state.error}</div> : null;
       return (
           <div className="upload">
+          {error}
           <div style={{opacity: inProgress ? 1 : 0}} className="infinity">
             <div>
               <img src="/img/infinity.gif" width="120" height="120" />
@@ -77,11 +78,8 @@ define(function (require) {
                       disablePreview={true}
                       activeClassName="dropzone-active"
                       className="dropzone">
-                
-                <div id="dropzone-text">
 
-                <div id="error-text" style={{color: 'red'}}></div>
-
+                <div>
                 RobotReviewer helps to automate systematic reviews in Evidence Based Medicine.
                 <br />
                 Try dropping Randomized Controlled Trial PDFs here, or click to select files to upload!
