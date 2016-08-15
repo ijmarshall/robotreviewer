@@ -40,6 +40,7 @@ define(function (require) {
     routes : {
       "upload" : "upload",
       "report/:reportId" : "report",
+      "document/:reportId/:documentId?annotation_type=:type&uuid=:uuid" : "document",
       "document/:reportId/:documentId?annotation_type=:type" : "document",
       "*path" : "upload"
     },
@@ -59,7 +60,7 @@ define(function (require) {
          {link: "/#report/" + reportId, title: "report"}
         ]);
     },
-    document : function(reportId, documentId, type) {
+    document : function(reportId, documentId, type, uuid) {
       var node = document.getElementById("main");
       ReactDOM.unmountComponentAtNode(node);
 
@@ -71,10 +72,13 @@ define(function (require) {
       $.get(marginaliaUrl, function(data) {
         var marginalia = {marginalia: JSON.parse(data)};
         marginaliaModel.reset(marginaliaModel.parse(marginalia));
+        if(uuid) {
+          marginaliaModel.setActiveByUuid(uuid);
+        }
       });
 
       var documentUrl = "/pdf/" + reportId + "/" + documentId;
-      documentModel.loadFromUrl(documentUrl);
+      documentModel.loadFromUrl(documentUrl, uuid);
 
       ReactDOM.render(
         new DocumentView({document: documentModel,

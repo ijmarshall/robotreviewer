@@ -4,6 +4,20 @@
     <title>RobotReviewer report</title>
     <link rel=stylesheet type=text/css href="{{ url_for('static', filename='scripts/spa/css/foundation.css') }}">
     <style>
+     .judgement {
+       margin: 0 0 0 1em;
+     }
+     .judgement li {
+       font-size: x-small;
+       color: #ccc;
+       line-height: 1.125rem;
+     }
+     .judgement li:not(:last-child) {
+       margin-bottom: 0.5rem;
+     }
+     .judgement li a {
+       font-size: 0.875rem;
+     }
      .bias-table {
        width: 400px;
        margin-left:auto;
@@ -88,34 +102,50 @@
 
 
       <h2>Characteristics of studies</h2>
-
       {% for study in articles %}
       <h3>{{ study['short_citation'] }}</h3>
 
       <table>
         {% for domain in study['pico_text'] %}
         <tr>
-          <td>{{ domain['domain'] }}</td><td><a target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=pico_bot" class="annotation-link">{{ domain['text'][0] }}</a></td>
+          <td>{{ domain['domain'] }}</td>
+          <td>
+            <ol class="judgement">
+            {% for ann in domain['annotations'] %}
+              <li><a target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=pico_bot&uuid={{ ann['uuid'] }}" class="annotation-link">{{ ann['content'] }}</a></li>
+            {% endfor %}
+            </ol>
+          </td>
         </tr>
         {% endfor %}
+      </table>
 
-        <table>
-          <tr>
-            <th>Bias</th><th>Judgement</th><th>Support for judgement</th>
-          </tr>
-          {% for domain in study['bias'] %}
-          <tr>
-            <td>{{ domain['domain'] }}</td><td>{{ domain['judgement'] }}</td><td><a target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=bias_bot" class="annotation-link">{{ domain['justification'][0] }}</a></td>
-          </tr>
-          {% endfor %}
-        </table>
+      <table>
+        <tr>
+          <th>Bias</th><th>Judgement</th>
+          <th>Support for judgement</th>
+        </tr>
+        {% for domain in study['bias'] %}
+        <tr>
+          <td>{{ domain['domain'] }}</td>
+          <td>{{ domain['judgement'] }}</td>
+          <td>
+            <ol class="judgement">
+            {% for ann in domain['annotations'] %}
+              <li><a target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=bias_bot&uuid={{ ann['uuid'] }}" class="annotation-link">{{ ann['content'] }}</a></li>
+            {% endfor %}
+            </ol>
+          </td>
+        </tr>
         {% endfor %}
+      </table>
+      {% endfor %}
 
-        <h2>References</h2>
+      <h2>References</h2>
 
-        {% for study in articles %}
-        <p>{{ loop.index }}. {{ study['citation'] }}</p>
-        {% endfor %}
+      {% for study in articles %}
+      <p>{{ loop.index }}. {{ study['citation'] }}</p>
+      {% endfor %}
 
     </div>
   </body>

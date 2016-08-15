@@ -64,7 +64,7 @@ class BiasRobot:
 
         doc_len = len(data['text'])
         doc_text = data['parsed_text']
-        
+
         if not doc_text:
             # we've got to know the text at least..
             return data
@@ -133,20 +133,10 @@ class BiasRobot:
                                        high_prob_prefixes,
                                        high_prob_suffixes)]
 
-            # marginalia.append({
-            #     "type": "Risk of Bias",
-            #     "title": domain,
-            #     "annotations": annotation_metadata,
-            #     "description": "**Overall risk of bias prediction**: " + bias_class
-            #     })
-
             structured_data.append({
                 "domain": domain,
                 "judgement": bias_class,
-                "justification": high_prob_sents,
-                "annotation_metadata": annotation_metadata})
-
-
+                "annotations": annotation_metadata})
         data.ml["bias"] = structured_data
         return data
 
@@ -161,7 +151,7 @@ class BiasRobot:
             marginalia.append({
                         "type": "Risk of Bias",
                         "title": row['domain'],
-                        "annotations": row['annotation_metadata'],
+                        "annotations": row['annotations'],
                         "description": "**Overall risk of bias prediction**: {}".format(row['judgement'])
                         })
         return marginalia

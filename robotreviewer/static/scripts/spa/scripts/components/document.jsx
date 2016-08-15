@@ -12,8 +12,9 @@ define(function (require) {
   var TextUtil = require("../helpers/textUtil");
 
   var Document = React.createClass({
+    hasScrolled: false,
     getInitialState: function() {
-      return { $viewer: null };
+      return { $viewer: null,  };
     },
     toggleHighlights: function(e, uuid) {
       var $annotations = this.state.$viewer.find("[data-uuid*="+uuid+"]");
@@ -28,8 +29,11 @@ define(function (require) {
           var viewerHeight = $viewer.height();
           var center = viewerHeight / 2;
           $viewer.animate({scrollTop: $viewer.scrollTop() + delta - center});
+          return true;
         }
+        return false;
       }
+      return false;
     },
     componentWillUnmount: function() {
       $(window).off("highlight", this.toggleHighlights);
@@ -41,6 +45,15 @@ define(function (require) {
 
       var $viewer = $(this.refs.viewer);
       this.setState({$viewer: $viewer});
+    },
+    componentDidUpdate: function() {
+      var scrollTo = this.props.pdf.get("scrollTo");
+      if(scrollTo && !this.hasScrolled) {
+        var scroll = this.scrollTo(scrollTo);
+        if(scroll) {
+          this.hasScrolled = true;
+        }
+      }
     },
     render: function() {
       var pdf = this.props.pdf;
