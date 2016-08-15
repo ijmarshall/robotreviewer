@@ -3,6 +3,7 @@
   <head>
     <title>RobotReviewer report</title>
     <link rel=stylesheet type=text/css href="{{ url_for('static', filename='scripts/spa/css/foundation.css') }}">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
     <style>
      .judgement {
        margin: 0 0 0 1em;
@@ -11,13 +12,56 @@
        font-size: x-small;
        color: #ccc;
        line-height: 1.125rem;
-     }
+      }
+
      .judgement li:not(:last-child) {
        margin-bottom: 0.5rem;
      }
-     .judgement li a {
+     .judgement li i {
+       vertical-align: middle;
+       font-size: 0.875rem;
+       margin-left: 3px;
+       margin-top: -5px;
+     }
+     .judgement li span {
+       color: #222222;
        font-size: 0.875rem;
      }
+
+     .judgement a[data-tooltip] {
+       display: inline;
+       position: relative;
+     }
+
+     .judgement a[data-tooltip]:hover:after {
+       font-weight: 300;
+       font-size: small;
+       background: #111;
+       background: rgba(0,0,0,.8);
+       border-radius: 2px;
+       bottom: 28px;
+       color: #fff;
+       content: attr(data-tooltip);
+       display: block;
+       left: 0;
+       padding: 5px 15px;
+       position: absolute;
+       white-space: nowrap;
+       z-index: 98;
+     }
+
+     .judgement a[data-tooltip]:hover:before {
+       border: solid;
+       border-color: #111 transparent;
+       border-width: 6px 6px 0 6px;
+       bottom: 24px;
+       content: "";
+       display: block;
+       left: 25%;
+       position: absolute;
+       z-index: 99;
+     }
+
      .bias-table {
        width: 400px;
        margin-left:auto;
@@ -112,7 +156,10 @@
           <td>
             <ol class="judgement">
             {% for ann in domain['annotations'] %}
-              <li><a target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=pico_bot&uuid={{ ann['uuid'] }}" class="annotation-link">{{ ann['content'] }}</a></li>
+              <li>
+                <span>{{ ann['content'] }}</span>
+                <a data-tooltip="jump to annotation" target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=pico_bot&uuid={{ ann['uuid'] }}" class="annotation-link"><i class="fa fa-file-pdf-o" aria-hidden="true"></i></a>
+              </li>
             {% endfor %}
             </ol>
           </td>
@@ -132,7 +179,10 @@
           <td>
             <ol class="judgement">
             {% for ann in domain['annotations'] %}
-              <li><a target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=bias_bot&uuid={{ ann['uuid'] }}" class="annotation-link">{{ ann['content'] }}</a></li>
+              <li>
+                <span>{{ ann['content'] }}</span>
+                <a data-tooltip="jump to annotation" target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=bias_bot&uuid={{ ann['uuid'] }}" class="annotation-link"><i class="fa fa-file-pdf-o" aria-hidden="true"></i></a>
+              </li>
             {% endfor %}
             </ol>
           </td>
