@@ -95,4 +95,5 @@ nbproject
 *.log
 .tern-port
 robotreviewer/data/uploaded_pdfs/*
+deploy.tar.gz
 !.gitkeep
