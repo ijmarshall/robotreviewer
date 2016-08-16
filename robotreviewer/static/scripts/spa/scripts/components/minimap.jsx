@@ -42,7 +42,9 @@ define(function (require) {
       var $minimap = $(node.parentNode);
 
       $viewer.on("scroll", function() {
-        self.setState({offset: $viewer.scrollTop() / self.props.factor});
+        window.requestAnimationFrame(function() {
+          self.setState({offset: $viewer.scrollTop() / self.props.factor});
+        });
       });
 
       $("body").on("mouseup.minimap", function(e) {
