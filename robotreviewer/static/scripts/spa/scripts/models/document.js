@@ -83,7 +83,7 @@ define(function (require) {
       if(!result.matches.length) {
         var target = content
           .replace(/\s+/g, " ")
-          .replace(/\s(\W)\s/, "$1 ")
+          .replace(/\s(\W)\s/g, "$1 ")
           .trim();
         var pattern = _.map(target.split(""), quoteRegex).join("\\W{0,3}");
         result = TextSearcher.searchRegex(text, pattern, false);

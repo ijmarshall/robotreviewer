@@ -1,0 +1,10 @@
+software-properties-common
+aria2
+curl
+openssl
+ca-certificates
+unzip
+openjdk-8-jdk-headless
+maven
+libxml2
+wget
