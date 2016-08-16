@@ -157,7 +157,7 @@ def report_view(report_uuid, format):
 def download_report(report_uuid, format):
     report = produce_report(report_uuid, format, download=True)
     strIO = StringIO()
-    strIO.write(report.encode('latin-1')) # need to send as a bytestring
+    strIO.write(report.encode('utf-8')) # need to send as a bytestring
     strIO.seek(0)
     return send_file(strIO,
                      attachment_filename="robotreviewer_report_%s.%s" % (report_uuid, format),
@@ -175,8 +175,9 @@ def produce_report(report_uuid, format, download=False):
         return render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles, report_uuid=report_uuid, online=(not download), format=format)
     elif format=='json':
         return json.dumps({"document_ids": article_ids,
-                       "report": render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles),
-                        "report_id": uuid.uuid4().hex})
+                           "report": render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles),
+                           "report_id": uuid.uuid4().hex,
+                           })
     else:
         raise Exception('format "{}" was requested but not available')
 
