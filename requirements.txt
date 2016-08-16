@@ -1,0 +1,5 @@
+argparse
+dataset
+unidecode
+fuzzywuzzy
+flask-wtf
