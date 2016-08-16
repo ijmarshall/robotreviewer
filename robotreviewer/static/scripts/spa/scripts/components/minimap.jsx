@@ -27,13 +27,16 @@ define(function (require) {
       $("body").off("mouseup.minimap");
     },
     scrollTo: function(e, $minimap, $viewer) {
+      var self = this;
       var documentOffset = $minimap.offset().top;
       var offset = ((this.props.height / 2) + documentOffset);
       var y = e.pageY;
-      this.setState({offset: y - offset});
-
       var scroll = (y - offset) * this.props.factor;
       $viewer.scrollTop(scroll);
+
+      window.requestAnimationFrame(function() {
+        self.setState({offset: y - offset});
+      });
     },
     componentDidMount: function() {
       var self = this;
