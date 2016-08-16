@@ -66,4 +66,5 @@ ENV HOME /var/lib/deploy
 ENV ROBOTREVIEWER_GROBID_PATH=/var/lib/deploy/grobid
 ENV ROBOTREVIEWER_GROBID_HOST=http://0.0.0.0:8080
 ENV DEV false
+ENV DEBUG false
 ENTRYPOINT ["/var/lib/deploy/src/server"]
