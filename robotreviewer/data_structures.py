@@ -20,7 +20,6 @@ class MultiDict():
             # list of authorities from most to least trusted
             self.authorities = ["gold", "human", "pubmed", "ml", "grobid", "dubious", "_spacy"]
             
-        
         if (default_authority is not None) and (default_authority not in self.authorities):
             raise ValueError('default value is not present in authority list')
 
@@ -95,6 +94,12 @@ class MultiDict():
         doesn't do any checking...
         """
         self.data = json.loads(json_str)
+
+    def visible_data(self):
+        """
+        return the stuff which is supposed to be visible
+        """
+        return {k: v for k, v in self.data.items() if not k.startswith('_')}
 
     
     # doesn't really iterate, but for compatibility

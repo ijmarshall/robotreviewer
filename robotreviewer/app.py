@@ -174,9 +174,9 @@ def produce_report(report_uuid, format, download=False):
     if format=='html' or format=='doc':
         return render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles, report_uuid=report_uuid, online=(not download), format=format)
     elif format=='json':
-        return json.dumps({"document_ids": article_ids,
-                           "report": render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles),
-                           "report_id": uuid.uuid4().hex,
+        return json.dumps({"article_ids": article_ids,
+                           "article_data": [a.visible_data() for a in articles],
+                           "report_id": report_uuid,
                            })
     else:
         raise Exception('format "{}" was requested but not available')
