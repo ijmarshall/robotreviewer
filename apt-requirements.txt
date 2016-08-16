@@ -4,6 +4,7 @@ curl
 openssl
 ca-certificates
 unzip
-maven2
+openjdk-8-jdk-headless
+maven
 libxml2
 wget
