@@ -28,7 +28,8 @@ define(function (require) {
           var delta = annotation.offset().top;
           var viewerHeight = $viewer.height();
           var center = viewerHeight / 2;
-          $viewer.animate({scrollTop: $viewer.scrollTop() + delta - center}, "swing", callback || _.identity);
+          $viewer.scrollTop($viewer.scrollTop() + delta - center);
+          (callback || _.identity)();
           return true;
         }
       }
