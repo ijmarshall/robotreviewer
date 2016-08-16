@@ -32,16 +32,17 @@ RUN ln -s /usr/bin/nodejs /usr/bin/node
 # Get the source
 ADD deploy.tar.gz /var/lib/deploy/src
 
+RUN chown -R deploy.deploy /var/lib/deploy
+
+## From here on we're the deploy user
+USER deploy
+
 # get grobid
 RUN wget https://github.com/kermitt2/grobid/archive/grobid-parent-0.4.0.zip
 RUN unzip grobid-parent-0.4.0.zip && mv grobid-grobid-parent-0.4.0 grobid
 RUN cd grobid && mvn -Dmaven.test.skip=true clean install
 RUN mv grobid /var/lib/deploy/grobid
 
-RUN chown -R deploy.deploy /var/lib/deploy
-
-## From here on we're the deploy user
-USER deploy
 # install Anaconda
 RUN aria2c -s 16 -x 16 -k 30M https://repo.continuum.io/archive/Anaconda2-4.1.1-Linux-x86_64.sh -o /var/lib/deploy/Anaconda.sh
 RUN cd /var/lib/deploy && bash Anaconda.sh -b && rm -rf Anaconda.sh
