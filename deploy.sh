@@ -17,4 +17,4 @@ rm -rf $TMP
 cd $CURR
 
 echo "building image"
-docker build .
+docker build -t robotreviewer .
