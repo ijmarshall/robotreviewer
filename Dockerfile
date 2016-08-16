@@ -38,10 +38,11 @@ RUN chown -R deploy.deploy /var/lib/deploy
 USER deploy
 
 # get grobid
-RUN wget https://github.com/kermitt2/grobid/archive/grobid-parent-0.4.0.zip
-RUN unzip grobid-parent-0.4.0.zip && mv grobid-grobid-parent-0.4.0 grobid
-RUN cd grobid && mvn -Dmaven.test.skip=true clean install
-RUN mv grobid /var/lib/deploy/grobid
+RUN mkdir /var/lib/deploy/tmp
+RUN cd /var/lib/deploy/tmp && wget https://github.com/kermitt2/grobid/archive/grobid-parent-0.4.0.zip
+RUN cd /var/lib/deploy/tmp && unzip grobid-parent-0.4.0.zip && mv grobid-grobid-parent-0.4.0 grobid
+RUN cd /var/lib/deploy/tmp/grobid && mvn -Dmaven.test.skip=true clean install
+RUN cd /var/lib/deploy/tmp/ && mv grobid /var/lib/deploy/grobid && rm -rf /var/lib/deploy/tmp
 
 # install Anaconda
 RUN aria2c -s 16 -x 16 -k 30M https://repo.continuum.io/archive/Anaconda2-4.1.1-Linux-x86_64.sh -o /var/lib/deploy/Anaconda.sh
