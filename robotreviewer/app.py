@@ -163,7 +163,7 @@ def download_report(report_uuid, format):
                      attachment_filename="robotreviewer_report_%s.%s" % (report_uuid, format),
                      as_attachment=True)
 
-def produce_report(report_uuid, format, download=False):
+def produce_report(report_uuid, reportformat, download=False):
     c = rr_sql_conn.cursor()
     articles, article_ids = [], []
     for i, row in enumerate(c.execute("SELECT pdf_uuid, annotations FROM article WHERE report_uuid=?", (report_uuid,))):
@@ -171,15 +171,15 @@ def produce_report(report_uuid, format, download=False):
         data.load_json(row[1])
         articles.append(data)
         article_ids.append(row[0])
-    if format=='html' or format=='doc':
-        return render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles, report_uuid=report_uuid, online=(not download), format=format)
-    elif format=='json':
+    if reportformat=='html' or reportformat=='doc':
+        return render_template('reportview.{}'.format(reportformat), headers=bots['bias_bot'].get_domains(), articles=articles, report_uuid=report_uuid, online=(not download), reportformat=reportformat)
+    elif reportformat=='json':
         return json.dumps({"article_ids": article_ids,
                            "article_data": [a.visible_data() for a in articles],
                            "report_id": report_uuid,
                            })
     else:
-        raise Exception('format "{}" was requested but not available')
+        raise Exception('format "{}" was requested but not available'.format(reportformat))
 
 @app.route('/pdf/<report_uuid>/<pdf_uuid>')
 def get_pdf(report_uuid, pdf_uuid):
