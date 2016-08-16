@@ -150,7 +150,21 @@ def request_entity_too_large(error):
 
 @csrf.exempt # TODO: add csrf back in
 @app.route('/report_view/<report_uuid>/<format>')
-def show_report(report_uuid, format):
+def report_view(report_uuid, format):
+    return produce_report(report_uuid, format, download=False)
+
+@csrf.exempt # TODO: add csrf back in
+@app.route('/download_report/<report_uuid>/<format>')
+def download_report(report_uuid, format):
+    report = produce_report(report_uuid, format, download=True)
+    strIO = StringIO()
+    strIO.write(report.encode('utf-8')) # need to send as a bytestring
+    strIO.seek(0)
+    return send_file(strIO,
+                     attachment_filename="robotreviewer_report_%s.%s" % (report_uuid, format),
+                     as_attachment=True)
+
+def produce_report(report_uuid, format, download=False):
     c = rr_sql_conn.cursor()
     articles, article_ids = [], []
     for i, row in enumerate(c.execute("SELECT pdf_uuid, annotations FROM article WHERE report_uuid=?", (report_uuid,))):
@@ -158,12 +172,13 @@ def show_report(report_uuid, format):
         data.load_json(row[1])
         articles.append(data)
         article_ids.append(row[0])
-    if format=='html':
-        return render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles, report_uuid=report_uuid)
+    if format=='html' or format=='doc':
+        return render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles, report_uuid=report_uuid, online=(not download), format=format)
     elif format=='json':
         return json.dumps({"document_ids": article_ids,
-                       "report": render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles),
-                        "report_id": uuid.uuid4().hex})
+                           "report": render_template('reportview.html', headers=bots['bias_bot'].get_domains(), articles=articles),
+                           "report_id": uuid.uuid4().hex,
+                           })
     else:
         raise Exception('format "{}" was requested but not available')
 
@@ -172,13 +187,13 @@ def get_pdf(report_uuid, pdf_uuid):
     # returns PDF binary from database by pdf_uuid
     # where the report_uuid also matches
     c = rr_sql_conn.cursor()
-    c.execute("SELECT pdf_file FROM article WHERE report_uuid=? AND pdf_uuid=?", (report_uuid, pdf_uuid)) # each row_id should be unique; but to ensure that it is the correct session holder retrieving this data
+    c.execute("SELECT pdf_file FROM article WHERE report_uuid=? AND pdf_uuid=?", (report_uuid, pdf_uuid))
     pdf_file = c.fetchone()
     strIO = StringIO()
     strIO.write(pdf_file[0])
     strIO.seek(0)
     return send_file(strIO,
-                     attachment_filename="filename=%s.pdf" % pdf_uuid,
+                     attachment_filename="%s.pdf" % pdf_uuid,
                      as_attachment=False)
 
 
