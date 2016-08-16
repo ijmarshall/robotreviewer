@@ -25,7 +25,7 @@ def json_config():
 
 def val(v):
     truthy = ("yes", "true", "t", "1")
-    falsey = ("no", "false", "f", "1")
+    falsey = ("no", "false", "f", "0")
     v_lower = v.lower()
     if(v_lower in truthy or v_lower in falsey):
         return v_lower in truthy
