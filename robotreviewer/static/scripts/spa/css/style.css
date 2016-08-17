@@ -28,6 +28,10 @@ body {
   overflow: hidden;
 }
 
+.viewer-container * {
+  scroll-behavior: smooth;
+}
+
 .viewer {
   position: absolute;
   width: calc(70% - 40px);
@@ -37,7 +41,6 @@ body {
   left: 55px;
   padding-right: 40px;
   line-height: 1.2em;
-
 }
 
 /* yeah I know ... */

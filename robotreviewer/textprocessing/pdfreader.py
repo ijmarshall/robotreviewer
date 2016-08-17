@@ -30,7 +30,7 @@ import atexit
 import codecs
 import json
 
-from multiprocessing.dummy import Pool as ThreadPool 
+from multiprocessing.dummy import Pool as ThreadPool
 
 # Author:  Iain Marshall <mail@ijmarshall.com>
 
@@ -53,14 +53,14 @@ class Grobid():
         log.info('Checking if Grobid live...')
         while connected == False:
             try:
-                r = requests.get('http://localhost:8080')
+                r = requests.get(config.GROBID_HOST)
                 r.raise_for_status() # raise error if not HTTP: 200
                 connected = True
             except:
                 time.sleep(check_delay)
 
         log.info('Grobid connection success :)')
-        
+
 
     def cleanup(self):
         self.connection.kill()
@@ -71,7 +71,7 @@ class Grobid():
 class PdfReader():
 
     def __init__(self):
-        self.url = urlparse.urljoin(config.GROBID_HOST, 'processFulltextDocument')        
+        self.url = urlparse.urljoin(config.GROBID_HOST, 'processFulltextDocument')
         log.info('Attempting to start Grobid sever...')
         self.grobid_process = Grobid()
         log.info('Success! :)')
@@ -95,13 +95,13 @@ class PdfReader():
         """
         if num_threads is None:
             num_threads = config.GROBID_THREADS
-        pool = ThreadPool(num_threads) 
+        pool = ThreadPool(num_threads)
         return pool.map(self.convert, pdf_binary_list)
 
     def run_grobid(self, pdf_binary, MAX_TRIES=5):
         files = {'input': pdf_binary}
         r = requests.post(self.url, files=files)
-        
+
         try:
             r.raise_for_status() # raise error if not HTTP: 200
         except Exception:
@@ -113,7 +113,7 @@ class PdfReader():
         # save output for debugging
         # tmp_filename = os.path.join(config.TEMP_PDF, 'tmp.xml')
         # with codecs.open(tmp_filename, 'w', 'utf-8') as f:
-        #     f.write(r.text)        
+        #     f.write(r.text)
         return r.text
 
     def parse_xml(self, xml_string):
@@ -143,7 +143,7 @@ class PdfReader():
         return output
 
     def _extract_text(self, elem):
-        # note the whitespace on the join here. 
+        # note the whitespace on the join here.
         return ' '.join([s.decode("utf-8") for s in ET.tostringlist(
                         elem, method="text", encoding="utf-8") if s is not None]).strip() # don't ask...
 
