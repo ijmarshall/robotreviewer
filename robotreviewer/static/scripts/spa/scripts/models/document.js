@@ -98,8 +98,8 @@ define(function (require) {
           position + content.length,
           false, {
             matchDistance: 500,
-            contextMatchThreshold: 0.55,
-            patternMatchThreshold: 0.55,
+            contextMatchThreshold: 0.75,
+            patternMatchThreshold: 0.75,
             flexContext: true
           });
 
