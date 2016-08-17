@@ -131,7 +131,7 @@ class PdfReader():
                     output.grobid['title'] = self._extract_text(elem)
                 elif elem.tag in ['{http://www.tei-c.org/ns/1.0}head', '{http://www.tei-c.org/ns/1.0}p']:
                     full_text_bits.extend([self._extract_text(elem), '\n'])
-                elif elem.tag=='{http://www.tei-c.org/ns/1.0}author':
+                elif elem.tag=='{http://www.tei-c.org/ns/1.0}author' and '{http://www.tei-c.org/ns/1.0}fileDesc' in path:
                     author_list.append(re.sub('\s+',' ', self._extract_text(elem)))
                     
                 path.pop()
