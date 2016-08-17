@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "removing old deploy tar"
+rm deploy.tar.gz
+
 echo "copying to temporary directory"
 TMP=`mktemp -d`
 cp -a . $TMP
