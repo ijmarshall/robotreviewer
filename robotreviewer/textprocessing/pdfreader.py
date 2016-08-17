@@ -5,6 +5,8 @@ Requires Grobid to be running, by default on localhost:8080
 This can be set in config.py
 """
 
+import re 
+
 from robotreviewer import config
 from robotreviewer.data_structures import MultiDict
 import requests
@@ -118,7 +120,6 @@ class PdfReader():
         output = MultiDict()
         full_text_bits = []
         author_list = []
-        author_bits = []
         path = []
         for event, elem in ET.iterparse(StringIO(xml_string.encode('utf-8')),events=("start", "end")):
             if event == 'start':
@@ -130,16 +131,15 @@ class PdfReader():
                     output.grobid['title'] = self._extract_text(elem)
                 elif elem.tag in ['{http://www.tei-c.org/ns/1.0}head', '{http://www.tei-c.org/ns/1.0}p']:
                     full_text_bits.extend([self._extract_text(elem), '\n'])
-                elif elem.tag=='{http://www.tei-c.org/ns/1.0}forename':
-                    author_bits.append(self._extract_text(elem))
-                elif elem.tag=='{http://www.tei-c.org/ns/1.0}surname':
-                    author_bits.append(self._extract_text(elem))
-                    author_list.append(author_bits)
-                    author_bits = []
-
+                elif elem.tag=='{http://www.tei-c.org/ns/1.0}author':
+                    author_list.append(re.sub('\s+',' ', self._extract_text(elem)))
+                    
                 path.pop()
+
         output.grobid['text'] = '\n'.join(full_text_bits)
-        output.grobid['authors'] = author_bits
+        output.grobid['authors'] = author_list
+        log.info('author list: %s' % author_list)
+        
         return output
 
     def _extract_text(self, elem):
