@@ -28,7 +28,13 @@ define(function (require) {
           var delta = annotation.offset().top;
           var viewerHeight = $viewer.height();
           var center = viewerHeight / 2;
-          $viewer.animate({scrollTop: $viewer.scrollTop() + delta - center}, "swing", callback || _.identity);
+          var isSmoothScrollSupported = 'scrollBehavior' in document.documentElement.style;
+          if(!isSmoothScrollSupported) {
+            $viewer.animate({scrollTop: $viewer.scrollTop() + delta - center}, "swing", callback || _.identity);
+          } else {
+            $viewer.scrollTop($viewer.scrollTop() + delta - center);
+            (callback || _.identity)();
+          }
           return true;
         }
       }
