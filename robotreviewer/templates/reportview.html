@@ -97,7 +97,7 @@
      }
 
 
-  
+
      th.rotate {
        height: 300px;
        white-space: nowrap;
@@ -113,17 +113,23 @@
        border-bottom: 1px solid #ccc;
        padding: 5px 10px;
      }
-     
-
-    
 
      .reportcontainer {
        width: 800px;
+       position: relative;
        margin-left:auto;
        margin-right:auto;
      }
 
-    
+     .download {
+       position: absolute;
+       top: 0.95rem;
+       right: 0;
+     }
+     .download a i {
+       margin-right: 5px;
+       vertical-align: middle;
+     }
     </style>
   </head>
 
@@ -132,13 +138,23 @@
       <h1>RobotReviewer report</h1>
 
       {% if online %}
-
-      <div class="download-dropdown">
-        <ul class="inline-list">
-        <li>download as:</li>
-        <li><a href="download_report/{{ report_uuid }}/html">html</a></li>
-        <li><a href="download_report/{{ report_uuid }}/json">json</a></li>
-        <li><a href="download_report/{{ report_uuid }}/doc">word</a></li>
+      <div class="download">
+        <ul class="button-group">
+          <li>
+            <a class="button tiny secondary" href="download_report/{{ report_uuid }}/html">
+              <i class="fa fa-file-text-o" aria-hidden="true"></i> html
+            </a>
+          </li>
+          <li>
+            <a class="button tiny secondary" href="download_report/{{ report_uuid }}/json">
+              <i class="fa fa-file-code-o" aria-hidden="true"></i> json
+            </a>
+          </li>
+          <li>
+            <a class="button tiny secondary" href="download_report/{{ report_uuid }}/doc">
+              <i class="fa fa-file-word-o" aria-hidden="true"></i> word
+            </a>
+          </li>
         </ul>
       </div>
       {% endif %}
