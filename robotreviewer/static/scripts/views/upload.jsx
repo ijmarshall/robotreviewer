@@ -32,7 +32,7 @@ define(function (require) {
               if(percentComplete < 100) {
                 self.setState({progress: percentComplete + "%"});
               } else {
-                self.setState({message: "Synthesizing predictions...", progress: ""});
+                self.setState({message: "Thinking…", progress: ""});
               }
             }
           }, false);
@@ -77,9 +77,9 @@ define(function (require) {
                       className="dropzone">
 
                 <div>
-                RobotReviewer helps to automate systematic reviews in Evidence Based Medicine.
+                RobotReviewer automatically summarises and synthesises data from Randomized Controlled Trials.
                 <br />
-                Try dropping Randomized Controlled Trial PDFs here, or click to select files to upload!
+                Drag and drop PDFs here, or click to select files to upload!
                 </div>
               </Dropzone>
             </div>
