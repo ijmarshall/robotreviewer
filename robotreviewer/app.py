@@ -7,7 +7,7 @@ RobotReviewer server
 #           Byron Wallce <byron.wallace@utexas.edu>
 
 import logging, os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def str2bool(v):
   return v.lower() in ("yes", "true", "t", "1")
@@ -81,13 +81,12 @@ log.info("Robots loaded successfully! Ready...")
 #####
 ## connect to and set up database
 #####
-
-# TODO: need to make sure directory is there on new install
 rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES)
 c = rr_sql_conn.cursor()
 c.execute('CREATE TABLE IF NOT EXISTS article(id INTEGER PRIMARY KEY, report_uuid TEXT, pdf_uuid TEXT, pdf_hash TEXT, pdf_file BLOB, annotations TEXT, timestamp TIMESTAMP)')
 c.close()
 rr_sql_conn.commit()
+
 
 
 # lastly wait until Grobid is connected
@@ -104,6 +103,9 @@ def upload_and_annotate():
     # uploads a bunch of PDFs, do the RobotReviewer annotation
     # save PDFs + annotations to database
     # returns the report run uuid + list of article uuids
+
+    cleanup_database()
+
     report_uuid = rand_id()
     pdf_uuids = []
 
@@ -246,6 +248,7 @@ def cleanup_database(days=1):
     remove any PDFs which have been here for more than
     1 day, then compact the database
     """
+    log.info('Cleaning up database')
     d = datetime.now() + timedelta(days=days)
     c = rr_sql_conn.cursor()
     c.execute("DELETE FROM article WHERE timestamp < datetime(?)", [d])
