@@ -249,7 +249,7 @@ def cleanup_database(days=1):
     1 day, then compact the database
     """
     log.info('Cleaning up database')
-    d = datetime.now() + timedelta(days=days)
+    d = datetime.now() - timedelta(days=days)
     c = rr_sql_conn.cursor()
     c.execute("DELETE FROM article WHERE timestamp < datetime(?)", [d])
     rr_sql_conn.commit()
