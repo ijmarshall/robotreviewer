@@ -36,9 +36,20 @@ class MultiDict():
             if rslt:
                 return rslt
         else:
-            return None
+            raise KeyError(u'Key "{}" not present in any of the authorities of this MultiDict'.format(key))
         
-    def get(self, key):
+    def get(self, key, default=None):
+        """
+        return value from best authority which exists
+        """
+        for authority in self.authorities:
+            rslt = self.data[authority].get(key)
+            if rslt:
+                return rslt
+        else:
+            return default
+
+    def get_authority(self, key):
         """
         return value from best authority which exists
         in tuple alongside authority name

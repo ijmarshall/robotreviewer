@@ -107,13 +107,7 @@ class PdfReader():
         except Exception:
             log.info("oh dear... post request to grobid failed. exception below.")
             log.error(r.text)
-            raise
-
-        # TEMPOARY (MAYBE) TODO - remove
-        # save output for debugging
-        # tmp_filename = os.path.join(config.TEMP_PDF, 'tmp.xml')
-        # with codecs.open(tmp_filename, 'w', 'utf-8') as f:
-        #     f.write(r.text)
+            raise            
         return r.text
 
     def parse_xml(self, xml_string):
@@ -131,14 +125,20 @@ class PdfReader():
                     output.grobid['title'] = self._extract_text(elem)
                 elif elem.tag in ['{http://www.tei-c.org/ns/1.0}head', '{http://www.tei-c.org/ns/1.0}p']:
                     full_text_bits.extend([self._extract_text(elem), '\n'])
-                elif elem.tag=='{http://www.tei-c.org/ns/1.0}author' and '{http://www.tei-c.org/ns/1.0}fileDesc' in path:
-                    author_list.append(re.sub('\s+',' ', self._extract_text(elem)))
+                elif elem.tag=='{http://www.tei-c.org/ns/1.0}persName' and '{http://www.tei-c.org/ns/1.0}fileDesc' in path:
+                    forenames = [e.text for e in elem.findall('{http://www.tei-c.org/ns/1.0}forename')]
+                    lastnames = [e.text for e in elem.findall('{http://www.tei-c.org/ns/1.0}surname')]
+                    initials = [f[0] for f in forenames]
+                    # NB the format below is identical to that used in pubmed_robot.py
+                    author_list.append({"initials": u''.join(initials),
+                                        "forename": u' '.join(forenames),
+                                        "lastname": u' '.join(lastnames)})
                     
                 path.pop()
 
         output.grobid['text'] = '\n'.join(full_text_bits)
         output.grobid['authors'] = author_list
-        log.info('author list: %s' % author_list)
+        # log.info('author list: %s' % author_list)
         
         return output
 

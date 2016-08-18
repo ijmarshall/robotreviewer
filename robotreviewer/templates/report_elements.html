@@ -17,7 +17,7 @@
           {% if online %}
           <a target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=bias_bot" class="annotation-link">
           {% endif %}
-          {{ study['short_citation'] }}
+          {{ short_citation(study) }}
           {% if online %}
           </a>
           {% endif %}
@@ -32,7 +32,7 @@
 
       <h2>Characteristics of studies</h2>
       {% for study in articles %}
-      <h3>{{ study['short_citation'] }}</h3>
+      <h3>{{ short_citation(study) }}</h3>
 
       <table class="char-pico-table">
         {% for domain in study['pico_text'] %}
@@ -83,5 +83,5 @@
       <h2>References</h2>
 
       {% for study in articles %}
-      <p>{{ loop.index }}. {{ study['citation'] }}</p>
+      <p>{{ loop.index }}. {{ long_citation(study) }}</p>
       {% endfor %}
