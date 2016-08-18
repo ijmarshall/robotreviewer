@@ -12,7 +12,6 @@ from datetime import datetime, timedelta
 def str2bool(v):
   return v.lower() in ("yes", "true", "t", "1")
 
-
 DEBUG_MODE = str2bool(os.environ.get("DEBUG", "true"))
 LOCAL_PATH = "robotreviewer/uploads"
 LOG_LEVEL = (logging.DEBUG if DEBUG_MODE else logging.INFO)
@@ -83,6 +82,7 @@ log.info("Robots loaded successfully! Ready...")
 #####
 rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES)
 c = rr_sql_conn.cursor()
+
 c.execute('CREATE TABLE IF NOT EXISTS article(id INTEGER PRIMARY KEY, report_uuid TEXT, pdf_uuid TEXT, pdf_hash TEXT, pdf_file BLOB, annotations TEXT, timestamp TIMESTAMP)')
 c.close()
 rr_sql_conn.commit()
@@ -104,23 +104,21 @@ def upload_and_annotate():
     # save PDFs + annotations to database
     # returns the report run uuid + list of article uuids
 
-    cleanup_database()
-
     report_uuid = rand_id()
     pdf_uuids = []
 
     uploaded_files = request.files.getlist("file")
     c = rr_sql_conn.cursor()
- 
+
     '''
     blobs = []
-    for f in uploaded_files: 
+    for f in uploaded_files:
         filename = secure_filename(f.filename)
-    ''' 
+    '''
 
     blobs = [f.read() for f in uploaded_files]
     filenames = [f.filename for f in uploaded_files]
-    
+
     articles = pdf_reader.convert_batch(blobs)
     parsed_articles = []
     # tokenize full texts here
@@ -150,7 +148,7 @@ def upload_and_annotate():
 @app.errorhandler(413)
 def request_entity_too_large(error):
     ''' @TODO not sure if we want to return something else here? '''
-    return json.dumps({'success':False, 'error':True}), 413, {'ContentType':'application/json'} 
+    return json.dumps({'success':False, 'error':True}), 413, {'ContentType':'application/json'}
 
 
 @csrf.exempt # TODO: add csrf back in
@@ -249,8 +247,25 @@ def cleanup_database(days=1):
     1 day, then compact the database
     """
     log.info('Cleaning up database')
+    conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'),
+                           detect_types=sqlite3.PARSE_DECLTYPES)
+
     d = datetime.now() - timedelta(days=days)
-    c = rr_sql_conn.cursor()
+    c = conn.cursor()
     c.execute("DELETE FROM article WHERE timestamp < datetime(?)", [d])
-    rr_sql_conn.commit()
-    rr_sql_conn.execute("VACUUM") # make the database smaller again
+    conn.commit()
+    conn.execute("VACUUM") # make the database smaller again
+    conn.commit()
+    conn.close()
+
+
+try:
+  from apscheduler.schedulers.background import BackgroundScheduler
+  @app.before_first_request
+  def initialize():
+    log.info("initializing clean-up task")
+    scheduler = BackgroundScheduler()
+    scheduler.start()
+    scheduler.add_job(cleanup_database, 'interval', hours=12)
+except Exception:
+  log.warn("could not start scheduled clean-up task")
