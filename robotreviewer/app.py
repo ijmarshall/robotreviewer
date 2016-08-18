@@ -59,6 +59,7 @@ import hashlib
 
 
 app = Flask(__name__,  static_url_path='')
+from robotreviewer import formatting
 app.secret_key = os.environ.get("SECRET", "super secret key")
 # setting max file upload size 100 mbs
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
@@ -110,13 +111,14 @@ def upload_and_annotate():
     c = rr_sql_conn.cursor()
  
     '''
-    
     blobs = []
     for f in uploaded_files: 
         filename = secure_filename(f.filename)
     ''' 
 
     blobs = [f.read() for f in uploaded_files]
+    filenames = [f.filename for f in uploaded_files]
+    
     articles = pdf_reader.convert_batch(blobs)
     parsed_articles = []
     # tokenize full texts here
@@ -128,12 +130,13 @@ def upload_and_annotate():
     for article, parsed_text in zip(articles, parsed_articles):
         article._spacy['parsed_text'] = parsed_text
 
-    for blob, data in zip(blobs, articles):
+    for filename, blob, data in zip(filenames, blobs, articles):
         pdf_hash = hashlib.md5(blob).hexdigest()
         pdf_uuid = rand_id()
         pdf_uuids.append(pdf_uuid)
         data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
         data.gold['pdf_uuid'] = pdf_uuid
+        data.gold['filename'] = filename
 
         c.execute("INSERT INTO article (report_uuid, pdf_uuid, pdf_hash, pdf_file, annotations, timestamp) VALUES(?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), data.to_json(), datetime.now()))
         rr_sql_conn.commit()

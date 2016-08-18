@@ -23,7 +23,7 @@ class PubmedRobot:
 
     def annotate(self, data):
 
-        title_text = data['title']
+        title_text = data.get('title')
         if not title_text:
             # unable to do pubmed unless we have a title, so just return the original data
             return data

@@ -39,8 +39,8 @@ class RCTRobot:
 
     def annotate(self, data):
 
-        title_text = data['title']
-        abstract_text = data['abstract']
+        title_text = data.get('title')
+        abstract_text = data.get('abstract')
 
         if title_text is None or abstract_text is None:
             # not much point in continuing unless we have a title and abstract

@@ -113,12 +113,13 @@ class PICORobot:
         """
 
 
-        doc_text = data["parsed_text"]
-        doc_len = len(data['text'])
-
+        doc_text = data.get("parsed_text")
+        
         if not doc_text:
             # we've got to know the text at least..
             return data
+
+        doc_len = len(data['text'])
 
 
         if top_k is None:
