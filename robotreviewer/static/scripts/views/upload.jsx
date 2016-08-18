@@ -77,7 +77,7 @@ define(function (require) {
                       className="dropzone">
 
                 <div>
-                RobotReviewer automatically summarises and synthesises data from Randomized Controlled Trials.
+                RobotReviewer automatically extracts and synthesises data from Randomized Controlled Trials.
                 <br />
                 Drag and drop PDFs here, or click to select files to upload!
                 </div>
