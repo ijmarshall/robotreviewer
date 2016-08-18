@@ -32,7 +32,11 @@ define(function (require) {
               if(percentComplete < 100) {
                 self.setState({progress: percentComplete + "%"});
               } else {
+<<<<<<< HEAD
                 self.setState({message: "Thinking...", progress: ""});
+=======
+                self.setState({message: "Thinking…", progress: ""});
+>>>>>>> e2b33852d94ec35d8f82cfe075d67a579dc5bdf8
               }
             }
           }, false);
