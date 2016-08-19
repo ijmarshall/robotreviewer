@@ -44,7 +44,7 @@ class PubmedRobot:
         # seems like a reasonable heuristic but not checked
         # (given that sometimes our query is a partial title
         # retrieved by Grobid)
-        pubmed_data['pubmed_match_quality'] = sum([match_pc, match_pc_overlap]) 
+        pubmed_data['pubmed_match_quality'] = match_pc
 
         var_map = [('abstract', pubmed_data['abstract']),
                    ('pmid', pubmed_data['pmid']),
@@ -53,7 +53,7 @@ class PubmedRobot:
         pubmed_data['citation'] = self.format_citation(pubmed_data)
         pubmed_data['short_citation'] = self.short_citation(pubmed_data)
         
-        if pubmed_data['pubmed_match_quality'] > 1.8:
+        if pubmed_data['pubmed_match_quality'] > 95:
             data.data['pubmed'] = pubmed_data # until setattr is worked out 
         else:
             # keep it just in case, but don't replace better quality match

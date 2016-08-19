@@ -46,7 +46,6 @@ from robotreviewer.lexicons.drugbank import Drugbank
 # from robotreviewer.textprocessing.abbreviations import Abbreviations
 from robotreviewer.textprocessing import tokenizer
 
-from unidecode import unidecode
 
 log = logging.getLogger(__name__)
 

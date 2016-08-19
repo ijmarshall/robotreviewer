@@ -15,7 +15,7 @@ import xml.etree.cElementTree as ET
 try:
     from cStringIO import StringIO # py2
 except ImportError:
-    from io import StringIO # py3
+    from io import BytesIO as StringIO # py3
 
 try:
     import urlparse
@@ -29,6 +29,8 @@ import time
 import atexit
 import codecs
 import json
+from datetime import datetime
+import dateutil
 
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -75,6 +77,7 @@ class PdfReader():
         log.info('Attempting to start Grobid sever...')
         self.grobid_process = Grobid()
         log.info('Success! :)')
+        self.reg_ids_regex = re.compile(r"((?:ACTRN|CTRI\/|ChiCTR\-|DRKS|EUCTR|IRCT|ISRCTN|JPRN\-|KCT|NCT|RBR\-|RPCEC|TCTR)[0-9a-zA-z\-\/]+)")
 
     def connect(self):
         self.grobid_process.connect()
@@ -86,7 +89,11 @@ class PdfReader():
         """
         returns MultiDict containing document information
         """
-        out = self.parse_xml(self.run_grobid(pdf_binary))
+        try:
+            out = self.parse_xml(self.run_grobid(pdf_binary))
+        except Exception as e:
+            out = MultiDict() # return empty data if not possible to parse
+            log.error(u"Grobid hasn't worked! :(\n exception raised: {}".format(e))
         return out
 
     def convert_batch(self, pdf_binary_list, num_threads=None):
@@ -132,19 +139,44 @@ class PdfReader():
                     # NB the format below is identical to that used in pubmed_robot.py
                     author_list.append({"initials": u''.join(initials),
                                         "forename": u' '.join(forenames),
-                                        "lastname": u' '.join(lastnames)})
-                    
+                                        "lastname": u' '.join(lastnames)})    
+                elif elem.tag=='{http://www.tei-c.org/ns/1.0}date' and elem.attrib.get('type')=='published' and '{http://www.tei-c.org/ns/1.0}fileDesc' in path:
+                    DEFAULT = datetime(1800, 1, 1)
+                    parsed_date = dateutil.parser.parse(elem.attrib['when'])
+                    output.grobid["year"] = parsed_date.year
+                    output.grobid["month"] = parsed_date.month
+                elif elem.tag=='{http://www.tei-c.org/ns/1.0}biblScope' and '{http://www.tei-c.org/ns/1.0}fileDesc' in path:
+
+                    unit = elem.attrib.get('unit')
+                    if unit == 'volume':
+                        output.grobid["volume"] = elem.text
+                    elif unit == 'issue':
+                        output.grobid["volume"] = elem.text
+                    elif unit == 'page':
+                        page_from = elem.attrib.get('from')
+                        page_to = elem.attrib.get('to')
+                        if page_from:
+                            output.grobid["page_from"] = page_from
+                        if page_to:
+                            output.grobid["page_to"] = page_to
+                        if page_from and page_to:
+                            output.grobid["pages"] = "{}-{}".format(page_from, page_to)
+                elif elem.tag=='{http://www.tei-c.org/ns/1.0}title' and '{http://www.tei-c.org/ns/1.0}fileDesc' in path:
+
+                    output.grobid['journal'] = elem.text
                 path.pop()
 
-        output.grobid['text'] = '\n'.join(full_text_bits)
+        
+        output.grobid['text'] = u'\n'.join(full_text_bits)
         output.grobid['authors'] = author_list
+
         # log.info('author list: %s' % author_list)
         
         return output
 
     def _extract_text(self, elem):
         # note the whitespace on the join here.
-        return ' '.join([s.decode("utf-8") for s in ET.tostringlist(
+        return u' '.join([s.decode("utf-8") for s in ET.tostringlist(
                         elem, method="text", encoding="utf-8") if s is not None]).strip() # don't ask...
 
 def main():
