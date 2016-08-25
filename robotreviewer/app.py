@@ -99,7 +99,7 @@ def main():
     resp = make_response(render_template('index.html'))
     return resp
 
-@csrf.exempt
+@csrf.exempt # TODO: add csrf back in
 @app.route('/upload_and_annotate', methods=['POST'])
 def upload_and_annotate():
     # uploads a bunch of PDFs, do the RobotReviewer annotation
