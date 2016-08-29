@@ -95,7 +95,7 @@ class BiasRobot:
             X = np.zeros([1, self.max_sentlen*self.max_doclen], dtype=np.int)
             X[0] = X_doc.reshape([self.max_sentlen*self.max_doclen])
 
-            result = self.eval_doc([X, 1])
+            result = self.eval_doc([X, 1]) # learning_phase=1 for test-mode (no dropout!)
             doc_sents_preds, bias_probs = [output[0] for output in result]
             bias_pred = np.argmax(bias_probs)
 
