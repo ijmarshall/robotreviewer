@@ -39,7 +39,8 @@ except ImportError:
     from io import BytesIO as StringIO # py3
 
 from robotreviewer.textprocessing.tokenizer import nlp
-from robotreviewer.robots.bias_robot import BiasRobot
+# from robotreviewer.robots.bias_robot import BiasRobot
+from robotreviewer.robots.rationale_robot import BiasRobot
 from robotreviewer.robots.pico_robot import PICORobot
 from robotreviewer.robots.rct_robot import RCTRobot
 from robotreviewer.robots.pubmed_robot import PubmedRobot
@@ -136,7 +137,7 @@ def upload_and_annotate():
         pdf_hash = hashlib.md5(blob).hexdigest()
         pdf_uuid = rand_id()
         pdf_uuids.append(pdf_uuid)
-        data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
+        data = annotate(data, bot_names=["bias_bot", "pico_bot", "rct_bot"])
         data.gold['pdf_uuid'] = pdf_uuid
         data.gold['filename'] = filename
 
