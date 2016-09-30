@@ -28,13 +28,15 @@ from robotreviewer.ml.classifier import MiniClassifier
 from robotreviewer.ml.vectorizer import ModularVectorizer
 
 import sys
-sys.path.append('robotreviewer/ml') # need this for loading the pickled SequenceVectorizer
+sys.path.append('robotreviewer/ml') # need this for loading the rationale_CNN module
+from rationale_CNN import RationaleCNN, Document
 
 import numpy as np
 import re
 
 import keras
 import keras.backend as K
+from keras.models import load_model
 
 
 class BiasRobot:
@@ -53,18 +55,16 @@ class BiasRobot:
         self.bias_domains = ['Random sequence generation']
         self.top_k = top_k
 
-        # model
-        self.model = keras.models.load_model('robotreviewer/data/keras/models/rationale.h5')
+        # load in preprocessor
+        preprocesser = pickle.load(open("robotreviewer/data/keras/vectorizers/preprocessor.pickle", 'rb'))
 
-        # vectorizer
-        self.vectorizer = pickle.load(open('robotreviewer/data/keras/vectorizers/rationale.p'))
-        self.max_sentlen = self.vectorizer.maxlen
-        self.max_doclen = self.model.layers[1].input_length / self.max_sentlen # hacky way to get out `max_doclen`
-
-        # keras function for computing sentence weights and document probs
-        inputs = self.model.inputs + [K.learning_phase()]
-        outputs = [self.model.get_layer('sent_weights').output, self.model.get_layer('doc_probs').output]
-        self.eval_doc = K.function(inputs, outputs)
+        # and now load in the model; assumes h5 file bundling
+        # architecture and params naturally
+        model_arch_file    = "robotreviewer/data/keras/models/rationale-CNN_model.json"
+        model_weights_file = "robotreviewer/data/keras/models/rationale-CNN_RSG.hdf5"
+        self.model = RationaleCNN(preprocesser,
+                                  document_model_architecture_path=model_arch_file,
+                                  document_model_weights_path=model_weights_file)   
 
     def annotate(self, data, top_k=None):
         """
@@ -80,26 +80,18 @@ class BiasRobot:
             return data # we've got to know the text at least..
 
         doc_len = len(data['text'])
-        doc_sents = [sent.string for sent in doc_text.sents][:self.max_doclen] # cap maximum number of sentences
-        doc_sents = [str(''.join(c for c in sent if ord(c) < 128)) for sent in doc_sents] # delete non-ascii characters
+        doc_sents = [sent.string for sent in doc_text.sents]#[:self.max_doclen] # cap maximum number of sentences
+        # doc_sents = [str(''.join(c for c in sent if ord(c) < 128)) for sent in doc_sents] # delete non-ascii characters
         doc_sent_start_i = [sent.start_char for sent in doc_text.sents]
         doc_sent_end_i = [sent.end_char for sent in doc_text.sents]
 
         structured_data = []
         for domain in self.bias_domains:
             # vectorize document
-            X_seq = self.vectorizer.texts_to_sequences(doc_sents)
-            nb_sentence, _ = X_seq.shape
-            X_doc = np.zeros([self.max_doclen, self.max_sentlen])
-            X_doc[self.max_doclen-min(self.max_doclen, nb_sentence):] = X_seq[:self.max_doclen]
-            X = np.zeros([1, self.max_sentlen*self.max_doclen], dtype=np.int)
-            X[0] = X_doc.reshape([self.max_sentlen*self.max_doclen])
+            doc = Document(None, doc_sents)
+            bias_prob, high_prob_sent_indices = self.model.predict_and_rank_sentences_for_doc(doc, num_rationales=top_k)
+            bias_pred = int(bias_prob > .5)
 
-            result = self.eval_doc([X, 1]) # learning_phase=1 for test-mode (no dropout!)
-            doc_sents_preds, bias_probs = [output[0] for output in result]
-            bias_pred = np.argmax(bias_probs)
-
-            high_prob_sent_indices = np.argsort(doc_sents_preds)[:-top_k-1:-1] # top k, with no 1 first
             high_prob_sents = [doc_sents[i] for i in high_prob_sent_indices]
             high_prob_start_i = [doc_sent_start_i[i] for i in high_prob_sent_indices]
             high_prob_end_i = [doc_sent_end_i[i] for i in high_prob_sent_indices]
