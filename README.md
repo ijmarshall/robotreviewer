@@ -121,3 +121,6 @@ Feel free to contact us on [mail@ijmarshall.com](mailto:mail@ijmarshall) with an
 
 Copyright (c) 2016 Iain Marshall, Joël Kuiper, and Byron Wallace
 
+## Support
+
+This work is supported by: National Institutes of Health (NIH) under the National Library of Medicine, grant R01-LM012086-01A1, "Semi-Automating Data Extraction for Systematic Reviews", and by NIH grant 5UH2CA203711-02, "Crowdsourcing Mark-up of the Medical Literature to Support Evidence-Based Medicine and Develop Automated Annotation Capabilities", and the UK Medical Research Council (MRC), through its Skills Development Fellowship program, grant MR/N015185/1
