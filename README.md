@@ -1,7 +1,7 @@
 # RobotReviewer
 Automatic extraction of data from clinical trial reports
 
-A simple webserver written in Python which accepts a clinical trial (as a PDF), and returns risk of bias judgements.
+RobotReviewer is a system for providing automatic annotations from clinical trials (in PDF format). Currently, RobotReviewer provides data on the trial *PICO* characteristics (Population, Interventions/Comparators, and Outcomes), and also automatically assesses trials for likely biases using the Cochrane Risk of Bias tool.
 
 ## Systematic review author?
 
@@ -58,13 +58,10 @@ A BibTeX entry for LaTeX users is
     git lfs install
     git lfs pull
     ```
-<!-- 3. ignore point 3 for now...  -->
-<!-- 3. Install the PDF web viewer (optional --- this is not needed if you want to just use the REST API)
-    ```bash
-    git submodule update --init --recursive
-    ```
- -->
-4. Install the Python libraries that RobotReviewer needs - do one of the following.
+
+**NB** Step 3 seems to be a bit unreliable... If following those steps does not result in some large files being downloaded, please try updating your version of `git`, and `git lfs` which seems to solve the problem in most cases. If it doesn't please [contact us](mailto:mail@ijmarshall) and we'll try our best to help.
+
+3. Install the Python libraries that RobotReviewer needs - do one of the following.
 
     a. If you are using Anaconda:
 
@@ -80,14 +77,14 @@ pip install fuzzywuzzy # (this is not yet in the anaconda repo)
 pip install flask numpy scipy scikit-learn spacy fuzzywuzzy
 ```
 
-5. Install the sentence processing data:
-    ```bash
-    python -m spacy.en.download
-    ```
+4. Install the sentence processing data:
+```bash
+python -m spacy.en.download
+```
       
-6. This version of RobotReviewer requires Grobid, which runs on Java. Follow the instructions [here](https://grobid.readthedocs.io/en/latest/Install-Grobid/) to download and build it.
+5. This version of RobotReviewer requires Grobid, which in turn uses Java. Follow the instructions [here](https://grobid.readthedocs.io/en/latest/Install-Grobid/) to download and build it.
 
-7. Edit the `robotreviewer/config.py` file to contain the path to the directory where you have installed Grobid. (RobotReviewer will start it automatically in a subprocess). Note that this should be the path to the entire (parent) Grobid directory, not the bin subfolder. 
+6. Edit the `robotreviewer/config.py` file to contain the path to the directory where you have installed Grobid. (RobotReviewer will start it automatically in a subprocess). Note that this should be the path to the entire (parent) Grobid directory, not the bin subfolder. 
 
 ## Running
 
@@ -97,37 +94,17 @@ The following
 python -m robotreviewer
 ```
 
-will start a flask server running on `http://localhost:5000`. You can run the server in development mode by passing `DEBUG=true python -m robotreviewer`.
+will start a flask server running on `http://localhost:5000`. You can run the server in development mode by passing `DEBUG=true python -m robotreviewer`. Visiting this address from a browser will show the new multiple PDF synthesis demonstration.
 
-## REST API
+## Rest API
 
-1. To annotate plain text:
-    Send some JSON by POST to `/annotate` such as:
-    ```json
-    {"text": "Put the full text of a clinical trial extracted from the PDF in here"}
-    ```
+The big change in this version of RobotReviewer is that we now deal with *groups* of clinical trial reports, rather than one at a time. This is to allow RobotReviewer to synthesise the results of multiple trials.
 
-    and it will return something like:
+As a consequence API has become more sophisticated than previously, and we will add further documentation about it here.
 
-    ```json
-    {"marginalia": [
-       {"title":"Random sequence generation",
-        "type":"Risk of Bias",
-        "description":"**Overall risk of bias prediction**: low",
-        "annotations":[
-           {"content":"A central pharmacy randomly assigned study medication in a 1:1 ratio using a computer-generated randomization sequence with variable-sized blocks ranging from 2 to 8 stratified by study site.",
-            "uuid":"6e97f8d0-2970-11e5-b5fe-0242ac110006"
-           }, ...
-    ```
+In the meantime, the code for the API endpoints can be found in `/robotreviewer/app.py`. 
 
-2. To annotate a PDF:
-    Send a PDF by to: `/annotate_pdf`
-    (Notes for Joël: 1. this works with my slightly edited version of Spa... I've pushed it not as a submodule for the moment since I don't want to mess with the proper Spa. 2. I had some trouble getting the file data from Spa using the conventional Flask method. I *believe* it's since Spa uploads the PDF as data, and not as a multi-part encoded file. It works now, but just so you know it's a bit different from the report view thing below.)
-
-3. Report view!:
-    Send a zip file containing RCT PDFs to: `/generate_report`
-
-    **N.B. [here](https://gist.github.com/ijmarshall/2298e68f780e7287a14fb97f97f62085#file-report_view_demo-ipynb) is a working notebook which demonstrates this function**
+If you are interested in incorporating RobotReviewer into your own software, please [contact us](mailto:mail@ijmarshall) and we'd be pleased to assist.
 
 
 ## Help
@@ -137,8 +114,10 @@ Feel free to contact us on [mail@ijmarshall.com](mailto:mail@ijmarshall) with an
 ## References
 
 1. Marshall, I. J., Kuiper, J., & Wallace, B. C. (2015). RobotReviewer: evaluation of a system for automatically assessing bias in clinical trials. Journal of the American Medical Informatics Association. [[doi]](http://dx.doi.org/10.1093/jamia/ocv044)
+2. Zhang Y, Marshall I. J., & Wallace, B. C. (2016) Rationale-Augmented Convolutional Neural Networks for Text Classification. Conference on Empirical Methods on Natural Language Processing. [[preprint]](https://arxiv.org/pdf/1605.04469v2.pdf)
 2. Marshall, I., Kuiper, J., & Wallace, B. (2015). Automating Risk of Bias Assessment for Clinical Trials. IEEE Journal of Biomedical and Health Informatics. [[doi]](http://dx.doi.org/10.1109/JBHI.2015.2431314)
 3. Kuiper, J., Marshall, I. J., Wallace, B. C., & Swertz, M. A. (2014). Spá: A Web-Based Viewer for Text Mining in Evidence Based Medicine. In Proceedings of the European Conference on Machine Learning and Principles and Practice of Knowledge Discovery in Databases (ECML-PKDD 2014) (Vol. 8726, pp. 452–455). Springer Berlin Heidelberg. [[doi]](http://dx.doi.org/10.1007/978-3-662-44845-8_33)
 4. Marshall, I. J., Kuiper, J., & Wallace, B. C. (2014). Automating Risk of Bias Assessment for Clinical Trials. In Proceedings of the ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (ACM-BCB) (pp. 88–95). ACM. [[doi]](http://dx.doi.org/10.1145/2649387.2649406)
 
-Copyright (c) 2015 Iain Marshall, Joël Kuiper, and Byron Wallace
+Copyright (c) 2016 Iain Marshall, Joël Kuiper, and Byron Wallace
+
