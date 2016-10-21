@@ -104,6 +104,8 @@ As a consequence API has become more sophisticated than previously, and we will 
 
 In the meantime, the code for the API endpoints can be found in `/robotreviewer/app.py`. 
 
+Some things remain simple; e.g., for an example of using RR to classify abstracts as RCTs (or not) see [this gist](https://gist.github.com/bwallace/beebf6d7bbacfbb91704f66c28dcc537). 
+
 If you are interested in incorporating RobotReviewer into your own software, please [contact us](mailto:mail@ijmarshall) and we'd be pleased to assist.
 
 
