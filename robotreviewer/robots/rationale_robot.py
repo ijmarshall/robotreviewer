@@ -102,15 +102,15 @@ class BiasRobot:
             return data # we've got to know the text at least..
 
         doc_len = len(data['text'])
-        doc_sents = [sent.string for sent in doc_text.sents] # cap maximum number of sentences
+        doc_sents = [sent.string for sent in doc_text.sents]
         doc_sent_start_i = [sent.start_char for sent in doc_text.sents]
         doc_sent_end_i = [sent.end_char for sent in doc_text.sents]
 
         structured_data = []
         for domain, model in self.models.items():
             if type(model) == tuple: # linear model
-                (vec, doc_clf, sent_clf) = model 
-                doc_domains = [domain] * len(doc_sents)
+                (vec, sent_clf, doc_clf) = model 
+                doc_domains = [self.bias_domains[domain]] * len(doc_sents)
                 doc_X_i = zip(doc_sents, doc_domains)
                 vec.builder_clear()
                 vec.builder_add_docs(doc_sents)
@@ -118,18 +118,12 @@ class BiasRobot:
                 doc_sents_X = vec.builder_transform()
                 doc_sents_preds = sent_clf.decision_function(doc_sents_X)
                 high_prob_sent_indices = np.argsort(doc_sents_preds)[:-top_k-1:-1] # top k, with no 1 first
-                vec.builder_clear()
-                vec.builder_add_docs([doc_text.text])
-                vec.builder_add_docs([(doc_text.text, domain)])
-                sent_domain_interaction = "-s-" + domain
-                vec.builder_add_docs([(high_prob_sents_j, sent_domain_interaction)])
-                X = vec.builder_transform()
-                bias_pred = doc_clf.predict(X)[0]
             else:
                 doc = Document(doc_id=None, sentences=doc_sents) # vectorize document
                 bias_prob, high_prob_sent_indices = model.predict_and_rank_sentences_for_doc(doc, num_rationales=top_k)
-                bias_pred = int(bias_prob > threshold)
+                bias_pred = int(bias_prob < threshold) # low risk if True and high/unclear otherwise
 
+            # Find high probability sentences
             high_prob_sents = [doc_sents[i] for i in high_prob_sent_indices]
             high_prob_start_i = [doc_sent_start_i[i] for i in high_prob_sent_indices]
             high_prob_end_i = [doc_sent_end_i[i] for i in high_prob_sent_indices]
@@ -137,8 +131,16 @@ class BiasRobot:
             high_prob_suffixes = [doc_text.string[offset: min(doc_len, offset+20)] for offset in high_prob_end_i]
             high_prob_sents_j = " ".join(high_prob_sents)
 
-            bias_class = ["high/unclear", "low"][bias_pred]
+            if type(model) == tuple: # linear model
+                vec.builder_clear()
+                vec.builder_add_docs([doc_text.text])
+                vec.builder_add_docs([(doc_text.text, self.bias_domains[domain])])
+                sent_domain_interaction = "-s-" + self.bias_domains[domain]
+                vec.builder_add_docs([(high_prob_sents_j, sent_domain_interaction)])
+                X = vec.builder_transform()
+                bias_pred = doc_clf.predict(X)[0]
 
+            bias_class = ["high/unclear", "low"][bias_pred] # prediction
             annotation_metadata = []
             for sent in zip(high_prob_sents, high_prob_start_i, high_prob_prefixes, high_prob_suffixes):
                 sent_metadata = {"content": sent[0],
