@@ -21,6 +21,7 @@ import json
 import uuid
 import os
 import pickle
+from collections import OrderedDict
 
 import robotreviewer
 from robotreviewer.textprocessing import tokenizer
@@ -55,18 +56,39 @@ class BiasRobot:
         self.bias_domains = ['Random sequence generation']
         self.top_k = top_k
 
-        # load in preprocessor
-        preprocesser = pickle.load(open("robotreviewer/data/keras/vectorizers/preprocessor.pickle", 'rb'))
 
-        # and now load in the model; assumes h5 file bundling
-        # architecture and params naturally
-        model_arch_file    = "robotreviewer/data/keras/models/rationale-CNN_model.json"
-        model_weights_file = "robotreviewer/data/keras/models/rationale-CNN_RSG.hdf5"
-        self.model = RationaleCNN(preprocesser,
-                                  document_model_architecture_path=model_arch_file,
-                                  document_model_weights_path=model_weights_file)   
+        self.bias_domains = {'RSG': 'Random sequence generation',
+                             'AC': 'Allocation concealment',
+                             'BPP': 'Blinding of participants and personnel',
+                             'BOA': 'Blinding of outcome assessment',
+                             'IOD': 'Incomplete outcome data',
+                             'SR': 'Selective reporting'
+        }
 
-    def annotate(self, data, top_k=None):
+        # CNN domains
+        vectorizer_str = 'robotreviewer/data/keras/vectorizers/{}.pickle'
+        arch_str = 'robotreviewer/data/keras/models/{}.json'
+        weight_str = 'robotreviewer/data/keras/models/{}.hdf5'
+        self.models = OrderedDict()
+        for bias_domain in ['RSG', 'AC', 'BPP', 'BOA']:
+            # Load vectorizer and keras model
+            vectorizer_loc = vectorizer_str.format(bias_domain)
+            arch_loc = arch_str.format(bias_domain)
+            weight_loc = weight_str.format(bias_domain)
+            preprocessor = pickle.load(open(vectorizer_loc, 'rb'))
+            self.models[bias_domain] = RationaleCNN(preprocessor,
+                                                    document_model_architecture_path=arch_loc,
+                                                    document_model_weights_path=weight_loc)
+
+
+        # Linear domains
+        sent_clf = MiniClassifier(robotreviewer.get_data('bias/bias_sent_level.npz'))
+        doc_clf = MiniClassifier(robotreviewer.get_data('bias/bias_doc_level.npz'))
+        vec = ModularVectorizer(norm=None, non_negative=True, binary=True, ngram_range=(1, 2), n_features=2**26)
+        for bias_domain in ['IOD', 'SR']:
+            self.models[bias_domain] = (vec, sent_clf, doc_clf)
+
+    def annotate(self, data, top_k=None, threshold=0.5):
         """
         Annotate full text of clinical trial report
         `top_k` can be overridden here, else defaults to the class
@@ -80,17 +102,33 @@ class BiasRobot:
             return data # we've got to know the text at least..
 
         doc_len = len(data['text'])
-        doc_sents = [sent.string for sent in doc_text.sents]#[:self.max_doclen] # cap maximum number of sentences
-        # doc_sents = [str(''.join(c for c in sent if ord(c) < 128)) for sent in doc_sents] # delete non-ascii characters
+        doc_sents = [sent.string for sent in doc_text.sents] # cap maximum number of sentences
         doc_sent_start_i = [sent.start_char for sent in doc_text.sents]
         doc_sent_end_i = [sent.end_char for sent in doc_text.sents]
 
         structured_data = []
-        for domain in self.bias_domains:
-            # vectorize document
-            doc = Document(None, doc_sents)
-            bias_prob, high_prob_sent_indices = self.model.predict_and_rank_sentences_for_doc(doc, num_rationales=top_k)
-            bias_pred = int(bias_prob > .5)
+        for domain, model in self.models.items():
+            if type(model) == tuple: # linear model
+                (vec, doc_clf, sent_clf) = model 
+                doc_domains = [domain] * len(doc_sents)
+                doc_X_i = zip(doc_sents, doc_domains)
+                vec.builder_clear()
+                vec.builder_add_docs(doc_sents)
+                vec.builder_add_docs(doc_X_i)
+                doc_sents_X = vec.builder_transform()
+                doc_sents_preds = sent_clf.decision_function(doc_sents_X)
+                high_prob_sent_indices = np.argsort(doc_sents_preds)[:-top_k-1:-1] # top k, with no 1 first
+                vec.builder_clear()
+                vec.builder_add_docs([doc_text.text])
+                vec.builder_add_docs([(doc_text.text, domain)])
+                sent_domain_interaction = "-s-" + domain
+                vec.builder_add_docs([(high_prob_sents_j, sent_domain_interaction)])
+                X = vec.builder_transform()
+                bias_pred = doc_clf.predict(X)[0]
+            else:
+                doc = Document(doc_id=None, sentences=doc_sents) # vectorize document
+                bias_prob, high_prob_sent_indices = model.predict_and_rank_sentences_for_doc(doc, num_rationales=top_k)
+                bias_pred = int(bias_prob > threshold)
 
             high_prob_sents = [doc_sents[i] for i in high_prob_sent_indices]
             high_prob_start_i = [doc_sent_start_i[i] for i in high_prob_sent_indices]
@@ -98,22 +136,25 @@ class BiasRobot:
             high_prob_prefixes = [doc_text.string[max(0, offset-20):offset] for offset in high_prob_start_i]
             high_prob_suffixes = [doc_text.string[offset: min(doc_len, offset+20)] for offset in high_prob_end_i]
             high_prob_sents_j = " ".join(high_prob_sents)
-            sent_domain_interaction = "-s-" + domain
 
             bias_class = ["high/unclear", "low"][bias_pred]
-            annotation_metadata = [{"content": sent[0],
-                                    "position": sent[1],
-                                    "uuid": str(uuid.uuid1()),
-                                    "prefix": sent[2],
-                                    "suffix": sent[3]} for sent in zip(high_prob_sents, high_prob_start_i,
-                                       high_prob_prefixes,
-                                       high_prob_suffixes)]
 
-            structured_data.append({
-                "domain": domain,
-                "judgement": bias_class,
-                "annotations": annotation_metadata})
+            annotation_metadata = []
+            for sent in zip(high_prob_sents, high_prob_start_i, high_prob_prefixes, high_prob_suffixes):
+                sent_metadata = {"content": sent[0],
+                                 "position": sent[1],
+                                 "uuid": str(uuid.uuid1()),
+                                 "prefix": sent[2],
+                                 "suffix": sent[3]} 
+
+                annotation_metadata.append(sent_metadata)
+
+            structured_data.append({"domain": self.bias_domains[domain],
+                                    "judgement": bias_class,
+                                    "annotations": annotation_metadata})
+
         data.ml["bias"] = structured_data
+
         return data
 
     @staticmethod
