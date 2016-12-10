@@ -45,7 +45,7 @@ A BibTeX entry for LaTeX users is
 
 ## Installation
 
-1. Ensure you have a working version of Python 2.7. We recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience. However, if you have Python 2.7 already installed that will probably work fine too. (It's extremely close but won't yet work in Python 3 due to some weird unicode thing... don't laugh...)
+1. Ensure you have a working version of Python 2.7+ or 3.4+. We recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience. However, if you have Python already installed that will probably work fine too.
 
 2. Get a copy of the RobotReviewer repo, and go into that directory
     ```bash

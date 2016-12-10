@@ -1,4 +1,4 @@
-import app
+from robotreviewer import app
 
 if __name__ == '__main__':
     if app.DEBUG_MODE:

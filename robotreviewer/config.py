@@ -44,7 +44,7 @@ def config():
     return merge_dicts(json_config(), environ_config())
 
 def export_config(cfg):
-    for k, v in cfg.iteritems():
+    for k, v in cfg.items():
         globals()[k.upper()] = v
 
 export_config(config())

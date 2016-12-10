@@ -36,13 +36,15 @@ import zipfile
 try:
     from cStringIO import StringIO # py2
 except ImportError:
-    from io import StringIO # py3
+    from io import BytesIO as StringIO # py3
 
 from robotreviewer.textprocessing.tokenizer import nlp
-from robotreviewer.robots.bias_robot import BiasRobot
+# from robotreviewer.robots.bias_robot import BiasRobot
+from robotreviewer.robots.rationale_robot import BiasRobot
 from robotreviewer.robots.pico_robot import PICORobot
 from robotreviewer.robots.rct_robot import RCTRobot
-from robotreviewer.robots.pubmed_robot import PubmedRobot
+# from robotreviewer.robots.pubmed_robot import PubmedRobot
+# from robotreviewer.robots.ictrp_robot import ICTRPRobot
 from robotreviewer.data_structures import MultiDict
 from robotreviewer import report_view
 
@@ -73,7 +75,8 @@ csrf.init_app(app)
 log.info("Loading the robots...")
 bots = {"bias_bot": BiasRobot(top_k=3),
         "pico_bot": PICORobot(),
-        "pubmed_bot": PubmedRobot(),
+        # "pubmed_bot": PubmedRobot(),
+        # "ictrp_bot": ICTRPRobot(),
         "rct_bot": RCTRobot()}
 log.info("Robots loaded successfully! Ready...")
 
@@ -97,7 +100,7 @@ def main():
     resp = make_response(render_template('index.html'))
     return resp
 
-@csrf.exempt
+@csrf.exempt # TODO: add csrf back in
 @app.route('/upload_and_annotate', methods=['POST'])
 def upload_and_annotate():
     # uploads a bunch of PDFs, do the RobotReviewer annotation
@@ -122,7 +125,7 @@ def upload_and_annotate():
     articles = pdf_reader.convert_batch(blobs)
     parsed_articles = []
     # tokenize full texts here
-    for doc in nlp.pipe((d['text'] for d in articles), batch_size=1, n_threads=config.SPACY_THREADS, tag=True, parse=True, entity=False):
+    for doc in nlp.pipe((d.get('text', u'') for d in articles), batch_size=1, n_threads=config.SPACY_THREADS, tag=True, parse=True, entity=False):
         parsed_articles.append(doc)
 
 
@@ -134,7 +137,7 @@ def upload_and_annotate():
         pdf_hash = hashlib.md5(blob).hexdigest()
         pdf_uuid = rand_id()
         pdf_uuids.append(pdf_uuid)
-        data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot"])
+        data = annotate(data, bot_names=["bias_bot", "pico_bot", "rct_bot"])
         data.gold['pdf_uuid'] = pdf_uuid
         data.gold['filename'] = filename
 

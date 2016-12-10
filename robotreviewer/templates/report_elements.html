@@ -22,7 +22,7 @@
           </a>
           {% endif %}
           </td>
-          {% for domain in study['bias'] %}
+          {% for domain in study.get('bias', []) %}
           <td class="{% if domain['judgement'] == 'low' %}risk-low{% elif domain['judgement'] == 'high/unclear' %}risk-high{% endif %}">{{ '+' if domain['judgement'] == 'low' else '?' }}</td>
           {% endfor %}
         </tr>
@@ -35,7 +35,7 @@
       <h3>{{ short_citation(study) }}</h3>
 
       <table class="char-pico-table">
-        {% for domain in study['pico_text'] %}
+        {% for domain in study.get('pico_text', []) %}
         <tr>
           <td>{{ domain['domain'] }}</td>
           <td>
@@ -59,7 +59,7 @@
           <th>Bias</th><th>Judgement</th>
           <th>Support for judgement</th>
         </tr>
-        {% for domain in study['bias'] %}
+        {% for domain in study.get('bias', []) %}
         <tr>
           <td>{{ domain['domain'] }}</td>
           <td>{{ domain['judgement'] }}</td>
@@ -83,5 +83,5 @@
       <h2>References</h2>
 
       {% for study in articles %}
-      <p>{{ loop.index }}. {{ long_citation(study) }}</p>
+      <p>{{ loop.index }}. {{ long_citation(study) }} PMID: {{ study.get('pmid', 'not found') }}</p>
       {% endfor %}

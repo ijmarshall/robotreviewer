@@ -3,7 +3,7 @@ formatting.py
 functions for displaying RobotReviewer internal data in useful ways
 """
 
-from app import app
+from robotreviewer.app import app
 import logging
 log = logging.getLogger(__name__)
 
