@@ -43,7 +43,7 @@ from keras.models import load_model
 
 class BiasRobot:
 
-    def __init__(self, top_k=3, m=10):
+    def __init__(self, top_k=3):
         """
         `top_k` refers to 'top-k recall'.
 
@@ -56,9 +56,6 @@ class BiasRobot:
         """
         self.bias_domains = ['Random sequence generation']
         self.top_k = top_k
-        # we will pull m sentences from each model and then perform 
-        # borda count to pick the top_k
-        self.m = 20
 
         self.bias_domains = {'RSG': 'Random sequence generation',
                              'AC': 'Allocation concealment',
@@ -112,7 +109,7 @@ class BiasRobot:
         if weights is None: 
             weights = np.ones(2)
 
-        for i in range(self.m):
+        for i in range(len(a)):
             score = i+1 # 1 ... m
             rank_scores_dict[a[i]] += weights[0]*score
             rank_scores_dict[b[i]] += weights[1]*score 
@@ -154,9 +151,7 @@ class BiasRobot:
             vec.builder_add_docs(doc_X_i)
             doc_sents_X = vec.builder_transform()
             doc_sents_preds = sent_clf.decision_function(doc_sents_X)
-            linear_high_prob_sent_indices = np.argsort(doc_sents_preds)[:-self.m-1:-1] # top k, with no 1 first
-            linear_high_prob_sent_indices = linear_high_prob_sent_indices[::-1] # now the top ranked sentence will be last. 
-            #else:
+            linear_high_prob_sent_indices = np.argsort(doc_sents_preds) 
 
             ### 
             # CNN predictions
@@ -164,15 +159,12 @@ class BiasRobot:
             if domain in self.CNN_models:
                 model = self.CNN_models[domain]
                 doc = Document(doc_id=None, sentences=doc_sents) # vectorize document
-                bias_prob_CNN, high_prob_sent_indices_CNN = model.predict_and_rank_sentences_for_doc(doc, num_rationales=self.m)
+                bias_prob_CNN, high_prob_sent_indices_CNN = model.predict_and_rank_sentences_for_doc(doc, num_rationales=len(doc))#num_rationales=self.m)
                     
-                # aggregate; note that because we've manually validated the linear model 
-                # sent predictions, we weight these slightly higher (mostly this has
-                # the effect of breaking ties in borda count)
                 high_prob_sent_indices = self.simple_borda_count(high_prob_sent_indices_CNN, 
-                                                                 linear_high_prob_sent_indices,
-                                                                 weights=[0.9,1.0])[:top_k]
+                                                                 linear_high_prob_sent_indices)[:top_k]
 
+              
                 # and now the overall (doc-level) prediction from the CNN model.
                 # bias_prob = 1 --> low risk 
                 # from riskofbias2:
@@ -186,6 +178,10 @@ class BiasRobot:
                 high_prob_sent_indices = linear_high_prob_sent_indices[-top_k:]
                 high_prob_sent_indices = linear_high_prob_sent_indices[::-1] # put highest prob sentence first 
         
+
+           
+            #import pdb; pdb.set_trace() 
+            # high_prob_sents_CNN = [doc_sents[i] for i in high_prob_sent_indices_CNN]
 
             # Find high probability sentences
             high_prob_sents = [doc_sents[i] for i in high_prob_sent_indices]
