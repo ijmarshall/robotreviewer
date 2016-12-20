@@ -78,7 +78,7 @@ class BiasRobot:
         arch_str = 'robotreviewer/data/keras/models/{}.json'
         weight_str = 'robotreviewer/data/keras/models/{}.hdf5'
         self.CNN_models = OrderedDict()
-        for bias_domain in ['RSG', 'AC']: # to update with more models!
+        for bias_domain in ['RSG', 'AC', 'BPP', 'BOA']:
             # Load vectorizer and keras model
             vectorizer_loc = vectorizer_str.format(bias_domain)
             arch_loc = arch_str.format(bias_domain)
@@ -92,7 +92,9 @@ class BiasRobot:
         # Linear domains (these are joint models!)
         self.linear_sent_clf = MiniClassifier(robotreviewer.get_data('bias/bias_sent_level.npz'))
         self.linear_doc_clf = MiniClassifier(robotreviewer.get_data('bias/bias_doc_level.npz'))
-        self.linear_vec = ModularVectorizer(norm=None, non_negative=True, binary=True, ngram_range=(1, 2), n_features=2**26)
+        self.linear_vec = ModularVectorizer(norm=None, non_negative=True, binary=True, ngram_range=(1, 2), 
+                                                n_features=2**26)
+
         #for bias_domain in ['IOD', 'SR']:
         #    self.models[bias_domain] = (vec, sent_clf, doc_clf)
 
@@ -179,7 +181,7 @@ class BiasRobot:
                 high_prob_sent_indices = linear_high_prob_sent_indices[::-1] # put highest prob sentence first 
         
 
-            #if domain == "AC":
+            #if domain == "BOA":
             #    import pdb; pdb.set_trace() 
             # high_prob_sents_CNN = [doc_sents[i] for i in high_prob_sent_indices_CNN]
 
