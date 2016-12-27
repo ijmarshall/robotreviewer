@@ -4,7 +4,7 @@ RobotReviewer server
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
 #           Joel Kuiper <me@joelkuiper.com>
-#           Byron Wallce <byron.wallace@utexas.edu>
+#           Byron Wallce <byron@ccs.neu.edu>
 
 import logging, os
 from datetime import datetime, timedelta
@@ -15,6 +15,9 @@ def str2bool(v):
 DEBUG_MODE = str2bool(os.environ.get("DEBUG", "true"))
 LOCAL_PATH = "robotreviewer/uploads"
 LOG_LEVEL = (logging.DEBUG if DEBUG_MODE else logging.INFO)
+# determined empirically by Edward; covers 90% of abstracts
+# (crudely and unscientifically adjusted for grobid)
+NUM_WORDS_IN_ABSTRACT = 450
 
 logging.basicConfig(level=LOG_LEVEL, format='[%(levelname)s] %(name)s %(asctime)s: %(message)s')
 log = logging.getLogger(__name__)
@@ -39,12 +42,17 @@ except ImportError:
     from io import BytesIO as StringIO # py3
 
 from robotreviewer.textprocessing.tokenizer import nlp
+
+''' robots! '''
 # from robotreviewer.robots.bias_robot import BiasRobot
 from robotreviewer.robots.rationale_robot import BiasRobot
 from robotreviewer.robots.pico_robot import PICORobot
 from robotreviewer.robots.rct_robot import RCTRobot
 # from robotreviewer.robots.pubmed_robot import PubmedRobot
 # from robotreviewer.robots.ictrp_robot import ICTRPRobot
+from robotreviewer.robots import pico_viz_robot
+from robotreviewer.robots.pico_viz_robot import PICOVizRobot
+
 from robotreviewer.data_structures import MultiDict
 from robotreviewer import report_view
 
@@ -57,7 +65,7 @@ import sqlite3
 
 import hashlib
 
-
+import numpy as np # note - this should probably be moved!
 
 app = Flask(__name__,  static_url_path='')
 from robotreviewer import formatting
@@ -77,7 +85,9 @@ bots = {"bias_bot": BiasRobot(top_k=3),
         "pico_bot": PICORobot(),
         # "pubmed_bot": PubmedRobot(),
         # "ictrp_bot": ICTRPRobot(),
-        "rct_bot": RCTRobot()}
+        "rct_bot": RCTRobot(),
+        "pico_viz_bot": PICOVizRobot()}
+
 log.info("Robots loaded successfully! Ready...")
 
 #####
@@ -113,12 +123,6 @@ def upload_and_annotate():
     uploaded_files = request.files.getlist("file")
     c = rr_sql_conn.cursor()
 
-    '''
-    blobs = []
-    for f in uploaded_files:
-        filename = secure_filename(f.filename)
-    '''
-
     blobs = [f.read() for f in uploaded_files]
     filenames = [f.filename for f in uploaded_files]
 
@@ -137,7 +141,7 @@ def upload_and_annotate():
         pdf_hash = hashlib.md5(blob).hexdigest()
         pdf_uuid = rand_id()
         pdf_uuids.append(pdf_uuid)
-        data = annotate(data, bot_names=["bias_bot", "pico_bot", "rct_bot"])
+        data = annotate(data, bot_names=["bias_bot", "pico_bot", "rct_bot", "pico_viz_bot"])
         data.gold['pdf_uuid'] = pdf_uuid
         data.gold['filename'] = filename
 
@@ -170,7 +174,20 @@ def download_report(report_uuid, format):
                      attachment_filename="robotreviewer_report_%s.%s" % (report_uuid, format),
                      as_attachment=True)
 
-def produce_report(report_uuid, reportformat, download=False):
+
+# @TODO improve
+# also should maybe be moved?
+def get_study_name(article):
+    authors = article.get("authors")
+    study_str = ""
+    if not authors is None:
+        study_str = authors[0]["lastname"] + " et al."
+    else: 
+        study_str = ['filename'][:20] + " ..."
+    return study_str
+
+
+def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True):
     c = rr_sql_conn.cursor()
     articles, article_ids = [], []
     for i, row in enumerate(c.execute("SELECT pdf_uuid, annotations FROM article WHERE report_uuid=?", (report_uuid,))):
@@ -178,8 +195,26 @@ def produce_report(report_uuid, reportformat, download=False):
         data.load_json(row[1])
         articles.append(data)
         article_ids.append(row[0])
+
     if reportformat=='html' or reportformat=='doc':
-        return render_template('reportview.{}'.format(reportformat), headers=bots['bias_bot'].get_domains(), articles=articles, report_uuid=report_uuid, online=(not download), reportformat=reportformat)
+        if PICO_vectors:
+            study_names, p_vectors, i_vectors, o_vectors = [], [], [], []
+            for article in articles: 
+                study_names.append(get_study_name(article))
+                p_vectors.append(np.array(article.ml["p_vector"]))
+                i_vectors.append(np.array(article.ml["i_vector"]))
+                o_vectors.append(np.array(article.ml["o_vector"]))
+
+            vectors_d = {"population":np.vstack(p_vectors), 
+                         "intervention":np.vstack(i_vectors), 
+                         "outcomes":np.vstack(o_vectors)}
+
+            p_plot_path = bots["pico_viz_bot"].generate_2d_viz(study_names, vectors_d, 
+                                            "{0}-PICO-embeddings".format(report_uuid))
+
+
+        return render_template('reportview.{}'.format(reportformat), headers=bots['bias_bot'].get_domains(), articles=articles, 
+                                pico_plot_path=p_plot_path, report_uuid=report_uuid, online=(not download), reportformat=reportformat)
     elif reportformat=='json':
         return json.dumps({"article_ids": article_ids,
                            "article_data": [a.visible_data() for a in articles],
