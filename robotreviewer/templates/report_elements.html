@@ -1,3 +1,22 @@
+      <h2>Abstract</h2>
+
+      <p>
+      Here are the results from {{articles|length}} PDFs.
+      {% set non_rct_articles = not_rcts(articles) %}
+      {% if non_rct_articles %}
+      (Note that {{ non_rct_articles|length }} of these were were not obviously randomized controlled trials, being those by 
+        {% for study in non_rct_articles %}
+          {% if loop.last %}and{% endif %}
+          {{ short_citation(study) }}
+          {% if not loop.last %}
+          , 
+          {% endif %}
+        {% endfor %}
+      ).
+      {% endif %}
+      </p>
+
+
       <h2>Risk of bias table</h2>
 
       <table class='bias-table'>
