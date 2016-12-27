@@ -95,8 +95,6 @@ class BiasRobot:
         self.linear_vec = ModularVectorizer(norm=None, non_negative=True, binary=True, ngram_range=(1, 2), 
                                                 n_features=2**26)
 
-        #for bias_domain in ['IOD', 'SR']:
-        #    self.models[bias_domain] = (vec, sent_clf, doc_clf)
 
 
     def simple_borda_count(self, a, b, weights=None):
@@ -161,7 +159,7 @@ class BiasRobot:
             if domain in self.CNN_models:
                 model = self.CNN_models[domain]
                 doc = Document(doc_id=None, sentences=doc_sents) # vectorize document
-                bias_prob_CNN, high_prob_sent_indices_CNN = model.predict_and_rank_sentences_for_doc(doc, num_rationales=len(doc))#num_rationales=self.m)
+                bias_prob_CNN, high_prob_sent_indices_CNN = model.predict_and_rank_sentences_for_doc(doc, num_rationales=len(doc))
                     
                 high_prob_sent_indices = self.simple_borda_count(high_prob_sent_indices_CNN, 
                                                                  linear_high_prob_sent_indices)[:top_k]
@@ -182,7 +180,7 @@ class BiasRobot:
         
 
             #if domain == "BOA":
-            #    import pdb; pdb.set_trace() 
+            #import pdb; pdb.set_trace() 
             # high_prob_sents_CNN = [doc_sents[i] for i in high_prob_sent_indices_CNN]
 
             # Find high probability sentences
@@ -251,6 +249,6 @@ class BiasRobot:
         return [u'Random sequence generation',
                 u'Allocation concealment',
                 u'Blinding of participants and personnel',
-                u'Blinding of outcome assessment',
-                u'Incomplete outcome data',
-                u'Selective reporting']
+                u'Blinding of outcome assessment']
+                #u'Incomplete outcome data',
+                #u'Selective reporting']

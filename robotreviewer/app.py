@@ -183,7 +183,8 @@ def get_study_name(article):
     if not authors is None:
         study_str = authors[0]["lastname"] + " et al."
     else: 
-        study_str = ['filename'][:20] + " ..."
+        #import pdb; pdb.set_trace()
+        study_str = article['filename'][:20].lower().replace(".pdf", "") + " ..."
     return study_str
 
 
