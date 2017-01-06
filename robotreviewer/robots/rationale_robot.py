@@ -20,7 +20,9 @@ Marshall IJ, Kuiper J, & Wallace BC. RobotReviewer: evaluation of a system for a
 import json
 import uuid
 import os
+import operator
 import pickle
+from collections import OrderedDict, defaultdict
 
 import robotreviewer
 from robotreviewer.textprocessing import tokenizer
@@ -28,13 +30,15 @@ from robotreviewer.ml.classifier import MiniClassifier
 from robotreviewer.ml.vectorizer import ModularVectorizer
 
 import sys
-sys.path.append('robotreviewer/ml') # need this for loading the pickled SequenceVectorizer
+sys.path.append('robotreviewer/ml') # need this for loading the rationale_CNN module
+from rationale_CNN import RationaleCNN, Document
 
 import numpy as np
 import re
 
 import keras
 import keras.backend as K
+from keras.models import load_model
 
 
 class BiasRobot:
@@ -53,20 +57,68 @@ class BiasRobot:
         self.bias_domains = ['Random sequence generation']
         self.top_k = top_k
 
-        # model
-        self.model = keras.models.load_model('robotreviewer/data/keras/models/rationale.h5')
+        self.bias_domains = {'RSG': 'Random sequence generation',
+                             'AC': 'Allocation concealment',
+                             'BPP': 'Blinding of participants and personnel',
+                             'BOA': 'Blinding of outcome assessment',
+                             'IOD': 'Incomplete outcome data',
+                             'SR': 'Selective reporting'
+        }
 
-        # vectorizer
-        self.vectorizer = pickle.load(open('robotreviewer/data/keras/vectorizers/rationale.p'))
-        self.max_sentlen = self.vectorizer.maxlen
-        self.max_doclen = self.model.layers[1].input_length / self.max_sentlen # hacky way to get out `max_doclen`
+        ###
+        # Here we take a simple ensembling approach in which we combine the 
+        # predictions made by our rationaleCNN model and the JAMIA (linear)
+        # multi task variant.
+        ###
 
-        # keras function for computing sentence weights and document probs
-        inputs = self.model.inputs + [K.learning_phase()]
-        outputs = [self.model.get_layer('sent_weights').output, self.model.get_layer('doc_probs').output]
-        self.eval_doc = K.function(inputs, outputs)
+        self.all_domains = ['RSG', 'AC', 'BPP', 'BOA']
 
-    def annotate(self, data, top_k=None):
+        # CNN domains
+        vectorizer_str = 'robotreviewer/data/keras/vectorizers/{}.pickle'
+        arch_str = 'robotreviewer/data/keras/models/{}.json'
+        weight_str = 'robotreviewer/data/keras/models/{}.hdf5'
+        self.CNN_models = OrderedDict()
+        for bias_domain in ['RSG', 'AC', 'BPP', 'BOA']:
+            # Load vectorizer and keras model
+            vectorizer_loc = vectorizer_str.format(bias_domain)
+            arch_loc = arch_str.format(bias_domain)
+            weight_loc = weight_str.format(bias_domain)
+            preprocessor = pickle.load(open(vectorizer_loc, 'rb'))
+            self.CNN_models[bias_domain] = RationaleCNN(preprocessor,
+                                                    document_model_architecture_path=arch_loc,
+                                                    document_model_weights_path=weight_loc)
+
+
+        # Linear domains (these are joint models!)
+        self.linear_sent_clf = MiniClassifier(robotreviewer.get_data('bias/bias_sent_level.npz'))
+        self.linear_doc_clf = MiniClassifier(robotreviewer.get_data('bias/bias_doc_level.npz'))
+        self.linear_vec = ModularVectorizer(norm=None, non_negative=True, binary=True, ngram_range=(1, 2), 
+                                                n_features=2**26)
+
+
+
+    def simple_borda_count(self, a, b, weights=None):
+        ''' 
+        Basic Borda count implementation for just two lists. 
+        Assumes that a and b are lists of indices sorted
+        in *increasing* preference (so top-ranked sentence
+        should be the last element).
+        '''
+        rank_scores_dict = defaultdict(int)
+
+        if weights is None: 
+            weights = np.ones(2)
+
+        for i in range(len(a)):
+            score = i+1 # 1 ... m
+            rank_scores_dict[a[i]] += weights[0]*score
+            rank_scores_dict[b[i]] += weights[1]*score 
+
+        sorted_indices = sorted(rank_scores_dict.items(), key=operator.itemgetter(1), reverse=True)
+        return [index[0] for index in sorted_indices]
+        #return sorted_indices
+
+    def annotate(self, data, top_k=None, threshold=0.5):
         """
         Annotate full text of clinical trial report
         `top_k` can be overridden here, else defaults to the class
@@ -74,54 +126,106 @@ class BiasRobot:
 
         """
         top_k = self.top_k if not top_k else top_k
-        
+
         doc_text = data.get('parsed_text')
         if not doc_text:
             return data # we've got to know the text at least..
 
         doc_len = len(data['text'])
-        doc_sents = [sent.string for sent in doc_text.sents][:self.max_doclen] # cap maximum number of sentences
-        doc_sents = [str(''.join(c for c in sent if ord(c) < 128)) for sent in doc_sents] # delete non-ascii characters
+        doc_sents = [sent.string for sent in doc_text.sents]
+
         doc_sent_start_i = [sent.start_char for sent in doc_text.sents]
         doc_sent_end_i = [sent.end_char for sent in doc_text.sents]
 
         structured_data = []
-        for domain in self.bias_domains:
-            # vectorize document
-            X_seq = self.vectorizer.texts_to_sequences(doc_sents)
-            nb_sentence, _ = X_seq.shape
-            X_doc = np.zeros([self.max_doclen, self.max_sentlen])
-            X_doc[self.max_doclen-min(self.max_doclen, nb_sentence):] = X_seq[:self.max_doclen]
-            X = np.zeros([1, self.max_sentlen*self.max_doclen], dtype=np.int)
-            X[0] = X_doc.reshape([self.max_sentlen*self.max_doclen])
+        #for domain, model in self.models.items():
+        for domain in self.all_domains:
+            ###
+            # linear model predictions (all domains)
+            #if type(model) == tuple: # linear model
+            (vec, sent_clf, doc_clf) = (self.linear_vec, self.linear_sent_clf, self.linear_doc_clf)
+            doc_domains = [self.bias_domains[domain]] * len(doc_sents)
+            doc_X_i = zip(doc_sents, doc_domains)
+            vec.builder_clear()
+            vec.builder_add_docs(doc_sents)
+            vec.builder_add_docs(doc_X_i)
+            doc_sents_X = vec.builder_transform()
+            doc_sents_preds = sent_clf.decision_function(doc_sents_X)
+            linear_high_prob_sent_indices = np.argsort(doc_sents_preds) 
 
-            result = self.eval_doc([X, 1]) # learning_phase=1 for test-mode (no dropout!)
-            doc_sents_preds, bias_probs = [output[0] for output in result]
-            bias_pred = np.argmax(bias_probs)
+            ### 
+            # CNN predictions
+            bias_prob_CNN = None
+            if domain in self.CNN_models:
+                model = self.CNN_models[domain]
+                doc = Document(doc_id=None, sentences=doc_sents) # vectorize document
+                bias_prob_CNN, high_prob_sent_indices_CNN = model.predict_and_rank_sentences_for_doc(doc, num_rationales=len(doc))
+                    
+                high_prob_sent_indices = self.simple_borda_count(high_prob_sent_indices_CNN, 
+                                                                 linear_high_prob_sent_indices)[:top_k]
 
-            high_prob_sent_indices = np.argsort(doc_sents_preds)[:-top_k-1:-1] # top k, with no 1 first
+              
+                # and now the overall (doc-level) prediction from the CNN model.
+                # bias_prob = 1 --> low risk 
+                # from riskofbias2:
+                #        doc_y[mapped_domain] = 1 if domain["RATING"] == "YES" else -1
+                #        # simplifying to LOW risk of bias = 1 *v* HIGH/UNKNOWN risk = -1
+                ####
+                bias_pred = int(bias_prob_CNN >= threshold) # low risk if True and high/unclear otherwise
+               
+            else: 
+                # no aggregation here (since no CNN model for this domain)
+                high_prob_sent_indices = linear_high_prob_sent_indices[-top_k:]
+                high_prob_sent_indices = linear_high_prob_sent_indices[::-1] # put highest prob sentence first 
+        
+
+            #if domain == "BOA":
+            #import pdb; pdb.set_trace() 
+            # high_prob_sents_CNN = [doc_sents[i] for i in high_prob_sent_indices_CNN]
+
+            # Find high probability sentences
             high_prob_sents = [doc_sents[i] for i in high_prob_sent_indices]
             high_prob_start_i = [doc_sent_start_i[i] for i in high_prob_sent_indices]
             high_prob_end_i = [doc_sent_end_i[i] for i in high_prob_sent_indices]
             high_prob_prefixes = [doc_text.string[max(0, offset-20):offset] for offset in high_prob_start_i]
             high_prob_suffixes = [doc_text.string[offset: min(doc_len, offset+20)] for offset in high_prob_end_i]
             high_prob_sents_j = " ".join(high_prob_sents)
-            sent_domain_interaction = "-s-" + domain
 
-            bias_class = ["high/unclear", "low"][bias_pred]
-            annotation_metadata = [{"content": sent[0],
-                                    "position": sent[1],
-                                    "uuid": str(uuid.uuid1()),
-                                    "prefix": sent[2],
-                                    "suffix": sent[3]} for sent in zip(high_prob_sents, high_prob_start_i,
-                                       high_prob_prefixes,
-                                       high_prob_suffixes)]
 
-            structured_data.append({
-                "domain": domain,
-                "judgement": bias_class,
-                "annotations": annotation_metadata})
+            # overall pred from linear model
+            vec.builder_clear()
+            vec.builder_add_docs([doc_text.text])
+            vec.builder_add_docs([(doc_text.text, self.bias_domains[domain])])
+            sent_domain_interaction = "-s-" + self.bias_domains[domain]
+            vec.builder_add_docs([(high_prob_sents_j, sent_domain_interaction)])
+            X = vec.builder_transform()
+            bias_prob_linear = doc_clf.predict_proba(X)[0]
+            
+            # if we have a CNN pred, too, then average; otherwise
+            # rely on linear model.
+            bias_prob = bias_prob_linear
+            if bias_prob_CNN is not None:
+                bias_prob = (bias_prob_CNN + bias_prob_linear) / 2.0
+            
+            bias_pred = int(bias_prob >= threshold)
+
+            bias_class = ["high/unclear", "low"][bias_pred] # prediction
+            annotation_metadata = []
+            for sent in zip(high_prob_sents, high_prob_start_i, high_prob_prefixes, high_prob_suffixes):
+                sent_metadata = {"content": sent[0],
+                                 "position": sent[1],
+                                 "uuid": str(uuid.uuid1()),
+                                 "prefix": sent[2],
+                                 "suffix": sent[3]} 
+
+                annotation_metadata.append(sent_metadata)
+
+            structured_data.append({"domain": self.bias_domains[domain],
+                                    "judgement": bias_class,
+                                    "annotations": annotation_metadata})
+
         data.ml["bias"] = structured_data
+
         return data
 
     @staticmethod
@@ -145,6 +249,6 @@ class BiasRobot:
         return [u'Random sequence generation',
                 u'Allocation concealment',
                 u'Blinding of participants and personnel',
-                u'Blinding of outcome assessment',
-                u'Incomplete outcome data',
-                u'Selective reporting']
+                u'Blinding of outcome assessment']
+                #u'Incomplete outcome data',
+                #u'Selective reporting']
