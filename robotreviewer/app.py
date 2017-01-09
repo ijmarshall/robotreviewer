@@ -197,7 +197,14 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
         articles.append(data)
         article_ids.append(row[0])
 
+
     if reportformat=='html' or reportformat=='doc':
+        # embeddings only relatively meaningful; do not generate
+        # if we have only 1 study.
+        if len(articles) < 2:
+            PICO_vectors = False 
+
+        pico_plot_html = u""
         if PICO_vectors:
             study_names, p_vectors, i_vectors, o_vectors = [], [], [], []
             p_words, i_words, o_words = [], [], []

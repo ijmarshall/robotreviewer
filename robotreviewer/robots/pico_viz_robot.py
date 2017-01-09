@@ -96,8 +96,13 @@ class PICOVizRobot:
             model.load_weights(weight_path)
 
             inputs = [model.inputs[0], K.learning_phase()]
-            #outputs = model.get_layer('study').output
-            outputs = [model.get_layer('convolution1d_1').output, model.get_layer('study').output]
+           
+            # to trace back from embeddings to activations on n-grams
+            # we provide intermediate output from conv filters here.
+            outputs = [model.get_layer('convolution1d_1').output, 
+                       model.get_layer('convolution1d_2').output, 
+                       model.get_layer('convolution1d_3').output, 
+                       model.get_layer('study').output]
             
             return K.function(inputs, outputs)
 
@@ -161,26 +166,64 @@ class PICOVizRobot:
         return H
 
 
-    def get_activated_words(self, conv_output, X, num_words=4):
+    def get_activated_words(self, conv_output_uni, conv_output_bi, conv_output_tri, X, num_words=3):
         # conv_output will have dims (1 x abstract len x nb filters)
         # so something like (1 x 422 x 333)
         non_padding_idx = np.min(np.nonzero(X[0,:]))    # this is the first non-padding token index
-        filter_outputs = conv_output.squeeze() # drop the 1
-        filter_outputs = filter_outputs[non_padding_idx:,:]
-        max_over_filters = np.amax(filter_outputs, axis=1)
-        unigram_indices = np.argsort(max_over_filters)[::-1]
+        
+        most_active_indices, activation_values = [], []
+
+        # get most activated value for each n-gram spot, for each filter
+        filter_maxes, filter_types, filter_indices = [], [], []
+        for filter_idx, conv_output in enumerate([conv_output_uni, conv_output_bi, conv_output_tri]):
+            filter_outputs = conv_output.squeeze() # drop the 1
+            filter_outputs = filter_outputs[non_padding_idx:,:]
+            # these are maxes over redundant filters corresponding to
+            # a particular n-gram length (n \in {1,2,3})
+            max_over_filters = np.amax(filter_outputs, axis=1)
+            
+            filter_maxes.extend(max_over_filters)
+            filter_types.extend([filter_idx]*max_over_filters.shape[0])
+            # for easy reverse indexing into X
+            filter_indices.extend(list(range(max_over_filters.shape[0]))) 
+
+        # now sort out most activated uni, bi, tri-grams.
+        gram_indices = np.argsort(filter_maxes)[::-1]
+        
+        #most_active_indices.append(gram_indices)
+        #    activation_values.append(max_over_filters[gram_indices])
+
+        
 
         # 'qqq' is our 'out of vocab' string
         words_to_exclude = stopwords.words('english') + [t for t in string.punctuation] + ['qqq']
-        words = []
-        for idx in unigram_indices:
-            cur_word = self.vectorizer.idx2word[X[0,non_padding_idx+idx]]
+        def keep_word(word, already_observed=None):
+            if already_observed is None:
+                already_observed = []
+            return not word in words_to_exclude and len(word)>1 and word not in already_observed
+
+        ngrams = []
+        for meta_idx in gram_indices:
+            #index_vector = filter_indices[filter_types[idx]]
+            idx = filter_indices[meta_idx]
+            cur_n_gram = ""
+            first_word = self.vectorizer.idx2word[X[0,non_padding_idx+idx]]
+            if keep_word(first_word):
+                cur_n_gram = first_word
+
+            # collect the second token for bigrams, for example
+            for offset in range(filter_types[meta_idx]): 
+                next_gram = self.vectorizer.idx2word[X[0,non_padding_idx+idx+offset+1]]
+                if keep_word(next_gram):
+                    cur_n_gram += " {0}".format(next_gram)
             
-            if not cur_word in words_to_exclude and len(cur_word)>1 and cur_word not in words:
-                words.append(cur_word)
+            
+            if keep_word(cur_n_gram, already_observed=ngrams):
+                ngrams.append(cur_n_gram)
 
-        words = list(words)[:num_words]
+        #import pdb; pdb.set_trace()
 
+        words = list(ngrams)[:num_words]
         return words 
 
     def annotate(self, data):
@@ -203,19 +246,17 @@ class PICOVizRobot:
 
         TEST_MODE = 0
 
-
-        #p_vec = self.postprocess_embedding(self.population_embedding_model([X, TEST_MODE]))
-        p_conv_output, p_vec = self.population_embedding_model([X, TEST_MODE])
+        p_conv_output_uni, p_conv_output_bi, p_conv_output_tri, p_vec = self.population_embedding_model([X, TEST_MODE])
         p_vec = self.postprocess_embedding(p_vec)
-        p_words = self.get_activated_words(p_conv_output, X)
+        p_words = self.get_activated_words(p_conv_output_uni, p_conv_output_bi, p_conv_output_tri, X)
 
-        i_conv_output, i_vec = self.intervention_embedding_model([X, TEST_MODE])
+        i_conv_output_uni, i_conv_output_bi, i_conv_output_tri, i_vec = self.intervention_embedding_model([X, TEST_MODE])
         i_vec = self.postprocess_embedding(i_vec) 
-        i_words = self.get_activated_words(i_conv_output, X)
+        i_words = self.get_activated_words(i_conv_output_uni, i_conv_output_bi, i_conv_output_tri, X)
 
-        o_conv_output, o_vec = self.outcomes_embedding_model([X, TEST_MODE])
+        o_conv_output_uni, o_conv_output_bi, o_conv_output_tri, o_vec = self.outcomes_embedding_model([X, TEST_MODE])
         o_vec = self.postprocess_embedding(o_vec)
-        o_words = self.get_activated_words(o_conv_output, X)
+        o_words = self.get_activated_words(o_conv_output_uni, o_conv_output_bi, o_conv_output_tri, X)
             
         # we cast to a list because otherwise we cannot jsonify
         data.ml["p_vector"] = p_vec.tolist()
