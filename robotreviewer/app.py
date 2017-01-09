@@ -200,22 +200,31 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
     if reportformat=='html' or reportformat=='doc':
         if PICO_vectors:
             study_names, p_vectors, i_vectors, o_vectors = [], [], [], []
+            p_words, i_words, o_words = [], [], []
             for article in articles: 
                 study_names.append(get_study_name(article))
                 p_vectors.append(np.array(article.ml["p_vector"]))
+                p_words.append(article.ml["p_words"])
+
                 i_vectors.append(np.array(article.ml["i_vector"]))
+                i_words.append(article.ml["i_words"])
+
                 o_vectors.append(np.array(article.ml["o_vector"]))
+                o_words.append(article.ml["o_words"])
+
 
             vectors_d = {"population":np.vstack(p_vectors), 
                          "intervention":np.vstack(i_vectors), 
                          "outcomes":np.vstack(o_vectors)}
 
-            p_plot_path = bots["pico_viz_bot"].generate_2d_viz(study_names, vectors_d, 
+            words_d = {"population":p_words, "intervention":i_words, "outcomes":o_words}
+
+            pico_plot_html = bots["pico_viz_bot"].generate_2d_viz(study_names, vectors_d, words_d,
                                             "{0}-PICO-embeddings".format(report_uuid))
 
 
         return render_template('reportview.{}'.format(reportformat), headers=bots['bias_bot'].get_domains(), articles=articles, 
-                                pico_plot_path=p_plot_path, report_uuid=report_uuid, online=(not download), reportformat=reportformat)
+                                pico_plot=pico_plot_html, report_uuid=report_uuid, online=(not download), reportformat=reportformat)
     elif reportformat=='json':
         return json.dumps({"article_ids": article_ids,
                            "article_data": [a.visible_data() for a in articles],

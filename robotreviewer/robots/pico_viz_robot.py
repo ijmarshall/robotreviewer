@@ -1,8 +1,10 @@
 import pickle
+import string 
 
 import numpy as np 
 
 from nltk import word_tokenize
+from nltk.corpus import stopwords
 
 import keras
 from keras.models import model_from_json
@@ -11,10 +13,18 @@ import keras.backend as K
 import sklearn
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler
 
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as PathEffects
 import seaborn as sns
+sns.set_style("white")
+import mpld3
+            
+from matplotlib import rcParams
+rcParams.update({'figure.subplot.left'  : 0.01})
+
 
 population_arch_path = 'robotreviewer/data/pico/PICO_embeddings/populations/architecture.json'
 population_weight_path = 'robotreviewer/data/pico/PICO_embeddings/populations/weights.h5'
@@ -32,10 +42,11 @@ outcomes_PCA_path = 'robotreviewer/data/pico/PICO_embeddings/outcomes/outcomes-P
 vectorizer_path = 'robotreviewer/data/pico/PICO_embeddings/abstracts.p'
 
 
-def rand_jitter(arr):
-    stdev = 0.01*(arr.max()-arr.min())
-    import pdb; pdb.set_trace()
-    return arr + np.random.randn(arr.shape[0]) * stdev
+def convert_to_RGB(palette):
+    RGB_palette = []
+    for tuple in palette:
+        RGB_palette.append("rgb(" + ",".join([str(int(255*v)) for v in tuple]) + ")")
+    return RGB_palette
 
 def scatter(study_names, X, ax, title="population", norm=False):
     n_studies = X.shape[0] 
@@ -43,11 +54,10 @@ def scatter(study_names, X, ax, title="population", norm=False):
     
     sc = ax.scatter(X[:,0], X[:,1], lw=0, s=60, c=palette[np.arange(n_studies)])
 
-    ax.axis('tight')
-
+    
     # add labels for each study
     txts = []
-    #import pdb; pdb.set_trace()
+    
     X_range = X[:,0].max()-X[:,0].min()
     Y_range = X[:,1].max()-X[:,1].min()
 
@@ -56,7 +66,7 @@ def scatter(study_names, X, ax, title="population", norm=False):
         # only and are simply based on (manual) fiddling!
         jitter = np.array([-.05*X_range, .03*Y_range]) 
         xtext, ytext = X[i, :] + jitter
-        txt = ax.text(xtext, ytext, study_names[i], fontsize=8)
+        txt = ax.text(xtext, ytext, study_names[i], fontsize=9)
         txt.set_path_effects([PathEffects.Stroke(linewidth=5, foreground="w"), PathEffects.Normal()])
         txts.append(txt)
 
@@ -65,6 +75,9 @@ def scatter(study_names, X, ax, title="population", norm=False):
     ax.set_title(title)
     ax.set_xticks([])
     ax.set_yticks([])
+    ax.axis('off') 
+    # also return palette for later use
+    return sc, convert_to_RGB(palette[np.arange(n_studies)])
 
 
 class PICOVizRobot:
@@ -83,8 +96,9 @@ class PICOVizRobot:
             model.load_weights(weight_path)
 
             inputs = [model.inputs[0], K.learning_phase()]
-            outputs = model.get_layer('study').output
-                
+            #outputs = model.get_layer('study').output
+            outputs = [model.get_layer('convolution1d_1').output, model.get_layer('study').output]
+            
             return K.function(inputs, outputs)
 
         self.population_embedding_model = _load_embedding_model(population_arch_path,
@@ -103,26 +117,30 @@ class PICOVizRobot:
         self.vectorizer = pickle.load(f, encoding="latin")
 
 
-    def generate_2d_viz(self, study_names, embeddings_dict, name): 
+    def generate_2d_viz(self, study_names, embeddings_dict, words_dict, name): 
 
         # create 1 x 3 grid of plots (one per PICO element)
-        f, axes_array = plt.subplots(1, 3)
+        f, axes_array = plt.subplots(1, 3)#, figsize=(15,30))
 
         # iterate over three embeddings (P/I/O)
         for i, element in enumerate(self.elements):
-            # first project
-
             X_hat = self.PCA_dict[element].transform(embeddings_dict[element])
 
             cur_ax = axes_array[i]
-            scatter(study_names, X_hat, cur_ax, title=element.lower())
 
-      
-        outpath = "robotreviewer/static/img/RR_plots/{0}.png".format(name)
-        plt.savefig(outpath)
+            points, RGB_palette = scatter(study_names, X_hat, cur_ax, title=element.lower())
+            
+            # setup labels; color code consisent w/scatter
+            labels = []
+            for study_idx, study_words in enumerate(words_dict[element]):
+                label_str = u"<p style='color:{0}'>".format(RGB_palette[study_idx])
+                label_str +=  ", ".join(study_words) + "</p>"
+                labels.append(label_str)
 
-        return "img/RR_plots/{0}.png".format(name)
+            tooltip = mpld3.plugins.PointHTMLTooltip(points, labels=labels)
+            mpld3.plugins.connect(f, tooltip)
 
+        return mpld3.fig_to_html(f)
 
     def tokenize(self, text):
         tokenized = []
@@ -135,21 +153,37 @@ class PICOVizRobot:
 
         return " ".join(tokenized)
 
+
     def postprocess_embedding(self, H):
         norms = np.apply_along_axis(np.linalg.norm, axis=1, arr=H)
         norms[norms == 0] = 1 # avoid division by zero norm
         H /= norms[:, np.newaxis]
         return H
 
-    def annotate(self, data):
-        '''
-        df = pd.read_csv(csv_path)
-        display(df.head())
-        X = vectorizer.texts_to_sequences(df.text)
-        TEST_MODE = 0
 
-        H = embed([X, TEST_MODE])
-        '''
+    def get_activated_words(self, conv_output, X, num_words=4):
+        # conv_output will have dims (1 x abstract len x nb filters)
+        # so something like (1 x 422 x 333)
+        non_padding_idx = np.min(np.nonzero(X[0,:]))    # this is the first non-padding token index
+        filter_outputs = conv_output.squeeze() # drop the 1
+        filter_outputs = filter_outputs[non_padding_idx:,:]
+        max_over_filters = np.amax(filter_outputs, axis=1)
+        unigram_indices = np.argsort(max_over_filters)[::-1]
+
+        # 'qqq' is our 'out of vocab' string
+        words_to_exclude = stopwords.words('english') + [t for t in string.punctuation] + ['qqq']
+        words = []
+        for idx in unigram_indices:
+            cur_word = self.vectorizer.idx2word[X[0,non_padding_idx+idx]]
+            
+            if not cur_word in words_to_exclude and len(cur_word)>1 and cur_word not in words:
+                words.append(cur_word)
+
+        words = list(words)[:num_words]
+
+        return words 
+
+    def annotate(self, data):
         abstract, tokenized_abstract = "", ""
 
         
@@ -166,14 +200,31 @@ class PICOVizRobot:
         
         tokenized_abstract = self.tokenize(abstract)
         X = self.vectorizer.texts_to_sequences([tokenized_abstract])
-        
-        TEST_MODE = 0
-        p_vec = self.postprocess_embedding(self.population_embedding_model([X, TEST_MODE]))
-        i_vec = self.postprocess_embedding(self.intervention_embedding_model([X, TEST_MODE]))
-        o_vec = self.postprocess_embedding(self.outcomes_embedding_model([X, TEST_MODE]))
 
+        TEST_MODE = 0
+
+
+        #p_vec = self.postprocess_embedding(self.population_embedding_model([X, TEST_MODE]))
+        p_conv_output, p_vec = self.population_embedding_model([X, TEST_MODE])
+        p_vec = self.postprocess_embedding(p_vec)
+        p_words = self.get_activated_words(p_conv_output, X)
+
+        i_conv_output, i_vec = self.intervention_embedding_model([X, TEST_MODE])
+        i_vec = self.postprocess_embedding(i_vec) 
+        i_words = self.get_activated_words(i_conv_output, X)
+
+        o_conv_output, o_vec = self.outcomes_embedding_model([X, TEST_MODE])
+        o_vec = self.postprocess_embedding(o_vec)
+        o_words = self.get_activated_words(o_conv_output, X)
+            
         # we cast to a list because otherwise we cannot jsonify
         data.ml["p_vector"] = p_vec.tolist()
+        data.ml["p_words"]  = p_words
+
         data.ml["i_vector"] = i_vec.tolist()
+        data.ml["i_words"]  = i_words
+
         data.ml["o_vector"] = o_vec.tolist()
+        data.ml["o_words"]  = o_words
+
         return data
