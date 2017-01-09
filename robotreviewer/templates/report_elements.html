@@ -32,7 +32,8 @@
 
       <h2>Characteristics of studies</h2>
 
-      <img src=" {{ pico_plot_path }} "></img>
+      <!-- <img src=" {{ pico_plot_path }} "></img> -->
+      {{ pico_plot|safe }}
 
       {% for study in articles %}
       <h3>{{ short_citation(study) }}</h3>
