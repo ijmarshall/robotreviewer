@@ -13,12 +13,12 @@ import os
 class PubmedRobot:
 
     def __init__(self):
-        raw_data = np.load(robotreviewer.get_data('pubmed/pubmed_title_hash_2016_08_18.npz'))
+        raw_data = np.load(robotreviewer.get_data('pubmed/pubmed_title_hash_2016_07_24.npz'))
         self.vec_ti = csr_matrix((raw_data['data'], raw_data['indices'], raw_data['indptr']), raw_data['shape'])
-        self.pmid_ind = np.load(robotreviewer.get_data('pubmed/pubmed_index_2016_08_18.npz'))['pmid_ind']
+        self.pmid_ind = np.load(robotreviewer.get_data('pubmed/pubmed_index_2016_07_24.npz'))['pmid_ind']
         self.vectorizer = HashingVectorizer(binary=True, stop_words='english')
         # load database
-        self.connection = sqlite3.connect(robotreviewer.get_data('pubmed/pubmed_rcts_2016_08_18.sqlite'))
+        self.connection = sqlite3.connect(robotreviewer.get_data('pubmed/pubmed_rcts_2016_07_24.sqlite'))
         self.c = self.connection.cursor()
         
 
