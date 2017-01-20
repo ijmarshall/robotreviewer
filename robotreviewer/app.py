@@ -48,7 +48,7 @@ from robotreviewer.textprocessing.tokenizer import nlp
 from robotreviewer.robots.rationale_robot import BiasRobot
 from robotreviewer.robots.pico_robot import PICORobot
 from robotreviewer.robots.rct_robot import RCTRobot
-# from robotreviewer.robots.pubmed_robot import PubmedRobot
+from robotreviewer.robots.pubmed_robot import PubmedRobot
 # from robotreviewer.robots.ictrp_robot import ICTRPRobot
 from robotreviewer.robots import pico_viz_robot
 from robotreviewer.robots.pico_viz_robot import PICOVizRobot
@@ -83,7 +83,7 @@ csrf.init_app(app)
 log.info("Loading the robots...")
 bots = {"bias_bot": BiasRobot(top_k=3),
         "pico_bot": PICORobot(),
-        # "pubmed_bot": PubmedRobot(),
+        "pubmed_bot": PubmedRobot(),
         # "ictrp_bot": ICTRPRobot(),
         "rct_bot": RCTRobot(),
         "pico_viz_bot": PICOVizRobot()}
