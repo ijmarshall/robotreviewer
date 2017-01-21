@@ -58,12 +58,7 @@ A BibTeX entry for LaTeX users is
     git lfs install
     git lfs pull
     ```
-<!-- 3. ignore point 3 for now...  -->
-<!-- 3. Install the PDF web viewer (optional --- this is not needed if you want to just use the REST API)
-    ```bash
-    git submodule update --init --recursive
-    ```
- -->
+
 4. Install the Python libraries that RobotReviewer needs - do one of the following.
 
     a. If you are using Anaconda:
