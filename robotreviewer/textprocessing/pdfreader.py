@@ -31,6 +31,7 @@ import codecs
 import json
 from datetime import datetime
 import dateutil
+import hashlib
 
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -95,6 +96,10 @@ class PdfReader():
         except Exception as e:
             out = MultiDict() # return empty data if not possible to parse
             log.error(u"Grobid hasn't worked! :(\n exception raised: {}".format(e))
+        
+        sha1 = hashlib.sha1()
+        sha1.update(pdf_binary)
+        out.gold['filehash'] = sha1.hexdigest()
         return out
 
     def convert_batch(self, pdf_binary_list, num_threads=None):
