@@ -46,7 +46,7 @@ class Grobid():
     def __init__(self):
         self.devnull = open(os.devnull, 'wb')
         atexit.register(self.cleanup)
-        log.info('Launching Grobid process...')
+        log.info('Launching Grobid process... (from {0})'.format(config.GROBID_PATH))
         self.connection = subprocess.Popen(['mvn', '-q', '-Dmaven.test.skip=true', 'jetty:run-war'], cwd=os.path.join(config.GROBID_PATH, 'grobid-service'), stdout=self.devnull, stderr=subprocess.STDOUT) # skip tests since they will not run properly from python subprocess
 
     def connect(self, check_delay=2):
@@ -56,6 +56,7 @@ class Grobid():
         while connected == False:
             try:
                 r = requests.get(config.GROBID_HOST)
+                print (r)
                 r.raise_for_status() # raise error if not HTTP: 200
                 connected = True
             except:
