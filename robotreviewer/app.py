@@ -147,6 +147,7 @@ def upload_and_annotate():
         data.gold['pdf_uuid'] = pdf_uuid
         data.gold['filename'] = filename
 
+
         c.execute("INSERT INTO article (report_uuid, pdf_uuid, pdf_hash, pdf_file, annotations, timestamp) VALUES(?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), data.to_json(), datetime.now()))
         rr_sql_conn.commit()
     c.close()
@@ -203,14 +204,18 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
     if reportformat=='html' or reportformat=='doc':
         # embeddings only relatively meaningful; do not generate
         # if we have only 1 study.
-        if len(articles) < 2:
+        if sum([(not article.get('_parse_error', False)) for article in articles]) < 2:
+            # i.e. if we have fewer than 2 good articles then skip
             PICO_vectors = False 
 
         pico_plot_html = u""
         if PICO_vectors:
             study_names, p_vectors, i_vectors, o_vectors = [], [], [], []
             p_words, i_words, o_words = [], [], []
-            for article in articles: 
+            for article in articles:
+                if article.get('_parse_error', False):
+                    # need to make errors record more systematically
+                    continue
                 study_names.append(get_study_name(article))
                 p_vectors.append(np.array(article.ml["p_vector"]))
                 p_words.append(article.ml["p_words"])
@@ -220,6 +225,7 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
 
                 o_vectors.append(np.array(article.ml["o_vector"]))
                 o_words.append(article.ml["o_words"])
+
 
 
             vectors_d = {"population":np.vstack(p_vectors), 
@@ -290,8 +296,10 @@ def annotate(data, bot_names=["bias_bot"]):
     return annotations
 
 def annotation_pipeline(bot_names, data):
+    print(data.data)
     for bot_name in bot_names:
         log.debug("Sending doc to {} for annotation...".format(bots[bot_name].__class__.__name__))
+
         data = bots[bot_name].annotate(data)
         log.debug("{} done!".format(bots[bot_name].__class__.__name__))
     return data

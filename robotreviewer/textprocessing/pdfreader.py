@@ -5,7 +5,7 @@ Requires Grobid to be running, by default on localhost:8080
 This can be set in config.py
 """
 
-import re 
+import re
 
 from robotreviewer import config
 from robotreviewer.data_structures import MultiDict
@@ -95,7 +95,8 @@ class PdfReader():
         except Exception as e:
             out = MultiDict() # return empty data if not possible to parse
             log.error(u"Grobid hasn't worked! :(\n exception raised: {}".format(e))
-        
+            out.grobid['_parse_error'] = True
+
         sha1 = hashlib.sha1()
         sha1.update(pdf_binary)
         out.gold['filehash'] = sha1.hexdigest()
@@ -119,7 +120,7 @@ class PdfReader():
         except Exception:
             log.info("oh dear... post request to grobid failed. exception below.")
             log.error(r.text)
-            raise            
+            raise
         return r.text
 
     def parse_xml(self, xml_string):
@@ -144,7 +145,7 @@ class PdfReader():
                     # NB the format below is identical to that used in pubmed_robot.py
                     author_list.append({"initials": u''.join(initials),
                                         "forename": u' '.join(forenames),
-                                        "lastname": u' '.join(lastnames)})    
+                                        "lastname": u' '.join(lastnames)})
                 elif elem.tag=='{http://www.tei-c.org/ns/1.0}date' and elem.attrib.get('type')=='published' and '{http://www.tei-c.org/ns/1.0}fileDesc' in path:
                     DEFAULT = datetime(1800, 1, 1)
                     parsed_date = dateutil.parser.parse(elem.attrib['when'])
@@ -171,12 +172,12 @@ class PdfReader():
                     output.grobid['journal'] = elem.text
                 path.pop()
 
-        
+
         output.grobid['text'] = u'\n'.join(full_text_bits)
         output.grobid['authors'] = author_list
 
         # log.info('author list: %s' % author_list)
-        
+
         return output
 
     def _extract_text(self, elem):
