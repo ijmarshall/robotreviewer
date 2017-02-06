@@ -194,6 +194,7 @@ def get_study_name(article):
 def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True):
     c = rr_sql_conn.cursor()
     articles, article_ids = [], []
+    error_messages = [] # accumulate any errors over articles
     for i, row in enumerate(c.execute("SELECT pdf_uuid, annotations FROM article WHERE report_uuid=?", (report_uuid,))):
         data = MultiDict()
         data.load_json(row[1])
@@ -213,19 +214,20 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
             study_names, p_vectors, i_vectors, o_vectors = [], [], [], []
             p_words, i_words, o_words = [], [], []
             for article in articles:
-                if article.get('_parse_error', False):
+                if article.get('_parse_error'):
                     # need to make errors record more systematically
-                    continue
-                study_names.append(get_study_name(article))
-                p_vectors.append(np.array(article.ml["p_vector"]))
-                p_words.append(article.ml["p_words"])
+                    error_messages.append("{0}<br/>".format(get_study_name(article)))
+                    
+                else:    
+                    study_names.append(get_study_name(article))
+                    p_vectors.append(np.array(article.ml["p_vector"]))
+                    p_words.append(article.ml["p_words"])
 
-                i_vectors.append(np.array(article.ml["i_vector"]))
-                i_words.append(article.ml["i_words"])
+                    i_vectors.append(np.array(article.ml["i_vector"]))
+                    i_words.append(article.ml["i_words"])
 
-                o_vectors.append(np.array(article.ml["o_vector"]))
-                o_words.append(article.ml["o_words"])
-
+                    o_vectors.append(np.array(article.ml["o_vector"]))
+                    o_words.append(article.ml["o_words"])
 
 
             vectors_d = {"population":np.vstack(p_vectors), 
@@ -238,8 +240,10 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
                                             "{0}-PICO-embeddings".format(report_uuid))
 
 
+        #import pdb; pdb.set_trace() 
         return render_template('reportview.{}'.format(reportformat), headers=bots['bias_bot'].get_domains(), articles=articles, 
-                                pico_plot=pico_plot_html, report_uuid=report_uuid, online=(not download), reportformat=reportformat)
+                                pico_plot=pico_plot_html, report_uuid=report_uuid, online=(not download), 
+                                errors=error_messages, reportformat=reportformat)
     elif reportformat=='json':
         return json.dumps({"article_ids": article_ids,
                            "article_data": [a.visible_data() for a in articles],
