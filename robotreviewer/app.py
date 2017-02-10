@@ -98,7 +98,7 @@ log.info("Robots loaded successfully! Ready...")
 rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES)
 c = rr_sql_conn.cursor()
 
-c.execute('CREATE TABLE IF NOT EXISTS article(id INTEGER PRIMARY KEY, report_uuid TEXT, pdf_uuid TEXT, pdf_hash TEXT, pdf_file BLOB, annotations TEXT, timestamp TIMESTAMP)')
+c.execute('CREATE TABLE IF NOT EXISTS article(id INTEGER PRIMARY KEY, report_uuid TEXT, pdf_uuid TEXT, pdf_hash TEXT, pdf_file BLOB, annotations TEXT, timestamp TIMESTAMP, dont_delete INTEGER)')
 c.close()
 rr_sql_conn.commit()
 
@@ -148,7 +148,7 @@ def upload_and_annotate():
         data.gold['filename'] = filename
 
 
-        c.execute("INSERT INTO article (report_uuid, pdf_uuid, pdf_hash, pdf_file, annotations, timestamp) VALUES(?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), data.to_json(), datetime.now()))
+        c.execute("INSERT INTO article (report_uuid, pdf_uuid, pdf_hash, pdf_file, annotations, timestamp, dont_delete) VALUES(?, ?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), data.to_json(), datetime.now(), config.DONT_DELETE))
         rr_sql_conn.commit()
     c.close()
 
@@ -321,7 +321,7 @@ def cleanup_database(days=1):
 
     d = datetime.now() - timedelta(days=days)
     c = conn.cursor()
-    c.execute("DELETE FROM article WHERE timestamp < datetime(?)", [d])
+    c.execute("DELETE FROM article WHERE timestamp < datetime(?) AND dont_delete=0", [d])
     conn.commit()
     conn.execute("VACUUM") # make the database smaller again
     conn.commit()
