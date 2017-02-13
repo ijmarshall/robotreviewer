@@ -1,33 +1,46 @@
-      <h2>Abstract</h2>
+     {% if errors|length > 0 %}
+     <h2>Warning: there were processing errors on</h2>
+       <p class="processing-error">
+       {% for error in errors %}
+         {{ error|safe }}
+       {% endfor %}
+       <br/>
+       These have been excluded from the output.
+       </p>
+     {% endif %}
+
+
+     <h2>Abstract</h2>
 
       <p>
       Here are the results from {{articles|length}} PDFs.
       {% set non_rct_articles = not_rcts(articles) %}
       {% if non_rct_articles %}
-      (Note that {{ non_rct_articles|length }} of these were were not obviously randomized controlled trials, being those by 
+      (Note that {{ non_rct_articles|length }} of these were were not obviously randomized controlled trials, being those by
         {% for study in non_rct_articles %}
           {% if loop.last %}and{% endif %}
           {{ short_citation(study) }}
           {% if not loop.last %}
-          , 
+          ,
           {% endif %}
         {% endfor %}
       ).
       {% endif %}
       </p>
 
-
       <h2>Risk of bias table</h2>
 
       <table class='bias-table'>
         <tr class='bias-header-row'>
           <th class='trial-id-header'>trial</th>
+          <th class='trial-id-header'>design</th>
           {% for header in headers %}
           <th class="rotate"><div><span>{{ header }}</span></div></th>
           {% endfor %}
         </tr>
 
         <!-- <p>Len articles = {{ articles|length }}</p> -->
+
 
 
         {% for study in articles %}
@@ -41,6 +54,13 @@
           </a>
           {% endif %}
           </td>
+          <td class = "risk-studyid">
+          {% if study.get('rct', {}).get('is_rct') %}
+            RCT
+          {% else %}
+            not RCT
+          {% endif %}
+          </td>
           {% for domain in study.get('bias', []) %}
           <td class="{% if domain['judgement'] == 'low' %}risk-low{% elif domain['judgement'] == 'high/unclear' %}risk-high{% endif %}">{{ '+' if domain['judgement'] == 'low' else '?' }}</td>
           {% endfor %}
@@ -50,6 +70,12 @@
 
 
       <h2>Characteristics of studies</h2>
+
+      <!-- <img src=" {{ pico_plot_path }} "></img> -->
+      {{ pico_plot|safe }}
+
+
+
       {% for study in articles %}
       <h3>{{ short_citation(study) }}</h3>
 

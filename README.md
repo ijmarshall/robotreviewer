@@ -81,10 +81,10 @@ pip install flask numpy scipy scikit-learn spacy fuzzywuzzy
 ```bash
 python -m spacy.en.download
 ```
-      
+
 5. This version of RobotReviewer requires Grobid, which in turn uses Java. Follow the instructions [here](https://grobid.readthedocs.io/en/latest/Install-Grobid/) to download and build it.
 
-6. Edit the `robotreviewer/config.py` file to contain the path to the directory where you have installed Grobid. (RobotReviewer will start it automatically in a subprocess). Note that this should be the path to the entire (parent) Grobid directory, not the bin subfolder. 
+6. Edit the `robotreviewer/config.py` file to contain the path to the directory where you have installed Grobid. (RobotReviewer will start it automatically in a subprocess). Note that this should be the path to the entire (parent) Grobid directory, not the bin subfolder.
 
 ## Running
 
@@ -102,9 +102,9 @@ The big change in this version of RobotReviewer is that we now deal with *groups
 
 As a consequence API has become more sophisticated than previously, and we will add further documentation about it here.
 
-In the meantime, the code for the API endpoints can be found in `/robotreviewer/app.py`. 
+In the meantime, the code for the API endpoints can be found in `/robotreviewer/app.py`.
 
-Some things remain simple; e.g., for an example of using RR to classify abstracts as RCTs (or not) see [this gist](https://gist.github.com/bwallace/beebf6d7bbacfbb91704f66c28dcc537). 
+Some things remain simple; e.g., for an example of using RR to classify abstracts as RCTs (or not) see [this gist](https://gist.github.com/bwallace/beebf6d7bbacfbb91704f66c28dcc537).
 
 If you are interested in incorporating RobotReviewer into your own software, please [contact us](mailto:mail@ijmarshall) and we'd be pleased to assist.
 
