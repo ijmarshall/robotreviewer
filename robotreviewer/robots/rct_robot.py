@@ -20,7 +20,7 @@ import json
 import uuid
 import os
 
-import pickle 
+import pickle
 
 import robotreviewer
 from robotreviewer.ml.classifier import MiniClassifier
@@ -46,7 +46,7 @@ from keras.regularizers import l2, activity_l2
 from keras.models import model_from_json
 
 
-class KerasVectorizer(VectorizerMixin):    
+class KerasVectorizer(VectorizerMixin):
     def __init__(self, input='content', encoding='utf-8',
                  decode_error='strict', strip_accents=None,
                  lowercase=True, preprocessor=None, tokenizer=None,
@@ -67,7 +67,7 @@ class KerasVectorizer(VectorizerMixin):
         self.embedding_dim = embedding_inits.syn0.shape[1] if embedding_inits else None
         with open(vocab_map_file, 'rb') as f:
             self.vocab_map = pickle.load(f)
-        
+
     def transform(self, raw_documents, maxlen=400):
         """
         returns lists of integers
@@ -93,7 +93,7 @@ class RCTRobot:
 
         cnn_weight_files = glob.glob(os.path.join(robotreviewer.DATA_ROOT, 'rct/*.h5'))
         json_filename = os.path.join(robotreviewer.DATA_ROOT, 'rct/rct_cnn_structure.json')
-        self.cnn_clfs = [get_model(json_filename, cnn_weight_file) for cnn_weight_file in cnn_weight_files]        
+        self.cnn_clfs = [get_model(json_filename, cnn_weight_file) for cnn_weight_file in cnn_weight_files]
         self.svm_vectorizer = HashingVectorizer(binary=False, ngram_range=(1, 1), stop_words='english')
         self.cnn_vectorizer = KerasVectorizer(vocab_map_file=os.path.join(robotreviewer.DATA_ROOT, 'rct/rct_cnn_vocab_map.pck'))
 
@@ -106,7 +106,7 @@ class RCTRobot:
                                 "cnn": {"mean": 0.15549565997665432,
                                         "std": 0.22064840347497616,
                                         "weight": 1.}} # weighted in mean since we use only 1 model (since produces near identical results to binning 10)
- 
+
         self.thresholds = {"svm": {"precise": 1.9487503268,
                                    "sensitive": -0.12860007792},
                            "svm_ptyp": {"precise": 4.01565491262,
@@ -123,39 +123,35 @@ class RCTRobot:
         # All precise models have been calibrated to 97.6% sensitivity
         # All sensitive models have been calibrated to 99.1% sensitivity
 
-                                        
+
 
     def annotate(self, data):
-        
+
         # use the best performing models from the validation paper (in draft...)
         filter_class = "svm_cnn_ptyp"
         threshold_class = "precise"
 
-        if data.get("abstract") is not None and data.get("title") is not None:            
+        if data.get("abstract") is not None and data.get("title") is not None:
             ti = data["title"]
             ab = data["abstract"]
-        elif data.get("parsed_text") is not None: 
+        elif data.get("parsed_text") is not None:
             # then just use the start of the document
             TI_LEN = 30
             AB_LEN = 500
-            # best guesses based on sample of RCT abstracts + aiming for 95% centile            
+            # best guesses based on sample of RCT abstracts + aiming for 95% centile
             ti = data['parsed_text'][:TI_LEN].text
             ab = data['parsed_text'][:AB_LEN].text
-        else: 
+        else:
             # else can't proceed
             return data
 
-        
-        # we should have all the ptyp studies in our database
-        # (though needs regular updating)
-        if 'pubmed' in data.data:
-            # floats since we need to scale them later
-            ptyp = 1.           
+        if "pubmed" in data.data:
+            ptyp = 1.0
         else:
-            ptyp = 0.
-        
+            ptyp = 0.0
+
         X_ti_str = [ti]
-        X_ab_str = ['{}\n\n{}'.format(ti, ab)]    
+        X_ab_str = ['{}\n\n{}'.format(ti, ab)]
 
         if "svm" in filter_class:
 
@@ -170,9 +166,9 @@ class RCTRobot:
             ptyp_scale =  (ptyp - self.scale_constants['ptyp']['mean']) / self.scale_constants['ptyp']['std']
 
         if "cnn" in filter_class:
-            X_cnn = self.cnn_vectorizer.transform(X_ab_str)            
-            cnn_preds = [clf.predict(X_cnn).T[0] for clf in self.cnn_clfs]        
-            cnn_preds = np.vstack(cnn_preds)            
+            X_cnn = self.cnn_vectorizer.transform(X_ab_str)
+            cnn_preds = [clf.predict(X_cnn).T[0] for clf in self.cnn_clfs]
+            cnn_preds = np.vstack(cnn_preds)
             cnn_scale =  (cnn_preds - self.scale_constants['cnn']['mean']) / self.scale_constants['cnn']['std']
 
         if filter_class == "svm":
@@ -185,27 +181,24 @@ class RCTRobot:
             weights = [self.scale_constants['svm']['weight']] + ([self.scale_constants['cnn']['weight']] * len(self.cnn_clfs))
             y_preds = np.average(np.vstack([cnn_scale, svm_scale]), axis=0, weights=weights) + ptyp_scale
 
-        
 
-        
+
+
         structured_data = {"is_rct": bool(y_preds[0] > self.thresholds[filter_class][threshold_class]),
                            "decision_score": y_preds[0],
                            "model_class": filter_class}
 
-        data.ml["rct"] = structured_data                         
+        data.ml["rct"] = structured_data
         return data
 
 
         @staticmethod
-        def get_marginalia(data):       
+        def get_marginalia(data):
             """
             Get marginalia formatted for Spa from structured data
-            """ 
+            """
             marginalia = [{"type": "Trial Design",
                           "title": "Is an RCT?",
                           "annotations": [],
                           "description":  "{0} (Decision score={1:0.2f} using {} model)".format(data["rct"]["is_rct"], data["rct"]["decision_score"], data["rct"]["model_class"])}]
             return marginalia
-
-
-

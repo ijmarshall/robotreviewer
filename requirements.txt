@@ -3,4 +3,8 @@ dataset
 unidecode
 fuzzywuzzy
 flask-wtf
+Keras
+Theano
 python-Levenshtein
+mpld3
+ujson
