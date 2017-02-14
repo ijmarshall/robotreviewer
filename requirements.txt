@@ -3,8 +3,10 @@ dataset
 unidecode
 fuzzywuzzy
 flask-wtf
-Keras
-Theano
 python-Levenshtein
-mpld3
 ujson
+nltk
+mpld3
+python-dateutil
+git+https://github.com/Theano/Theano.git
+git+https://github.com/fchollet/keras.git

@@ -45,17 +45,19 @@ RUN cd /var/lib/deploy/tmp/grobid && mvn -Dmaven.test.skip=true clean install
 RUN cd /var/lib/deploy/tmp/ && mv grobid /var/lib/deploy/grobid && rm -rf /var/lib/deploy/tmp
 
 # install Anaconda
-RUN aria2c -s 16 -x 16 -k 30M https://repo.continuum.io/archive/Anaconda3-4.3.0-Linux-x86_64.sh -o /var/lib/deploy/Anaconda.sh
+RUN aria2c -s 16 -x 16 -k 30M https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /var/lib/deploy/Anaconda.sh
 RUN cd /var/lib/deploy && bash Anaconda.sh -b && rm -rf Anaconda.sh
-ENV PATH=/var/lib/deploy/anaconda2/bin:$PATH
-
+ENV PATH=/var/lib/deploy/miniconda3/bin:$PATH
+RUN conda install python=3.5.0
 RUN conda config --add channels spacy
-RUN conda install flask numpy scipy scikit-learn spacy
+RUN conda install flask numpy scipy scikit-learn spacy Flask-WTF requests pandas gensim mkl
 RUN python -m spacy.en.download
 
 # install Python dependencies
 ADD requirements.txt /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
+
+RUN python -m nltk.downloader punkt
 
 # compile client side assets
 RUN cd /var/lib/deploy/src/robotreviewer/ &&  r.js -o static/build.js && rm -rf static && mv build static
