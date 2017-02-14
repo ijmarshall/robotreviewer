@@ -8,5 +8,6 @@ ujson
 nltk
 mpld3
 python-dateutil
+apscheduler
 git+https://github.com/Theano/Theano.git
 git+https://github.com/fchollet/keras.git
