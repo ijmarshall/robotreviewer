@@ -49,29 +49,30 @@ A BibTeX entry for LaTeX users is
 
 2. [Install git-lfs](https://git-lfs.github.com/) for managing the model file versions (on Mac: `brew install git-lfs`). NB! If you already have git lfs installed, make sure it's the most recent version, since older versions have not downloaded files properly.
 
-2. Get a copy of the RobotReviewer repo, and go into that directory
+3. Get a copy of the RobotReviewer repo, and go into that directory
     ```bash
     git clone https://github.com/ijmarshall/robotreviewer3.git
     cd robotreviewer3
     ```
-
-3. Get the large data files (>1GB) via git lfs (`brew install git-lfs` if you don't have it)
-    ```bash
-    git lfs install
-    git lfs pull
-    ```
-
-**NB** Step 3 seems to be a bit unreliable... If following those steps does not result in some large files being downloaded, please try updating your version of `git`, and `git lfs` which seems to solve the problem in most cases. If it doesn't please [contact us](mailto:mail@ijmarshall) and we'll try our best to help.
-
 3. Install the Python libraries that RobotReviewer needs - do one of the following.
 
     a. If you are using Anaconda:
 
 ```bash
 conda config --add channels spacy  # only needed once
-conda install flask numpy scipy scikit-learn spacy
-pip install fuzzywuzzy # (this is not yet in the anaconda repo)
+conda install flask numpy scipy scikit-learn spacy Flask-WTF requests pandas
+pip install fuzzywuzzy mpld3 python-dateutil python-Levenshtein # (th # (this is not yet in the anaconda repo)
+# then install theano and keras direct from source
+pip install git+https://github.com/Theano/Theano.git
+pip install git+https://github.com/fchollet/keras.git
 ```
+
+
+5. Install the sentence processing data:
+    ```bash
+    python -m spacy.en.download
+    python -m nltk.downloader punkt # to be shortly removed...
+    ```
 
     b. For everyone else:
 
