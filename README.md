@@ -47,6 +47,8 @@ A BibTeX entry for LaTeX users is
 
 1. Ensure you have a working version of Python 2.7+ or 3.4+. We recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience. However, if you have Python already installed that will probably work fine too.
 
+2. [Install git-lfs](https://git-lfs.github.com/) for managing the model file versions (on Mac: `brew install git-lfs`). NB! If you already have git lfs installed, make sure it's the most recent version, since older versions have not downloaded files properly.
+
 2. Get a copy of the RobotReviewer repo, and go into that directory
     ```bash
     git clone https://github.com/ijmarshall/robotreviewer3.git
