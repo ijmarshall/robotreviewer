@@ -149,9 +149,11 @@ class PdfReader():
                                         "lastname": u' '.join(lastnames)})
                 elif elem.tag=='{http://www.tei-c.org/ns/1.0}date' and elem.attrib.get('type')=='published' and '{http://www.tei-c.org/ns/1.0}fileDesc' in path:
                     DEFAULT = datetime(1800, 1, 1)
-                    parsed_date = dateutil.parser.parse(elem.attrib['when'])
-                    output.grobid["year"] = parsed_date.year
-                    output.grobid["month"] = parsed_date.month
+                    extracted_date = elem.attrib.get('when')
+                    if extracted_date:
+                        parsed_date = dateutil.parser.parse(extracted_date)
+                        output.grobid["year"] = parsed_date.year
+                        output.grobid["month"] = parsed_date.month
                 elif elem.tag=='{http://www.tei-c.org/ns/1.0}biblScope' and '{http://www.tei-c.org/ns/1.0}fileDesc' in path:
 
                     unit = elem.attrib.get('unit')
