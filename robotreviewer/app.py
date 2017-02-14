@@ -143,7 +143,7 @@ def upload_and_annotate():
         pdf_hash = hashlib.md5(blob).hexdigest()
         pdf_uuid = rand_id()
         pdf_uuids.append(pdf_uuid)
-        data = annotate(data, bot_names=["bias_bot", "pico_bot", "rct_bot", "pico_viz_bot"])
+        data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot", "pico_viz_bot"])
         data.gold['pdf_uuid'] = pdf_uuid
         data.gold['filename'] = filename
 
@@ -185,7 +185,7 @@ def get_study_name(article):
     study_str = ""
     if not authors is None:
         study_str = authors[0]["lastname"] + " et al."
-    else: 
+    else:
         #import pdb; pdb.set_trace()
         study_str = article['filename'][:20].lower().replace(".pdf", "") + " ..."
     return study_str
@@ -207,7 +207,7 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
         # if we have only 1 study.
         if sum([(not article.get('_parse_error', False)) for article in articles]) < 2:
             # i.e. if we have fewer than 2 good articles then skip
-            PICO_vectors = False 
+            PICO_vectors = False
 
         pico_plot_html = u""
         if PICO_vectors:
@@ -217,8 +217,8 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
                 if article.get('_parse_error'):
                     # need to make errors record more systematically
                     error_messages.append("{0}<br/>".format(get_study_name(article)))
-                    
-                else:    
+
+                else:
                     study_names.append(get_study_name(article))
                     p_vectors.append(np.array(article.ml["p_vector"]))
                     p_words.append(article.ml["p_words"])
@@ -230,8 +230,8 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
                     o_words.append(article.ml["o_words"])
 
 
-            vectors_d = {"population":np.vstack(p_vectors), 
-                         "intervention":np.vstack(i_vectors), 
+            vectors_d = {"population":np.vstack(p_vectors),
+                         "intervention":np.vstack(i_vectors),
                          "outcomes":np.vstack(o_vectors)}
 
             words_d = {"population":p_words, "intervention":i_words, "outcomes":o_words}
@@ -240,9 +240,9 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
                                             "{0}-PICO-embeddings".format(report_uuid))
 
 
-        #import pdb; pdb.set_trace() 
-        return render_template('reportview.{}'.format(reportformat), headers=bots['bias_bot'].get_domains(), articles=articles, 
-                                pico_plot=pico_plot_html, report_uuid=report_uuid, online=(not download), 
+        #import pdb; pdb.set_trace()
+        return render_template('reportview.{}'.format(reportformat), headers=bots['bias_bot'].get_domains(), articles=articles,
+                                pico_plot=pico_plot_html, report_uuid=report_uuid, online=(not download),
                                 errors=error_messages, reportformat=reportformat)
     elif reportformat=='json':
         return json.dumps({"article_ids": article_ids,
@@ -300,7 +300,6 @@ def annotate(data, bot_names=["bias_bot"]):
     return annotations
 
 def annotation_pipeline(bot_names, data):
-    print(data.data)
     for bot_name in bot_names:
         log.debug("Sending doc to {} for annotation...".format(bots[bot_name].__class__.__name__))
 
