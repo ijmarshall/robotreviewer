@@ -16,8 +16,12 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 
+import matplotlib 
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as PathEffects
+
 import seaborn as sns
 sns.set_style("white")
 import mpld3
