@@ -8,3 +8,7 @@ openjdk-8-jdk-headless
 maven
 libxml2
 wget
+libsm6 
+libxrender1
+libfontconfig1
+git

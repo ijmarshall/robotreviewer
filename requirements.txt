@@ -2,12 +2,14 @@ argparse
 dataset
 unidecode
 fuzzywuzzy
-flask-wtf
 python-Levenshtein
 ujson
 nltk
 mpld3
 python-dateutil
 apscheduler
+gevent
+greenlet
+
 git+https://github.com/Theano/Theano.git
 git+https://github.com/fchollet/keras.git
