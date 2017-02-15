@@ -5,7 +5,7 @@ Requires Grobid to be running, by default on localhost:8080
 This can be set in config.py
 """
 
-import re 
+import re
 
 from robotreviewer import config
 from robotreviewer.data_structures import MultiDict
@@ -31,6 +31,7 @@ import codecs
 import json
 from datetime import datetime
 import dateutil
+import hashlib
 
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -46,7 +47,7 @@ class Grobid():
     def __init__(self):
         self.devnull = open(os.devnull, 'wb')
         atexit.register(self.cleanup)
-        log.info('Launching Grobid process...')
+        log.info('Launching Grobid process... (from {0})'.format(config.GROBID_PATH))
         self.connection = subprocess.Popen(['mvn', '-q', '-Dmaven.test.skip=true', 'jetty:run-war'], cwd=os.path.join(config.GROBID_PATH, 'grobid-service'), stdout=self.devnull, stderr=subprocess.STDOUT) # skip tests since they will not run properly from python subprocess
 
     def connect(self, check_delay=2):
@@ -56,6 +57,7 @@ class Grobid():
         while connected == False:
             try:
                 r = requests.get(config.GROBID_HOST)
+                print (r)
                 r.raise_for_status() # raise error if not HTTP: 200
                 connected = True
             except:
@@ -94,6 +96,11 @@ class PdfReader():
         except Exception as e:
             out = MultiDict() # return empty data if not possible to parse
             log.error(u"Grobid hasn't worked! :(\n exception raised: {}".format(e))
+            out.grobid['_parse_error'] = True
+
+        sha1 = hashlib.sha1()
+        sha1.update(pdf_binary)
+        out.gold['filehash'] = sha1.hexdigest()
         return out
 
     def convert_batch(self, pdf_binary_list, num_threads=None):
@@ -114,7 +121,7 @@ class PdfReader():
         except Exception:
             log.info("oh dear... post request to grobid failed. exception below.")
             log.error(r.text)
-            raise            
+            raise
         return r.text
 
     def parse_xml(self, xml_string):
@@ -139,12 +146,14 @@ class PdfReader():
                     # NB the format below is identical to that used in pubmed_robot.py
                     author_list.append({"initials": u''.join(initials),
                                         "forename": u' '.join(forenames),
-                                        "lastname": u' '.join(lastnames)})    
+                                        "lastname": u' '.join(lastnames)})
                 elif elem.tag=='{http://www.tei-c.org/ns/1.0}date' and elem.attrib.get('type')=='published' and '{http://www.tei-c.org/ns/1.0}fileDesc' in path:
                     DEFAULT = datetime(1800, 1, 1)
-                    parsed_date = dateutil.parser.parse(elem.attrib['when'])
-                    output.grobid["year"] = parsed_date.year
-                    output.grobid["month"] = parsed_date.month
+                    extracted_date = elem.attrib.get('when')
+                    if extracted_date:
+                        parsed_date = dateutil.parser.parse(extracted_date)
+                        output.grobid["year"] = parsed_date.year
+                        output.grobid["month"] = parsed_date.month
                 elif elem.tag=='{http://www.tei-c.org/ns/1.0}biblScope' and '{http://www.tei-c.org/ns/1.0}fileDesc' in path:
 
                     unit = elem.attrib.get('unit')
@@ -166,12 +175,12 @@ class PdfReader():
                     output.grobid['journal'] = elem.text
                 path.pop()
 
-        
+
         output.grobid['text'] = u'\n'.join(full_text_bits)
         output.grobid['authors'] = author_list
 
         # log.info('author list: %s' % author_list)
-        
+
         return output
 
     def _extract_text(self, elem):

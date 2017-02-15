@@ -39,4 +39,10 @@ def long_citation_fn():
             return u"Unable to extract citation information for file {}".format(article['filename'])
     return dict(long_citation=long_citation)
 
+@app.context_processor
+def not_rcts_fn():
+    def not_rcts(articles):
+        return [r for r in articles if r.get('rct', {}).get('is_rct', True) == False]
+    return dict(not_rcts=not_rcts)
+
 

@@ -36,7 +36,7 @@ import numpy as np
 
 from keras.optimizers import SGD, RMSprop
 from keras import backend as K 
-from keras.models import Graph, Model, Sequential, model_from_json #load_model
+from keras.models import Model, Sequential, model_from_json #load_model
 from keras.preprocessing import sequence
 from keras.engine.topology import Layer
 from keras.preprocessing.sequence import pad_sequences
@@ -49,7 +49,7 @@ from keras.utils.np_utils import accuracy
 from keras.preprocessing.text import text_to_word_sequence, Tokenizer
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.constraints import maxnorm
-
+from keras.regularizers import l2
 
 class RationaleCNN:
 
@@ -150,7 +150,7 @@ class RationaleCNN:
         return tuple((1, shape[-1]))
 
     @staticmethod
-    def balanced_sample(X, y, binary=False):
+    def balanced_sample(X, y, sentences=None, binary=False, k=1, n_rows=None):
         if binary:
             _, neg_indices = np.where([y <= 0]) 
             _, pos_indices = np.where([y > 0])
@@ -161,20 +161,41 @@ class RationaleCNN:
             _, neg_rationale_indices = np.where([y[:,1] > 0]) 
             _, non_rationale_indices = np.where([y[:,2] > 0]) 
 
-            # sample a number of non-rationales equal to the total
-            # number of pos/neg rationales. 
-            m = pos_rationale_indices.shape[0] + neg_rationale_indices.shape[0]
-                                            # np.array(random.sample(non_rationale_indices, m)) 
 
-            sampled_non_rationale_indices = non_rationale_indices
-            if m < non_rationale_indices.shape[0]:
-                sampled_non_rationale_indices = np.random.choice(non_rationale_indices, m, replace=True)
+            if n_rows is not None: 
+                # then we will return a matrix comprising n_rows rows, 
+                # repeating positive examples but drawing diverse negative
+                # instances
+                num_rationale_indices = n_rows / 2.0
+                if pos_rationale_indices.shape[0] > 0:
+                    rationale_indices = np.random.choice(pos_rationale_indices, num_rationale_indices, replace=True)
+                else: 
+                    rationale_indices = np.random.choice(neg_rationale_indices, num_rationale_indices, replace=True)
 
-            train_indices = np.concatenate([pos_rationale_indices, neg_rationale_indices, 
-                                                sampled_non_rationale_indices])
+                # sample the rest as `negative' (neutral) instances
+                num_non_rationales = n_rows - num_rationale_indices
+                sampled_non_rationale_indices = np.random.choice(non_rationale_indices, num_non_rationales, replace=True)
+                train_indices = np.concatenate([rationale_indices, sampled_non_rationale_indices])
+            
+            else:
+
+                # sample a number of non-rationales equal to the total
+                # number of pos/neg rationales * k
+                m = k*(pos_rationale_indices.shape[0] + neg_rationale_indices.shape[0])
+                                                # np.array(random.sample(non_rationale_indices, m)) 
+
+                sampled_non_rationale_indices = non_rationale_indices
+                if m < non_rationale_indices.shape[0]:
+                    sampled_non_rationale_indices = np.random.choice(non_rationale_indices, m, replace=True)
+
+                train_indices = np.concatenate([pos_rationale_indices, neg_rationale_indices, 
+                                                    sampled_non_rationale_indices])
             
 
+
         np.random.shuffle(train_indices) # why not
+        if sentences is not None: 
+            return X[train_indices,:], y[train_indices], [sentences[idx] for idx in train_indices]
         return X[train_indices,:], y[train_indices]
 
 
@@ -303,11 +324,10 @@ class RationaleCNN:
         # it's not clear that it even makes sense to apply drop out here!
         sent_vectors = Dropout(self.sent_dropout, name="dropout")(sent_vectors)
 
+        # note that if end_to_end_train is False, we 'freeze' the sentence
+        # softmax weights after pretraining the sentence model
         print("end-to-end training is: %s" % self.end_to_end_train)
-        sent_pred_model = Dense(3, activation="softmax", name="sentence_prediction") 
-                                    #trainable=self.end_to_end_train)
-
-        # note that using the sent_preds directly works as expected...
+        sent_pred_model = Dense(3, activation="softmax", name="sentence_prediction", W_regularizer=l2(0.01)) 
         sent_preds = TimeDistributed(sent_pred_model, name="sentence_predictions")(sent_vectors)
 
         ####
@@ -398,6 +418,7 @@ class RationaleCNN:
         # now rank sentences; 0 indicates 'test time'
         sent_preds = self.sentence_prob_model(inputs=[X_doc, 0])[0].squeeze()[:doc.num_sentences]
 
+        # doc label: y=1 -> low risk
         # recall: [1, 0, 0] -> positive rationale; [0, 1, 0] -> negative rationale
         idx = 0
         if doc_pred < .5:
@@ -407,13 +428,14 @@ class RationaleCNN:
         rationale_indices = sent_preds[:,idx].argsort()[-num_rationales:]
         rationales = [doc.sentences[r_idx] for r_idx in rationale_indices]
 
+        #import pdb; pdb.set_trace()
         return (doc_pred, rationale_indices)
 
 
     def train_sentence_model(self, train_documents, nb_epoch=5, 
                                 downsample=True, 
                                 sent_val_split=.2, 
-                                sentence_model_weights_path="sentence_model_weights2.hdf5"):
+                                sentence_model_weights_path="sentence_model_weights.hdf5"):
 
         # assumes sentence sequences have been generated!
         assert(train_documents[0].sentence_sequences is not None)
@@ -427,25 +449,32 @@ class RationaleCNN:
                     validation_size)
     
         #######
-        # build the train and test sets
+        # build the train and validation sets
+        # @TODO redundant blocks...
         ######
-        X_doc, y_sent = [], []
+        X_doc, y_sent, train_sentences = [], [], []
         for d in train_documents[:-validation_size]:
             cur_X, cur_sent_y = d.get_padded_sequences(self.preprocessor)
-            X_doc.append(cur_X)
-            y_sent.append(cur_sent_y)
+            if np.max(cur_sent_y[:,:2]) > 0:            
+                X_doc.append(cur_X)
+                y_sent.append(cur_sent_y)
+                train_sentences.append(d.padded_sentences)
+
         X_doc = np.array(X_doc)
         y_sent = np.array(y_sent)
 
 
-        X_doc_validation, y_sent_validation = [], []
+        X_doc_validation, y_sent_validation, validation_sentences = [], [], []
         for d in train_documents[-validation_size:]:
             cur_X, cur_sent_y = d.get_padded_sequences(self.preprocessor)
-            X_doc_validation.append(cur_X)
-            y_sent_validation.append(cur_sent_y)
+            if np.max(cur_sent_y[:,:2]) > 0:
+                # 12/13: only validate on samples that actually have at 
+                # least one rationale!
+                X_doc_validation.append(cur_X)
+                y_sent_validation.append(cur_sent_y)
+                validation_sentences.append(d.padded_sentences)
         X_doc_validation = np.array(X_doc_validation)
         y_sent_validation = np.array(y_sent_validation)
-
 
 
         if downsample:
@@ -454,48 +483,45 @@ class RationaleCNN:
             cur_acc, best_acc = None, -np.inf  # - inf for F-score
 
             # then draw nb_epoch balanced samples; take one pass on each
+            skip_count = 0
             for iter_ in range(nb_epoch):
 
                 print ("on epoch: %s" % iter_)
 
-                X_temp, y_sent_temp = [], []
+                X_temp, y_sent_temp, sentences_temp = [], [], []
                 for i in range(X_doc.shape[0]):
-                    #X_doc_i, y_sent_i in zip(X_doc, y_sent):
+                    # i is indexing the document here!
                     X_doc_i = X_doc[i]
                     y_sent_i = y_sent[i]
 
                     # downsample each document
-                    
-                    X_doc_i_temp, y_sent_i_temp = RationaleCNN.balanced_sample(X_doc_i, y_sent_i)
-                    
+                        
                     '''
                     A tricky bit here is that the model expects a given doc length as input,
                     so here we take a kind of hacky approach of duplicating the downsampled
                     rows per documents. Basically this assembles 'balanced' pseudo documents
                     for input to the model.
                     '''
-
                     n_target_rows = X_doc_i.shape[0]
-                    if X_doc_i_temp.shape[0] > 0:
-                        # we skip docs with no rationales!
+                    X_doc_i_temp, y_sent_i_temp, sampled_sentences = RationaleCNN.balanced_sample(X_doc_i, y_sent_i, 
+                                                                                sentences=train_sentences[i],
+                                                                                n_rows=n_target_rows)
+                                                                                #doc=train_documents[:-validation_size][i])
+                   
+                    
 
-                        num_times_to_dup = (n_target_rows/X_doc_i_temp.shape[0])+1
+                    X_temp.append(X_doc_i_temp)
+                    y_sent_temp.append(y_sent_i_temp)
+                    sentences_temp.append(sampled_sentences)
 
+                
 
-                        X_doc_i_temp  = np.tile(X_doc_i_temp, (num_times_to_dup, 1))[:n_target_rows]
-                        y_sent_i_temp = np.tile(y_sent_i_temp, (num_times_to_dup, 1))[:n_target_rows]
-
-                        X_temp.append(X_doc_i_temp)
-                        y_sent_temp.append(y_sent_i_temp)
-
+ 
 
                 X_temp = np.array(X_temp)
                 y_sent_temp = np.array(y_sent_temp)
                 
-
-                # @TODO add batch_size as a param???
-                #import pdb; pdb.set_trace()
-                # Exception: Error when checking model input: expected input to have 3 dimensions, but got array with shape (1440, 1)
+            
                 self.sentence_model.fit(X_temp, y_sent_temp, nb_epoch=1)
                                          #class_weight={0:1, 1:1})
 
@@ -528,7 +554,23 @@ class RationaleCNN:
 
         # reload best weights
         self.sentence_model.load_weights(sentence_model_weights_path)
-    
+        
+
+        import pdb; pdb.set_trace() 
+
+        # 12/13/16 -- check if leaving sentence model trainable
+        if not self.end_to_end_train:
+            print ("freezing sentence prediction layer weights!")
+            sent_softmax_layer = self.doc_model.get_layer("sentence_predictions")
+            sent_softmax_layer.trainable = False 
+
+            # after freezing these weights, recompile doc model (as per 
+            # https://keras.io/getting-started/faq/#how-can-i-freeze-keras-layers)
+            self.doc_model.compile(metrics=["accuracy",     
+                                        RationaleCNN.metric_func_maker(metric_name="f", beta=self.f_beta), 
+                                        RationaleCNN.metric_func_maker(metric_name="recall"), 
+                                        RationaleCNN.metric_func_maker(metric_name="precision")], 
+                                        loss="binary_crossentropy", optimizer="adadelta")
 
     def train_document_model(self, train_documents, nb_epoch=5, downsample=False, 
                                 doc_val_split=.2, batch_size=50,
@@ -634,6 +676,10 @@ class Document:
         self.n = len(self.sentences)
 
 
+    def get_padded_sentences():
+        # sometimes useful for indexing purposes
+        return self.padded_sentences
+
     def __len__(self):
         return self.n 
 
@@ -644,6 +690,8 @@ class Document:
         integer sequences here.
         '''
         self.sentence_sequences = p.build_sequences(self.sentences)
+        self.padded_sentences = self.sentences + [''] * (p.max_doc_len - self.n)
+
 
     def get_padded_sequences_for_X_y(self, p, X, y):
         n_sentences = X.shape[0]
@@ -651,7 +699,8 @@ class Document:
             X = X[:p.max_doc_len]
             y = y[:p.max_doc_len]
         elif n_sentences < p.max_doc_len:
-            dummy_rows = p.max_features * np.ones((p.max_doc_len-n_sentences, p.max_sent_len), dtype='int32') 
+            #dummy_rows = p.max_features * np.ones((p.max_doc_len-n_sentences, p.max_sent_len), dtype='int32') 
+            dummy_rows = 0 * np.ones((p.max_doc_len-n_sentences, p.max_sent_len), dtype='int32')
             X = np.vstack((X, dummy_rows))
         
             dummy_lbls = [np.array([0,0,1]) for _ in range(p.max_doc_len-n_sentences)]
@@ -665,7 +714,8 @@ class Document:
             X = X[:p.max_doc_len]
         elif n_sentences < p.max_doc_len:
             # pad
-            dummy_rows = p.max_features * np.ones((p.max_doc_len-n_sentences, p.max_sent_len), dtype='int32') 
+            #dummy_rows = p.max_features * np.ones((p.max_doc_len-n_sentences, p.max_sent_len), dtype='int32') 
+            dummy_rows = 0 * np.ones((p.max_doc_len-n_sentences, p.max_sent_len), dtype='int32')
             X = np.vstack((X, dummy_rows))
         return np.array(X)
 
@@ -711,14 +761,24 @@ class Preprocessor:
         
         self.stopword = stopword
         # lifted directly from spacy's EN list
-        self.stopwords = [u'all', u'six', u'just', u'less', u'being', u'indeed', u'over', u'move', u'anyway', u'four', u'not', u'own', u'through', u'using', u'fify', u'where', u'mill', u'only', u'find', u'before', u'one', u'whose', u'system', u'how', u'somewhere', u'much', u'thick', u'show', u'had', u'enough', u'should', u'to', u'must', u'whom', u'seeming', u'yourselves', u'under', u'ours', u'two', u'has', u'might', u'thereafter', u'latterly', u'do', u'them', u'his', u'around', u'than', u'get', u'very', u'de', u'none', u'cannot', u'every', u'un', u'they', u'front', u'during', u'thus', u'now', u'him', u'nor', u'name', u'regarding', u'several', u'hereafter', u'did', u'always', u'who', u'didn', u'whither', u'this', u'someone', u'either', u'each', u'become', u'thereupon', u'sometime', u'side', u'towards', u'therein', u'twelve', u'because', u'often', u'ten', u'our', u'doing', u'km', u'eg', u'some', u'back', u'used', u'up', u'go', u'namely', u'computer', u'are', u'further', u'beyond', u'ourselves', u'yet', u'out', u'even', u'will', u'what', u'still', u'for', u'bottom', u'mine', u'since', u'please', u'forty', u'per', u'its', u'everything', u'behind', u'does', u'various', u'above', u'between', u'it', u'neither', u'seemed', u'ever', u'across', u'she', u'somehow', u'be', u'we', u'full', u'never', u'sixty', u'however', u'here', u'otherwise', u'were', u'whereupon', u'nowhere', u'although', u'found', u'alone', u're', u'along', u'quite', u'fifteen', u'by', u'both', u'about', u'last', u'would', u'anything', u'via', u'many', u'could', u'thence', u'put', u'against', u'keep', u'etc', u'amount', u'became', u'ltd', u'hence', u'onto', u'or', u'con', u'among', u'already', u'co', u'afterwards', u'formerly', u'within', u'seems', u'into', u'others', u'while', u'whatever', u'except', u'down', u'hers', u'everyone', u'done', u'least', u'another', u'whoever', u'moreover', u'couldnt', u'throughout', u'anyhow', u'yourself', u'three', u'from', u'her', u'few', u'together', u'top', u'there', u'due', u'been', u'next', u'anyone', u'eleven', u'cry', u'call', u'therefore', u'interest', u'then', u'thru', u'themselves', u'hundred', u'really', u'sincere', u'empty', u'more', u'himself', u'elsewhere', u'mostly', u'on', u'fire', u'am', u'becoming', u'hereby', u'amongst', u'else', u'part', u'everywhere', u'too', u'kg', u'herself', u'former', u'those', u'he', u'me', u'myself', u'made', u'twenty', u'these', u'was', u'bill', u'cant', u'us', u'until', u'besides', u'nevertheless', u'below', u'anywhere', u'nine', u'can', u'whether', u'of', u'your', u'toward', u'my', u'say', u'something', u'and', u'whereafter', u'whenever', u'give', u'almost', u'wherever', u'is', u'describe', u'beforehand', u'herein', u'doesn', u'an', u'as', u'itself', u'at', u'have', u'in', u'seem', u'whence', u'ie', u'any', u'fill', u'again', u'hasnt', u'inc', u'thereby', u'thin', u'no', u'perhaps', u'latter', u'meanwhile', u'when', u'detail', u'same', u'wherein', u'beside', u'also', u'that', u'other', u'take', u'which', u'becomes', u'you', u'if', u'nobody', u'unless', u'whereas', u'see', u'though', u'may', u'after', u'upon', u'most', u'hereupon', u'eight', u'but', u'serious', u'nothing', u'such', u'why', u'off', u'a', u'don', u'whereby', u'third', u'i', u'whole', u'noone', u'sometimes', u'well', u'amoungst', u'yours', u'their', u'rather', u'without', u'so', u'five', u'the', u'first', u'with', u'make', u'once']
+        #self.stopwords = [u'all', u'six', u'just', u'less', u'being', u'indeed', u'over', u'move', u'anyway', u'four', u'not', u'own', u'through', u'using', u'fify', u'where', u'mill', u'only', u'find', u'before', u'one', u'whose', u'system', u'how', u'somewhere', u'much', u'thick', u'show', u'had', u'enough', u'should', u'to', u'must', u'whom', u'seeming', u'yourselves', u'under', u'ours', u'two', u'has', u'might', u'thereafter', u'latterly', u'do', u'them', u'his', u'around', u'than', u'get', u'very', u'de', u'none', u'cannot', u'every', u'un', u'they', u'front', u'during', u'thus', u'now', u'him', u'nor', u'name', u'regarding', u'several', u'hereafter', u'did', u'always', u'who', u'didn', u'whither', u'this', u'someone', u'either', u'each', u'become', u'thereupon', u'sometime', u'side', u'towards', u'therein', u'twelve', u'because', u'often', u'ten', u'our', u'doing', u'km', u'eg', u'some', u'back', u'used', u'up', u'go', u'namely', u'computer', u'are', u'further', u'beyond', u'ourselves', u'yet', u'out', u'even', u'will', u'what', u'still', u'for', u'bottom', u'mine', u'since', u'please', u'forty', u'per', u'its', u'everything', u'behind', u'does', u'various', u'above', u'between', u'it', u'neither', u'seemed', u'ever', u'across', u'she', u'somehow', u'be', u'we', u'full', u'never', u'sixty', u'however', u'here', u'otherwise', u'were', u'whereupon', u'nowhere', u'although', u'found', u'alone', u're', u'along', u'quite', u'fifteen', u'by', u'both', u'about', u'last', u'would', u'anything', u'via', u'many', u'could', u'thence', u'put', u'against', u'keep', u'etc', u'amount', u'became', u'ltd', u'hence', u'onto', u'or', u'con', u'among', u'already', u'co', u'afterwards', u'formerly', u'within', u'seems', u'into', u'others', u'while', u'whatever', u'except', u'down', u'hers', u'everyone', u'done', u'least', u'another', u'whoever', u'moreover', u'couldnt', u'throughout', u'anyhow', u'yourself', u'three', u'from', u'her', u'few', u'together', u'top', u'there', u'due', u'been', u'next', u'anyone', u'eleven', u'cry', u'call', u'therefore', u'interest', u'then', u'thru', u'themselves', u'hundred', u'really', u'sincere', u'empty', u'more', u'himself', u'elsewhere', u'mostly', u'on', u'fire', u'am', u'becoming', u'hereby', u'amongst', u'else', u'part', u'everywhere', u'too', u'kg', u'herself', u'former', u'those', u'he', u'me', u'myself', u'made', u'twenty', u'these', u'was', u'bill', u'cant', u'us', u'until', u'besides', u'nevertheless', u'below', u'anywhere', u'nine', u'can', u'whether', u'of', u'your', u'toward', u'my', u'say', u'something', u'and', u'whereafter', u'whenever', u'give', u'almost', u'wherever', u'is', u'describe', u'beforehand', u'herein', u'doesn', u'an', u'as', u'itself', u'at', u'have', u'in', u'seem', u'whence', u'ie', u'any', u'fill', u'again', u'hasnt', u'inc', u'thereby', u'thin', u'no', u'perhaps', u'latter', u'meanwhile', u'when', u'detail', u'same', u'wherein', u'beside', u'also', u'that', u'other', u'take', u'which', u'becomes', u'you', u'if', u'nobody', u'unless', u'whereas', u'see', u'though', u'may', u'after', u'upon', u'most', u'hereupon', u'eight', u'but', u'serious', u'nothing', u'such', u'why', u'off', u'a', u'don', u'whereby', u'third', u'i', u'whole', u'noone', u'sometimes', u'well', u'amoungst', u'yours', u'their', u'rather', u'without', u'so', u'five', u'the', u'first', u'with', u'make', u'once']
+        self.stopwords = ["a", "about", "again", "all", "almost", "also", "although", "always", "among", "an", "and", "another", "any", "are", "as", "at", "b", "be", "because", "been", "before", "being", "between", "both", "but", "by", "c", "can", "could", "did", "do", "d", "does", "each", "either", "enough", "etc", "f", "for", "from", "had", "has", "have", "here", "how", "h", "i", "if", "in", "into", "is", "it", "its", "j", "just", "k", "made", "make", "may", "must", "n", "o", "of", "often", "on", "p", "q", "r", "s", "so", "that", "the", "them", "then", "their", "those", "thus", "to", "t", "u", "use", "used", "v", "w", "x", "y", "z", "we", "was"]
+
 
     def remove_stopwords(self, texts):
         stopworded_texts = []
         for text in texts: 
             # note the naive segmentation; although this is same as the 
             # keras module does.
-            stopworded_text = " ".join([t for t in text.split(" ") if not t in self.stopwords])
+            #stopworded_text = " ".join([t for t in text.split(" ") if not t.lower() in self.stopwords])
+            stopworded_text = []
+            for t in text.split(" "):
+                if not t in self.stopwords:
+                    if t.isdigit():
+                        t = "numbernumbernumber"
+                    stopworded_text.append(t)
+            #stopworded_text = " ".join([t for t in text.split(" ") if not t in self.stopwords])
+            stopworded_text = " ".join(stopworded_text)
             stopworded_texts.append(stopworded_text)
         return stopworded_texts
 
