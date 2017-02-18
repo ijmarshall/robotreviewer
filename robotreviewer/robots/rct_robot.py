@@ -97,30 +97,30 @@ class RCTRobot:
         self.svm_vectorizer = HashingVectorizer(binary=False, ngram_range=(1, 1), stop_words='english')
         self.cnn_vectorizer = KerasVectorizer(vocab_map_file=os.path.join(robotreviewer.DATA_ROOT, 'rct/rct_cnn_vocab_map.pck'))
 
-        self.scale_constants = {"svm": {"mean": -0.75481403525485891,
-                                        "std": 0.7812955939364481,
-                                        "weight": 10.},
-                                "ptyp": {"mean": 0.055155532891381948,
-                                        "std": 0.22828359573751594,
-                                        "weight": 1.},
-                                "cnn": {"mean": 0.15549565997665432,
-                                        "std": 0.22064840347497616,
-                                        "weight": 1.}} # weighted in mean since we use only 1 model (since produces near identical results to binning 10)
+        
 
-        self.thresholds = {"svm": {"precise": 1.9487503268,
-                                   "sensitive": -0.12860007792},
-                           "svm_ptyp": {"precise": 4.01565491262,
-                                        "sensitive": -0.014853014584},
-                           "cnn": {"precise": 2.0417000432,
-                                   "sensitive": -0.311928636661},
-                           "cnn_ptyp": {"precise": 3.58216450739,
-                                        "sensitive": -0.38400452513},
-                            "svm_cnn": {"precise": 2.01457242432,
-                                        "sensitive": -0.275235475372},
-                            "svm_cnn_ptyp": {"precise": 3.59886540373,
-                                            "sensitive": -0.294982870378}}
 
-        # All precise models have been calibrated to 97.6% sensitivity
+        self.scale_constants =  {'cnn': {'mean': 0.15592811611054261,
+                      'std': 0.22405916984696986,
+                      'weight': 1.6666666666666667},
+                     'ptyp': {'mean': 0.055155532891381948,
+                      'std': 0.22828359573751594},
+                     'svm': {'mean': -0.75481403525485891,
+                      'std': 0.7812955939364481,
+                      'weight': 10.0}} # weighted in mean since we use only 1 SVM model (since produces near identical results to binning 10) and 6 CNN models (since runs faster, and no further reduction in variance for further models)
+
+        self.thresholds = {'cnn': {'precise': 2.1340457758193034,
+              'sensitive': -0.076709540491855063},
+             'cnn_ptyp': {'precise': 3.529609848417909,
+              'sensitive': 0.083502632442633312},
+             'svm': {'precise': 1.9185522606237164,
+              'sensitive': 0.093273630980694439},
+             'svm_cnn': {'precise': 1.8749128673557529,
+              'sensitive': 0.064481902000491614},
+             'svm_cnn_ptyp': {'precise': 3.7674045603568755,
+              'sensitive': 0.1952449060483534},
+             'svm_ptyp': {'precise': 3.7358855328111837,
+              'sensitive': 0.42992224964656178}}# All precise models have been calibrated to 97.6% sensitivity
         # All sensitive models have been calibrated to 99.1% sensitivity
 
 
