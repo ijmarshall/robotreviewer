@@ -109,13 +109,23 @@ class BiasRobot:
         if weights is None: 
             weights = np.ones(2)
 
-        for i in range(len(a)):
+        # ensure list sizes are equal. note that the CNN
+        # model will always assume/force 200 sentences,
+        # whereas BoW model will not. so here we trim if
+        # necessary, effectively taking the max_index 
+        # top sentences from each model and pooling these.
+        a_n, b_n = len(a), len(b)
+        max_index = min(a_n, b_n)
+        a = a[-max_index:]
+        b = b[-max_index:]
+        for i in range(max_index):
             score = i+1 # 1 ... m
             rank_scores_dict[a[i]] += weights[0]*score
             rank_scores_dict[b[i]] += weights[1]*score 
 
         sorted_indices = sorted(rank_scores_dict.items(), key=operator.itemgetter(1), reverse=True)
         return [index[0] for index in sorted_indices]
+
         #return sorted_indices
 
     def annotate(self, data, top_k=None, threshold=0.5):
@@ -160,7 +170,8 @@ class BiasRobot:
                 model = self.CNN_models[domain]
                 doc = Document(doc_id=None, sentences=doc_sents) # vectorize document
                 bias_prob_CNN, high_prob_sent_indices_CNN = model.predict_and_rank_sentences_for_doc(doc, num_rationales=len(doc))
-                    
+                
+                
                 high_prob_sent_indices = self.simple_borda_count(high_prob_sent_indices_CNN, 
                                                                  linear_high_prob_sent_indices)[:top_k]
 
