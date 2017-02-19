@@ -99,6 +99,19 @@ python -m robotreviewer
 
 will start a flask server running on `http://localhost:5000`. You can run the server in development mode by passing `DEBUG=true python -m robotreviewer`. Visiting this address from a browser will show the new multiple PDF synthesis demonstration.
 
+## Demonstration reports
+
+We have included some example reports, with open access RCT PDFs in order to demonstrate RobotReviewer. These are saved in the default database, and can be accessed via the following links.
+
+Decision aids: `http://localhost:5000/#report/Tvg0-pHV2QBsYpJxE2KW-`
+Influenza vaccination: `http://localhost:5000/#report/_fzGUEvWAeRsqYSmNQbBq`
+Hypertension: `http://localhost:5000/#report/HBkzX1I3Uz_kZEQYeqXJf`
+
+
+
+
+
+
 ## Rest API
 
 The big change in this version of RobotReviewer is that we now deal with *groups* of clinical trial reports, rather than one at a time. This is to allow RobotReviewer to synthesise the results of multiple trials.
