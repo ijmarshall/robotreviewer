@@ -25,6 +25,10 @@ import mpld3
 from matplotlib import rcParams
 rcParams.update({'figure.subplot.left'  : 0.01})
 
+import sys
+from robotreviewer.ml import vectorizer
+sys.modules['vectorizer'] = vectorizer
+
 
 population_arch_path = 'robotreviewer/data/pico/PICO_embeddings/populations/architecture.json'
 population_weight_path = 'robotreviewer/data/pico/PICO_embeddings/populations/weights.h5'
