@@ -16,14 +16,19 @@
       Here are the results from {{articles|length}} PDFs.
       {% set non_rct_articles = not_rcts(articles) %}
       {% if non_rct_articles %}
-      (Note that {{ non_rct_articles|length }} of these were were not obviously randomized controlled trials, being those by
-        {% for study in non_rct_articles %}
-          {% if loop.last %}and{% endif %}
-          {{ short_citation(study) }}
-          {% if not loop.last %}
-          ,
-          {% endif %}
-        {% endfor %}
+      (Note that {{ non_rct_articles|length }} of these were not obviously randomized controlled trials, being
+        {% if non_rct_articles|length == 1 %}
+            the one by {{ short_citation(non_rct_articles[0]) }}
+        {% else %}
+        those by
+          {% for study in non_rct_articles %}
+            {% if loop.last %}and{% endif %}
+              {{ short_citation(study) }}
+              {% if not loop.last %}
+              ,
+              {% endif %}
+          {% endfor %}
+        {% endif %}
       ).
       {% endif %}
       </p>
