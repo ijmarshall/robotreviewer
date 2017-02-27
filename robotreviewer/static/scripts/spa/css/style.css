@@ -47,7 +47,7 @@ body {
   padding: 0 20px 0 20px;
   background-color: #f5f5f5;
   position: absolute;
-  z-index: 1000;
+  z-index: 10;
   left: calc(70% - 20px);
   width: calc(30% + 20px);
   height: 100%;
