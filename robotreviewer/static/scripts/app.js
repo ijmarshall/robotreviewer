@@ -6,7 +6,17 @@ define(function (require) {
   var React = require("react");
   var ReactDOM = require("react-dom");
   var _ = require("underscore");
+  var $ = require("jquery");
   var FileUtil = require("spa/helpers/fileUtil");
+
+  var Foundation = require("foundation");
+
+  // Foundation init
+  $(document).foundation();
+
+
+
+
 
   // Set CSRF
   var _sync = Backbone.sync;
