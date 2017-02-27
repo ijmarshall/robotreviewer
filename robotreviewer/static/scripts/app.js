@@ -9,13 +9,9 @@ define(function (require) {
   var $ = require("jquery");
   var FileUtil = require("spa/helpers/fileUtil");
 
+
+  var Fastclick = require("fastclick");
   var Foundation = require("foundation");
-
-  // Foundation init
-  $(document).foundation();
-
-
-
 
 
   // Set CSRF
@@ -108,4 +104,8 @@ define(function (require) {
 
 
   Backbone.history.start();
+
+  $(document).ready(function() {
+    $(document).foundation();
+  })
 });

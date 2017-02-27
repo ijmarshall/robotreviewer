@@ -23,6 +23,9 @@ require.config({
     'foundation': "spa/scripts/vendor/foundation",
 
 
+    'fastclick': "spa/scripts/vendor/fastclick",
+
+
     'JSXTransformer': "spa/scripts/vendor/JSXTransformer",
   }
 });
