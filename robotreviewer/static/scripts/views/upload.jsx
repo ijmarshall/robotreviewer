@@ -59,17 +59,32 @@ define(function (require) {
     render: function() {
       var inProgress = this.state.inProgress;
       var error = this.state.error ? <div className="alert-box alert">{this.state.error}</div> : null;
+
+      var stopPropagation = function(e) {
+        if (!e)
+          e = window.event;
+
+        //IE9 & Other Browsers
+        if (e.stopPropagation) {
+          e.stopPropagation();
+        }
+        //IE8 and Lower
+        else {
+          e.cancelBubble = true;
+        }
+      };
+
       return (
-          <div className="upload">
+          <div className="upload" style={{"position": "relative"}}>
           {error}
-          <div style={{opacity: inProgress ? 1 : 0}} className="infinity">
+          <div style={{opacity: inProgress ? 1 : 0,  "z-index": 1, "position": "relative"}} className="infinity">
             <div>
               <img src="/img/infinity.gif" width="120" height="120" />
               <br />
               {this.state.message + " " + this.state.progress}
             </div>
           </div>
-          <div style={{display: inProgress ? "none" : "block"}}>
+          <div style={{display: inProgress ? "none" : "block", "z-index": 10, "position": "relative"}}>
             <Dropzone onDrop={this.onDrop}
                       accept="application/pdf"
                       disablePreview={true}
@@ -80,7 +95,11 @@ define(function (require) {
                 RobotReviewer automatically extracts and synthesises data from Randomized Controlled Trials.
                 <br />
                 Drag and drop PDFs here, or click to select files to upload!
+
+                <br />
+                Or click one the examples: <a href="/#report/Tvg0-pHV2QBsYpJxE2KW-" onClick={stopPropagation}>Decision aids</a>, <a href="/#report/_fzGUEvWAeRsqYSmNQbBq" onClick={stopPropagation}>Influenza vaccination</a>, <a href="/#report/HBkzX1I3Uz_kZEQYeqXJf" onClick={stopPropagation}>Hypertension</a>
                 </div>
+
               </Dropzone>
             </div>
           </div>

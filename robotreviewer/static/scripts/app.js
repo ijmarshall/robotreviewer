@@ -10,10 +10,6 @@ define(function (require) {
   var FileUtil = require("spa/helpers/fileUtil");
 
 
-  var Fastclick = require("fastclick");
-  var Foundation = require("foundation");
-
-
   // Set CSRF
   var _sync = Backbone.sync;
   Backbone.sync = function(method, model, options){
@@ -105,7 +101,4 @@ define(function (require) {
 
   Backbone.history.start();
 
-  $(document).ready(function() {
-    $(document).foundation();
-  })
 });

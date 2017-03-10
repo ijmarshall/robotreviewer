@@ -334,7 +334,6 @@ canvas {
   position: absolute;
   text-align: center;
   z-index: 100;
-  left: 45%;
   top: 275px;
   -webkit-transition: opacity 0.5s ease-in-out;
   -moz-transition: opacity 0.5s ease-in-out;

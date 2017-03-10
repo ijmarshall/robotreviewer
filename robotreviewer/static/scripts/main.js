@@ -20,11 +20,6 @@ require.config({
     'react-dom': "spa/scripts/vendor/react-dom",
     'immutable': "spa/scripts/vendor/immutable",
 
-    'foundation': "spa/scripts/vendor/foundation",
-
-
-    'fastclick': "spa/scripts/vendor/fastclick",
-
 
     'JSXTransformer': "spa/scripts/vendor/JSXTransformer",
   }
