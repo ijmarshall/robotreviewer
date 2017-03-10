@@ -75,9 +75,9 @@ define(function (require) {
       };
 
       return (
-          <div className="upload" style={{"position": "relative"}}>
+          <div className="upload" style={{position: "relative", zIndex: 10, top: "-100px"}}>
           {error}
-          <div style={{opacity: inProgress ? 1 : 0,  "z-index": 1, "position": "relative"}} className="infinity">
+          <div style={{opacity: inProgress ? 1 : 0, zIndex: 100, position: "relative"}} className="infinity">
             <div>
               <img src="/img/infinity.gif" width="120" height="120" />
               <br />
