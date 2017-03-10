@@ -4,11 +4,11 @@
     <title>RobotReviewer report</title>
 
     {% if online %}
-    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='scripts/spa/css/foundation.css') }}">
-    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='scripts/spa/css/foundation.css') }}">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
     {% endif %}
 
-    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/report.css') }}">
+    <link rel="stylesheet" type=text/css href="{{ url_for('static', filename='css/report.css') }}">
 	  <script type="text/javascript"> $('.reportcontainer').css({"visibility":"hidden" });</script>
 
     </style>
@@ -47,11 +47,10 @@
     </div>
 
     <script>
-     $(document).ready(function()
-       {
-         $('.reportcontainer').css({"visibility":"visible"});
-       }
-	  </script>
+     $(document).ready(function() {
+       $('.reportcontainer').css({"visibility":"visible"});
+     }
+    </script>
 
   </body>
 </html>

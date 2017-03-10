@@ -97,7 +97,7 @@ define(function (require) {
                 Drag and drop PDFs here, or click to select files to upload!
 
                 <br />
-                Or click one the examples: <a href="/#report/Tvg0-pHV2QBsYpJxE2KW-" onClick={stopPropagation}>Decision aids</a>, <a href="/#report/_fzGUEvWAeRsqYSmNQbBq" onClick={stopPropagation}>Influenza vaccination</a>, <a href="/#report/HBkzX1I3Uz_kZEQYeqXJf" onClick={stopPropagation}>Hypertension</a>
+                Or click one of the examples: <a href="/#report/Tvg0-pHV2QBsYpJxE2KW-" onClick={stopPropagation}>Decision aids</a>, <a href="/#report/_fzGUEvWAeRsqYSmNQbBq" onClick={stopPropagation}>Influenza vaccination</a>, <a href="/#report/HBkzX1I3Uz_kZEQYeqXJf" onClick={stopPropagation}>Hypertension</a>
                 </div>
 
               </Dropzone>
