@@ -6,7 +6,9 @@ define(function (require) {
   var React = require("react");
   var ReactDOM = require("react-dom");
   var _ = require("underscore");
+  var $ = require("jquery");
   var FileUtil = require("spa/helpers/fileUtil");
+
 
   // Set CSRF
   var _sync = Backbone.sync;
@@ -98,4 +100,5 @@ define(function (require) {
 
 
   Backbone.history.start();
+
 });
