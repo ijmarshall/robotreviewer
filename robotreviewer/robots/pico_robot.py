@@ -18,37 +18,23 @@ using Supervised Distant Supervision".
 #           Byron Wallce <byron.wallace@utexas.edu>
 
 
-
-import json
 import uuid
-import numpy as np
-import sys
-import os
 import logging
-from scipy.sparse import diags
-import fnmatch
-import re
-import sklearn
-from scipy.sparse import lil_matrix, csc_matrix
+
 import numpy as np
+
+from scipy.sparse import diags, lil_matrix, csc_matrix
 import scipy as sp
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.preprocessing import normalize
-from scipy.sparse import diags
-
-
 
 import robotreviewer
-from robotreviewer import config
 from robotreviewer.ml.classifier import MiniClassifier
 from robotreviewer.lexicons.drugbank import Drugbank
-# from robotreviewer.textprocessing.abbreviations import Abbreviations
-from robotreviewer.textprocessing import tokenizer
 
 
 log = logging.getLogger(__name__)
-
 
 
 class PICORobot:
@@ -113,7 +99,7 @@ class PICORobot:
 
 
         doc_text = data.get("parsed_text")
-        
+
         if not doc_text:
             # we've got to know the text at least..
             return data

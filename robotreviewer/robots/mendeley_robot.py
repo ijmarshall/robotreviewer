@@ -1,8 +1,7 @@
-import robotreviewer
-import os
+import logging
+
 from mendeley import Mendeley
 from robotreviewer import config
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +23,7 @@ class MendeleyRobot:
             log.info('year...')
             data.mendeley['year'] = doc.year
             log.info('abstract...')
-            data.mendeley['abstract'] = doc.abstract            
+            data.mendeley['abstract'] = doc.abstract
             log.info('authors...')
             data.mendeley['authors'] = [{'forename': a.first_name, 'lastname': a.last_name, 'initials': ''.join(name[0] for name in a.first_name.split())} for a in doc.authors]
         except:
@@ -35,7 +34,7 @@ class MendeleyRobot:
 
 
 
-        
+
     # @staticmethod
     # def get_marginalia(data):
     #     """
@@ -60,7 +59,7 @@ class MendeleyRobot:
     #             marginalia.append ({"type": "PubMed",
     #                               "title": k.capitalize(),
     #                               "annotations": [],
-    #                               "description": v_str})  
+    #                               "description": v_str})
     #     else:
     #         for k, v in var_map:
     #             if isinstance(v, list):
@@ -70,6 +69,5 @@ class MendeleyRobot:
     #             marginalia.append ({"type": "PubMed (*low quality match*)",
     #                               "title": k.capitalize(),
     #                               "annotations": [],
-    #                               "description": v_str})  
+    #                               "description": v_str})
     #     return marginalia
-    

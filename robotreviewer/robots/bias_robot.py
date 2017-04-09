@@ -17,17 +17,13 @@ Marshall IJ, Kuiper J, & Wallace BC. RobotReviewer: evaluation of a system for a
 #           Joel Kuiper <me@joelkuiper.com>
 #           Byron Wallce <byron.wallace@utexas.edu>
 
-import json
 import uuid
-import os
-
-import robotreviewer
-from robotreviewer.textprocessing import tokenizer
-from robotreviewer.ml.classifier import MiniClassifier
-from robotreviewer.ml.vectorizer import ModularVectorizer
 
 import numpy as np
-import re
+
+import robotreviewer
+from robotreviewer.ml.classifier import MiniClassifier
+from robotreviewer.ml.vectorizer import ModularVectorizer
 
 class BiasRobot:
 
@@ -62,7 +58,7 @@ class BiasRobot:
         if top_k is None:
             top_k = self.top_k
 
-        
+
         doc_text = data.get('parsed_text')
 
         if not doc_text:

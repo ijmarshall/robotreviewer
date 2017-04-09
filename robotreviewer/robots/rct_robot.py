@@ -17,33 +17,19 @@ This model was trained on the Cochrane crowd dataset, and validated on the Clini
 #           Byron Wallce <byron.wallace@utexas.edu>
 
 import json
-import uuid
 import os
 
+import glob
+import numpy as np
 import pickle
+from keras.preprocessing import sequence
+from keras.models import model_from_json
+from scipy.sparse import lil_matrix, hstack
+from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.feature_extraction.text import VectorizerMixin
 
 import robotreviewer
 from robotreviewer.ml.classifier import MiniClassifier
-from sklearn.feature_extraction.text import HashingVectorizer
-
-from scipy.sparse import lil_matrix, hstack
-
-import numpy as np
-import re
-import glob
-from sklearn.feature_extraction.text import VectorizerMixin
-from sklearn.base import ClassifierMixin
-from keras.preprocessing import sequence
-from collections import Counter
-from keras.models import Sequential
-from keras.preprocessing import sequence
-from keras.layers import Dense, Dropout, Activation, Lambda, Input, merge, Flatten
-from keras.layers import Embedding
-from keras.layers import Convolution1D, MaxPooling1D
-from keras import backend as K
-from keras.models import Model
-from keras.regularizers import l2, activity_l2
-from keras.models import model_from_json
 
 
 class KerasVectorizer(VectorizerMixin):
@@ -97,7 +83,7 @@ class RCTRobot:
         self.svm_vectorizer = HashingVectorizer(binary=False, ngram_range=(1, 1), stop_words='english')
         self.cnn_vectorizer = KerasVectorizer(vocab_map_file=os.path.join(robotreviewer.DATA_ROOT, 'rct/rct_cnn_vocab_map.pck'))
 
-        
+
 
 
         self.scale_constants =  {'cnn': {'mean': 0.15592811611054261,
