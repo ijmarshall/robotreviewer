@@ -773,7 +773,7 @@ class Preprocessor:
             #stopworded_text = " ".join([t for t in text.split(" ") if not t.lower() in self.stopwords])
             stopworded_text = []
             for t in text.split(" "):
-                if not t in self.stopwords:
+                if t not in self.stopwords:
                     if t.isdigit():
                         t = "numbernumbernumber"
                     stopworded_text.append(t)

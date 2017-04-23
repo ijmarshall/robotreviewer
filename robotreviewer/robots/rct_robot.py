@@ -6,15 +6,22 @@ the Randomized Control Trial (RCT) robot predicts whether a given
     abstract = '''PURPOSE: It is undisputed for more than 200 years that the use of a parachute prevents major trauma when falling from a great height. Nevertheless up to date no prospective randomised controlled trial has proven the superiority in preventing trauma when falling from a great height instead of a free fall. The aim of this prospective randomised controlled trial was to prove the effectiveness of a parachute when falling from great height. METHODS: In this prospective randomised-controlled trial a commercially acquirable rag doll was prepared for the purposes of the study design as in accordance to the Declaration of Helsinki, the participation of human beings in this trial was impossible. Twenty-five falls were performed with a parachute compatible to the height and weight of the doll. In the control group, another 25 falls were realised without a parachute. The main outcome measures were the rate of head injury; cervical, thoracic, lumbar, and pelvic fractures; and pneumothoraxes, hepatic, spleen, and bladder injuries in the control and parachute groups. An interdisciplinary team consisting of a specialised trauma surgeon, two neurosurgeons, and a coroner examined the rag doll for injuries. Additionally, whole-body computed tomography scans were performed to identify the injuries. RESULTS: All 50 falls-25 with the use of a parachute, 25 without a parachute-were successfully performed. Head injuries (right hemisphere p = 0.008, left hemisphere p = 0.004), cervical trauma (p < 0.001), thoracic trauma (p < 0.001), lumbar trauma (p < 0.001), pelvic trauma (p < 0.001), and hepatic, spleen, and bladder injures (p < 0.001) occurred more often in the control group. Only the pneumothoraxes showed no statistically significant difference between the control and parachute groups. CONCLUSIONS: A parachute is an effective tool to prevent major trauma when falling from a great height.'''
     ptyp_is_rct = True
 
+    RCTRobot.annotate() takes a robotreviewer.data_structures.MultiDict
+    containing the article info. there are multiple ways to build a MultiDict,
+    however the most common way used in this project is as a PDF binary.
+
+    pdfr = PDFReader()
+    data = pdfr.convert(pdf_binary)
+
     rct_robot = RCTRobot()
-    annotations = rct_robot.annotate(title, abstract, ptyp)
+    annotations = rct_robot.annotate(data)
 
 This model was trained on the Cochrane crowd dataset, and validated on the Clinical Hedges dataset
 """
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
 #           Joel Kuiper <me@joelkuiper.com>
-#           Byron Wallce <byron.wallace@utexas.edu>
+#           Byron Wallace <byron.wallace@utexas.edu>
 
 import json
 import os

@@ -1,21 +1,30 @@
 """
 the BiasRobot class takes the full text of a clinical trial as
-input as a string, and returns bias information as a dict which
-can be easily converted to JSON.
+input as a robotreviewer.data_structures.MultiDict, and returns
+bias information in the same format, which can easily be converted
+to JSON.
 
-    text = "Streptomycin Treatment of Pulmonary Tuberculosis: A Medical Research Council Investigation..."
+there are multiple ways to build a MultiDict, however the most common
+way used in this project is as a PDF binary.
+
+    pdf_binary = ...
+
+    pdfr = PDFReader()
+    data = pdfr.convert(pdf_binary)
 
     robot = BiasRobot()
-    annotations = robot.annotate(text)
+    annotations = robot.annotate(data)
 
 Implements the models which were validated in the paper:
 
-Marshall IJ, Kuiper J, & Wallace BC. RobotReviewer: evaluation of a system for automatically assessing bias in clinical trials. Journal of the American Medical Informatics Association 2015.doi:10.1093/jamia/ocv044
+Marshall IJ, Kuiper J, & Wallace BC. RobotReviewer: evaluation of a system for
+automatically assessing bias in clinical trials. Journal of the American
+Medical Informatics Association 2015.doi:10.1093/jamia/ocv044
 """
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
 #           Joel Kuiper <me@joelkuiper.com>
-#           Byron Wallce <byron.wallace@utexas.edu>
+#           Byron Wallace <byron.wallace@utexas.edu>
 
 
 import uuid
