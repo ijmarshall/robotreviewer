@@ -2,14 +2,13 @@ import json
 import unittest
 import os
 
-
+import robotreviewer
 from robotreviewer.robots.rationale_robot import BiasRobot
-from robotreviewer.data_structures import MultiDict
+
 
 class TestBiasRobot(unittest.TestCase):
 
     br = BiasRobot()
-    examples_path = os.path.dirname(__file__) + "/examples/"
 
     def test_simple_borda_count(self):
         ''' tests for BiasRobot.simple_borda_count(a, b, weights=None) '''
@@ -47,30 +46,3 @@ class TestBiasRobot(unittest.TestCase):
                        71, 63, 78, 85, 44, 70, 69, 86, 15, 90, 94, 18]
         output = self.br.simple_borda_count(a, b)
         self.assertEqual(output, test_output)
-
-    def dont_test_annotate(self):
-        with open(self.examples_path + "/data_input.json") as input_file:
-            inp = input_file.read()
-        data = MultiDict()
-        data.load_json(inp)
-        data = self.br.annotate(data)
-
-        with open(self.examples_path + "/data_output.json") as output_file:
-            out = output_file.read()
-        post_data = MultiDict()
-        post_data.load_json(out)
-
-        pre = json.loads(data.to_json())
-        post = json.loads(out)
-
-        for key in pre:
-            print(key)
-            self.assertEqual(key in post, True)
-        self.assertEqual(len(pre), len(post))
-
-    def dont_test_get_domains(self):
-        d1 = self.br.bias_domains
-        d2 = self.br.get_domains()
-        self.assertEqual(len(d1), len(d2))
-        for d in d1:
-            self.assertEqual(d1[d] in d2, True)
