@@ -24,7 +24,7 @@ Medical Informatics Association 2015.doi:10.1093/jamia/ocv044
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
 #           Joel Kuiper <me@joelkuiper.com>
-#           Byron Wallace <byron.wallace@utexas.edu>
+#           Byron Wallace <byron@ccs.neu.edu>
 
 
 import uuid
@@ -192,7 +192,6 @@ class BiasRobot:
 
 
             #if domain == "BOA":
-            #import pdb; pdb.set_trace()
             # high_prob_sents_CNN = [doc_sents[i] for i in high_prob_sent_indices_CNN]
 
             # Find high probability sentences

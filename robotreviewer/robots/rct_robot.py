@@ -21,7 +21,7 @@ This model was trained on the Cochrane crowd dataset, and validated on the Clini
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
 #           Joel Kuiper <me@joelkuiper.com>
-#           Byron Wallace <byron.wallace@utexas.edu>
+#           Byron Wallace <byron@ccs.neu.edu>
 
 import json
 import os

@@ -428,7 +428,6 @@ class RationaleCNN:
         rationale_indices = sent_preds[:,idx].argsort()[-num_rationales:]
         rationales = [doc.sentences[r_idx] for r_idx in rationale_indices]
 
-        #import pdb; pdb.set_trace()
         return (doc_pred, rationale_indices)
 
 

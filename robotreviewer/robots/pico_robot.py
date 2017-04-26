@@ -15,7 +15,7 @@ using Supervised Distant Supervision".
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
 #           Joel Kuiper <me@joelkuiper.com>
-#           Byron Wallce <byron.wallace@utexas.edu>
+#           Byron Wallace <byron@ccs.neu.edu>
 
 
 import uuid

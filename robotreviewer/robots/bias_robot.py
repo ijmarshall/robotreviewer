@@ -15,7 +15,7 @@ Marshall IJ, Kuiper J, & Wallace BC. RobotReviewer: evaluation of a system for a
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
 #           Joel Kuiper <me@joelkuiper.com>
-#           Byron Wallce <byron.wallace@utexas.edu>
+#           Byron Wallace <byron@ccs.neu.edu>
 
 import uuid
 

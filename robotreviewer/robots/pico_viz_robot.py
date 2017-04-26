@@ -222,8 +222,6 @@ class PICOVizRobot:
             if keep_word(cur_n_gram, already_observed=ngrams):
                 ngrams.append(cur_n_gram)
 
-        #import pdb; pdb.set_trace()
-
         words = list(ngrams)[:num_words]
         return words
 
