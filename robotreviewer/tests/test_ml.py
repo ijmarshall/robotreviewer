@@ -32,8 +32,8 @@ class TestMiniClassifier(unittest.TestCase):
 
     def test_init(self):
         ''' test for MiniClassifier.__init__() '''
-        self.assertEqual(isinstance(self.doc_clf.coef, np.ndarray), True)
-        self.assertEqual(isinstance(self.doc_clf.intercept, float), True)
+        self.assertTrue(isinstance(self.doc_clf.coef, np.ndarray))
+        self.assertTrue(isinstance(self.doc_clf.intercept, float))
 
     def test_decision_function(self):
         ''' test for MiniClassifier.decision_function(X) '''
@@ -45,7 +45,7 @@ class TestMiniClassifier(unittest.TestCase):
             print(np.array_equiv(dec, y))
             since as decimals these will not pass
         '''
-        self.assertEqual(np.allclose(dec, decTest), True)
+        self.assertTrue(np.allclose(dec, decTest))
 
     def test_predict(self):
         ''' test for MiniClassifier.predict(X) '''
@@ -60,7 +60,7 @@ class TestMiniClassifier(unittest.TestCase):
         bpl = data["bias_prob_linear"]
         X = self.util.load_sparse_csr("X_data.npz")
         bpl_test = self.doc_clf.predict_proba(X)[0]
-        self.assertEqual(abs(bpl - bpl_test) < 0.01, True)
+        self.assertTrue(abs(bpl - bpl_test) < 0.01)
 
 class TestModularVectorizer(unittest.TestCase):
     
@@ -72,7 +72,7 @@ class TestModularVectorizer(unittest.TestCase):
         ''' test for ModularVectorizer.__init__() '''
         m = ModularVectorizer(norm=None, non_negative=True, binary=True,
                               ngram_range=(1, 2), n_features=2**26)
-        self.assertEqual(m.vec is not None, True)
+        self.assertTrue(m.vec is not None)
         self.assertEqual(type(m.vec), InteractionHashingVectorizer)
         
     def test_combine_matrices(self):
@@ -90,10 +90,10 @@ class TestModularVectorizer(unittest.TestCase):
     def test_builder_clear(self):
         ''' test for ModularVectorizer.builder_clear() '''
         self.m.builder_clear()
-        self.assertEqual(self.m.X is None, True)
+        self.assertTrue(self.m.X is None)
         self.m.X = ["anything"]
         self.m.builder_clear()
-        self.assertEqual(self.m.X is None, True)
+        self.assertTrue(self.m.X is None)
         
     def test_builder_add_docs(self):
         ''' test for ModularVectorizer.builder_add_docs() '''
@@ -103,14 +103,14 @@ class TestModularVectorizer(unittest.TestCase):
         X_si = [(data["X_si0"], data["X_si1"])]
         self.assertEqual(self.m.X, None)
         self.m.builder_add_docs(X_si)
-        self.assertEqual(self.m.X is not None, True)
+        self.assertTrue(self.m.X is not None)
         
     def test_builder_transform(self):
         ''' test for  ModularVectorizer.builder_transform '''
         self.m.builder_clear()
         self.assertEqual(self.m.builder_transform(), None)
         self.m.X = ["anything"]
-        self.assertEqual(self.m.builder_transform(), ["anything"])
+        self.assertTrue(self.m.builder_transform(), ["anything"])
 
 class TestInteractionHashingVectorizer(unittest.TestCase):
     

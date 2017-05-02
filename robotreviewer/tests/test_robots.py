@@ -1,10 +1,13 @@
 import json
 import unittest
 import os
+import numpy as np
 
 import robotreviewer
+from robotreviewer.data_structures import MultiDict
 from robotreviewer.robots.rationale_robot import BiasRobot
-
+from robotreviewer.robots.pico_viz_robot import PICOVizRobot
+from robotreviewer.robots.pubmed_robot import PubmedRobot
 
 class TestBiasRobot(unittest.TestCase):
 
@@ -46,3 +49,86 @@ class TestBiasRobot(unittest.TestCase):
                        71, 63, 78, 85, 44, 70, 69, 86, 15, 90, 94, 18]
         output = self.br.simple_borda_count(a, b)
         self.assertEqual(output, test_output)
+
+class TestPICOVizRobot(unittest.TestCase):
+    
+    pv = PICOVizRobot()
+    ex_path = os.path.dirname(__file__) + "/ex/"
+    
+    def test_init(self):
+        pvr = PICOVizRobot()
+        elements = ["population", "intervention", "outcomes"]
+        self.assertEqual(pvr.elements, elements)
+        for e in elements:
+            self.assertTrue(e in pvr.PCA_dict)
+        
+    def test_postprocess_embedding(self):
+        before = np.load(self.ex_path + "before.npy")
+        after = np.load(self.ex_path + "after.npy")
+        test = self.pv.postprocess_embedding(before)
+        self.assertEqual(np.array_equal(after, test), True)
+        
+    def test_tokenize(self):
+        with open(self.ex_path + "pico_viz.json") as datafile:
+            data = json.load(datafile)
+        test = data["token_start"]
+        tok = self.pv.tokenize(test)
+        end = data["token_end"]
+        self.assertEqual(tok, end)
+        
+    def test_annotate(self):
+        with open(self.ex_path + "pico_viz.json") as datafile:
+            data = json.load(datafile)
+        md = MultiDict()
+        md.data["gold"]["abstract"] = data["abstract"]
+        md = self.pv.annotate(md)
+        
+        p_vector = data["p_vector"]
+        self.assertEqual(md.data["ml"]["p_vector"], p_vector)
+        p_words = data["p_words"]
+        self.assertEqual(md.data["ml"]["p_words"], p_words)
+        i_vector = data["i_vector"]
+        self.assertEqual(md.data["ml"]["i_vector"], i_vector)
+        i_words = data["i_words"]
+        self.assertEqual(md.data["ml"]["i_words"], i_words)
+        o_vector = data["o_vector"]
+        self.assertEqual(md.data["ml"]["o_vector"], o_vector)
+        o_words = data["o_words"]
+        self.assertEqual(md.data["ml"]["o_words"], o_words)
+
+class TestPubmedRobot(unittest.TestCase):
+
+    pr = PubmedRobot()
+    ex_file = os.path.dirname(__file__) + "/ex/pubmedtest.json"
+
+    def test_annotate(self):
+        ''' test for PubmedRobot.annotate(data) '''
+        md = MultiDict()
+        with open(self.ex_file) as testdata:
+            data = json.load(testdata)
+        test = data["annotate"]
+        md.data["gold"]["title"] = data["title"]
+        out = self.pr.annotate(md)
+        self.assertEqual(out.data["pubmed"], test)
+
+    def test_query_pubmed(self):
+        ''' test for PubmedRobot.query_pubmed(pmid) '''
+        with open(self.ex_file) as testdata:
+            data = json.load(testdata)
+        pmid = data["pmid"]
+        q = self.pr.query_pubmed(pmid)
+        with open(os.path.dirname(__file__) + "/ex/query.json") as f:
+            query = json.load(f)
+        self.assertEqual(q, query)
+
+    def test_short_citation(self):
+        ''' test for PubmedRobot.short_citation(data) '''
+        data = {
+            "authors": [
+                {"lastname": "Bellman", "initials": "R"},
+                {"lastname": "Ford", "initials": "L"}
+            ],
+            "year": 1958
+        }
+        short_cite = self.pr.short_citation(data)
+        self.assertEqual(short_cite, "Bellman R, 1958")
