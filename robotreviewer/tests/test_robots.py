@@ -6,8 +6,10 @@ import numpy as np
 import robotreviewer
 from robotreviewer.data_structures import MultiDict
 from robotreviewer.robots.rationale_robot import BiasRobot
+from robotreviewer.robots.pico_robot import PICORobot
 from robotreviewer.robots.pico_viz_robot import PICOVizRobot
 from robotreviewer.robots.pubmed_robot import PubmedRobot
+from robotreviewer.robots.rct_robot import RCTRobot
 
 class TestBiasRobot(unittest.TestCase):
 
@@ -50,25 +52,51 @@ class TestBiasRobot(unittest.TestCase):
         output = self.br.simple_borda_count(a, b)
         self.assertEqual(output, test_output)
 
+class TestPICORobot(unittest.TestCase):
+        
+    pr = PICORobot()
+        
+    def test_get_positional_features(self):
+        ''' test for PICORobot._get_positional_features(sentences) '''
+        before = ['understanding the full burden of disease among them has been challenging as direct estimates of Men who Have Sex with Men (MSM) numbers in the general population have been largely unavailable.', 'We describe the population of Men who Have Sex with Men (MSM) in New York City, compare their demographics, risk behaviours, and new HIV and primary and secondary (P&S) syphilis rates with those of men who have sex with women (MSW), and examine trends in disease rates among Men who Have Sex with Men (MSM).', 'Methods Population denominators and demographic and behav-ioural data were obtained from population-based behavioural surveys during 2005e2008.', 'Numbers of new HIV and P&S syphilis diagnoses were extracted from citywide disease surveillance registries.', 'We calculated overall, age-and race/ethnicity-specific case rates and rate ratios for Men who Have Sex with Men (MSM) and MSW, and analysed trends in Men who Have Sex with Men (MSM) rates by age and race/ethnicity.', 'Results The average prevalence of same-sex behaviour among sexually active men during 2005e2008 (5.0%; 95% CI 4.5 to 5.6) differed by age (peaking at 8% among 40e49-year-old men) and race/ethnicity (2.3% among non-Hispanic black men; 7.4% among non-Hispanic white men).', 'Compared to MSW, Men who Have Sex with Men (MSM) differed significantly on all demographics and reported a higher prevalence of condom use at last sex and of HIV testing, but also more sex partners; 38.4% of Men who Have Sex with Men (MSM) and 13.6% of MSW reported Âź3 partners in the last year (p<0.001).', 'Men who Have Sex with Men (MSM) HIV and P&S syphilis rates were 2526.9/100 000 and 707.0/100 000, each of which was over 140 times MSW rates.', 'Rates were highest among young and black Men who Have Sex with Men (MSM)', '(See Abstract LBO-1.5 table 1).', 'Over 4 years, HIV rates more than doubled and P&S syphilis rates increased sixfold among 18e29-year-old Men who Have Sex with Men (MSM) to reach 8870.0/100 000 and 2900.4/100 000 in 2008, respectively.', 'Conclusions', 'The substantial population of Men who Have Sex with Men (MSM) in NYC is at high risk for transmission of sexually transmitted infections given high disease rates and ongoing risk behaviours.', 'There is significant overlap between HIVand P&S syphilis epidemics in NYC with the relatively small subgroups of young and non-Hispanic black Men who Have Sex with Men (MSM) disproportionately affected.', 'Integration of HIV and STD case data would allow for better identification and characterisation of the population affected by these synergistic epidemics.', 'Intensified and innovative efforts to implement and evaluate prevention programs are required.\n\n\n', 'Late breaker poster session\n\n\nwith\n\n\nLBP1.\n\n\n\n\n\n\n\n']
+        after = [{'DocumentPositionQuintile0': 1}, {'DocumentPositionQuintile0': 1}, {'DocumentPositionQuintile0': 1}, {'DocumentPositionQuintile0': 1}, {'DocumentPositionQuintile1': 1}, {'DocumentPositionQuintile1': 1}, {'DocumentPositionQuintile1': 1}, {'DocumentPositionQuintile2': 1}, {'DocumentPositionQuintile2': 1}, {'DocumentPositionQuintile2': 1}, {'DocumentPositionQuintile2': 1}, {'DocumentPositionQuintile3': 1}, {'DocumentPositionQuintile3': 1}, {'DocumentPositionQuintile3': 1}, {'DocumentPositionQuintile4': 1}, {'DocumentPositionQuintile4': 1}, {'DocumentPositionQuintile4': 1}]
+        test = PICORobot._get_positional_features(before)
+        self.assertEqual(test, after)
+
+    def test_token_contains_number(self):
+        ''' test for PICO_vectorizer.token_contains_number(token) '''
+        i1, o1 = "the", False
+        self.assertEqual(self.pr.vec.token_contains_number(i1), o1)
+        i2, o2 = "2013.09.032", True
+        self.assertEqual(self.pr.vec.token_contains_number(i2), o2)
+        i3, o3 = "http://dx.doi.org/10.1016/j.vaccine.", True
+        self.assertEqual(self.pr.vec.token_contains_number(i3), o3)
+
 class TestPICOVizRobot(unittest.TestCase):
     
     pv = PICOVizRobot()
     ex_path = os.path.dirname(__file__) + "/ex/"
     
     def test_init(self):
+        ''' test for PICOVizRobot.__init__() '''
+        '''
         pvr = PICOVizRobot()
         elements = ["population", "intervention", "outcomes"]
         self.assertEqual(pvr.elements, elements)
         for e in elements:
             self.assertTrue(e in pvr.PCA_dict)
+        '''
+        pass
         
     def test_postprocess_embedding(self):
+        ''' test for PICOVizRobot.postprocess_embedding(H) '''
         before = np.load(self.ex_path + "before.npy")
         after = np.load(self.ex_path + "after.npy")
         test = self.pv.postprocess_embedding(before)
-        self.assertEqual(np.array_equal(after, test), True)
+        self.assertTrue(np.array_equal(after, test))
         
     def test_tokenize(self):
+        ''' test for PICOVizRobot.tokenize(text) '''
         with open(self.ex_path + "pico_viz.json") as datafile:
             data = json.load(datafile)
         test = data["token_start"]
@@ -77,6 +105,7 @@ class TestPICOVizRobot(unittest.TestCase):
         self.assertEqual(tok, end)
         
     def test_annotate(self):
+        ''' test for PICOVizRobot.annotate(data) '''
         with open(self.ex_path + "pico_viz.json") as datafile:
             data = json.load(datafile)
         md = MultiDict()
@@ -132,3 +161,29 @@ class TestPubmedRobot(unittest.TestCase):
         }
         short_cite = self.pr.short_citation(data)
         self.assertEqual(short_cite, "Bellman R, 1958")
+
+class TestRCTRobot(unittest.TestCase):
+    
+    rct = RCTRobot()
+    ex_path = os.path.dirname(__file__) + "/ex/"
+    
+    def test_annotate(self):
+        ''' test for RCTRobot.annotate(data) '''
+        with open(self.ex_path + "rct.json") as data:
+            data = json.load(data)
+        md = MultiDict()
+        md.data["gold"]["title"] = data["title"]
+        md.data["gold"]["abstract"] = data["abstract"]
+        md.data["pubmed"] = True
+        md = self.rct.annotate(md)
+        test = {'is_rct': True, 'model_class': 'svm_cnn_ptyp', 'decision_score': 7.7760185186526991}
+        self.assertEqual(md.ml["rct"], test)
+        
+    def test_kv_transform(self):
+        ''' test for KerasVectorizer.transform(raw_documents) '''
+        with open(self.ex_path + "rct.json") as data:
+            data = json.load(data)
+        kv = self.rct.cnn_vectorizer
+        raw_documents = data["raw_documents"]
+        test = np.load(self.ex_path + "kv_transform.npy")
+        self.assertTrue(np.array_equal(kv.transform(raw_documents), test))

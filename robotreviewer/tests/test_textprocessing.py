@@ -1,8 +1,9 @@
+import json
 import unittest
 
 import robotreviewer.textprocessing.tokenizer as t
-from robotreviewer.textprocessing.pdfreader import PdfReader
 from robotreviewer.textprocessing.abbreviations import Abbreviations
+
 
 class TestAbbreviations(unittest.TestCase):
 
@@ -28,27 +29,7 @@ class TestAbbreviations(unittest.TestCase):
             a = Abbreviations(self.test_sentences[i])
             self.assertEqual(len(a.dictionary), self.num_abbrevs[i])
 
-    # def test_subs(self):
-    #     print("TESTING in test_subs")
-    #     print("FAILS on:")
-    #     a = Abbreviations(self.test_sentences[3])
-    #     print(self.test_sentences[3])
-    #     print(a.sub(self.test_sentences[3]))
-    #     print()
-    #
-    #     a = Abbreviations(self.test_sentences[0])
-    #     print(self.test_sentences[0])
-    #     print(a.sub(self.test_sentences[0]))
-    #     print()
-    #     print("END test_subs")
-
-class TestPDFReader(unittest.TestCase):
-
-    def test_pdf(self):
-        pass
-
-
 class TestTokenizer(unittest.TestCase):
 
     def test_spacy(self):
-        self.assertEqual(t.nlp != None, True)
+        self.assertTrue(t.nlp is not None)

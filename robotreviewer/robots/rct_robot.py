@@ -62,9 +62,6 @@ class KerasVectorizer(VectorizerMixin):
             self.vocab_map = pickle.load(f)
 
     def transform(self, raw_documents, maxlen=400):
-        """
-        returns lists of integers
-        """
         analyzer = self.build_analyzer()
         int_lists = [[1]+[self.vocab_map.get(w, 2) for w in analyzer(t)] for t in raw_documents]
         # 0 = pad, 1 = start, 2 = OOV
