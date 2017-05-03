@@ -1,8 +1,10 @@
 import json
 import unittest
+import os
 
 import robotreviewer.textprocessing.tokenizer as t
 from robotreviewer.textprocessing.abbreviations import Abbreviations
+from robotreviewer.textprocessing.pdfreader import PdfReader
 
 
 class TestAbbreviations(unittest.TestCase):
@@ -18,18 +20,59 @@ class TestAbbreviations(unittest.TestCase):
 
     num_abbrevs = [1, 3, 2, 1, 1, 1]
 
-    def test_abbreviations(self):
+    def test_init(self):
+        ''' test for Abbreviations.__init__() '''
         for i in range(len(self.test_sentences)):
             a = Abbreviations(self.test_sentences[i])
             for key in a.dictionary:
                 self.assertEqual(key in self.test_sentences[i], True)
-
-    def test_num_abbreviations(self):
         for i in range(len(self.test_sentences)):
             a = Abbreviations(self.test_sentences[i])
             self.assertEqual(len(a.dictionary), self.num_abbrevs[i])
 
+class TestPdfReader(unittest.TestCase):
+    
+    pdf = PdfReader()
+    ex_path = os.path.dirname(__file__) + "/ex/"
+    
+    def test_convert(self):
+        ''' test for PdfReader.convert(pdf_binary) '''
+        with open(self.ex_path + "pdf_as_list.txt") as infile:
+            lst = json.loads(infile.read())
+        pdf_binary = bytes(lst)
+        out = self.pdf.convert(pdf_binary)
+        grob = out.data["grobid"]
+        with open(self.ex_path + "pdffile.json") as datafile:
+            test = json.load(datafile)
+        self.assertEqual(grob, test)
+        
+    def test_run_grobid(self):
+        ''' test for PdfReader.run_grobid(pdf_binary) '''
+        with open(self.ex_path + "pdf_as_list.txt") as infile:
+            lst = json.loads(infile.read())
+        pdf_binary = bytes(lst)
+        xml = self.pdf.run_grobid(pdf_binary)
+        with open(self.ex_path + "run_grobid.txt") as infile:
+            xmltest = infile.read()
+        # can't compare xml to xmltest as they contain the date they were
+        #  generated, so would be equal in all but that
+        # parsing the xml removes that date information but leaves the rest
+        parsed = self.pdf.parse_xml(xml)
+        parsedtest = self.pdf.parse_xml(xmltest)
+        self.assertEqual(parsed.data, parsedtest.data)
+        
+    def test_parse_xml(self):
+        ''' test for PdfReader.parse_xml(xml_string) '''
+        with open(self.ex_path + "run_grobid.txt") as infile:
+            xml = infile.read()
+        grob = self.pdf.parse_xml(xml)
+        grob = grob.data["grobid"]
+        with open(self.ex_path + "pdffile.json") as datafile:
+            test = json.load(datafile)
+        self.assertEqual(grob, test)
+
 class TestTokenizer(unittest.TestCase):
 
     def test_spacy(self):
+        ''' test that tokenizer loads correctly '''
         self.assertTrue(t.nlp is not None)

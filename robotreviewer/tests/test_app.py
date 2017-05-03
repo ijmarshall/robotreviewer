@@ -1,4 +1,3 @@
-
 import unittest
 
 from robotreviewer.app import get_study_name

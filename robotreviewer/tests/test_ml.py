@@ -1,4 +1,3 @@
-
 import json
 import os
 import unittest
@@ -134,7 +133,6 @@ class TestVectorizer(unittest.TestCase):
     
     def test_init(self):
         ''' test for Vectorizer.__init__() '''
-        # tests to catch if default values are changed
         v = Vectorizer()
         self.assertEqual(v.embeddings, None)
         self.assertEqual(v.word_dim, 300)
