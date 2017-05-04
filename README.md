@@ -121,6 +121,17 @@ Some things remain simple; e.g., for an example of using RR to classify abstract
 If you are interested in incorporating RobotReviewer into your own software, please [contact us](mailto:mail@ijmarshall) and we'd be pleased to assist.
 
 
+## Testing
+
+The following
+
+```bash
+python -m unittest
+```
+
+will run the testing modules. These should be used to assure that changes made do
+not break or have an affect on the core of the code.
+
 ## Help
 
 Feel free to contact us on [mail@ijmarshall.com](mailto:mail@ijmarshall) with any questions.

@@ -1,6 +1,6 @@
 import json
-import unittest
 import os
+import unittest
 
 import robotreviewer.textprocessing.tokenizer as t
 from robotreviewer.textprocessing.abbreviations import Abbreviations
