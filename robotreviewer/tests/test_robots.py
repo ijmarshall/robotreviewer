@@ -1,4 +1,3 @@
-import gc
 import json
 import numpy as np
 import os
@@ -46,7 +45,6 @@ class TestPICOVizRobot(unittest.TestCase):
         after = np.load(self.ex_path + "after.npy")
         test = self.pv.postprocess_embedding(before)
         self.assertTrue(np.array_equal(after, test))
-        gc.collect()
         
     def test_tokenize(self):
         ''' test for PICOVizRobot.tokenize(text) '''
@@ -56,7 +54,6 @@ class TestPICOVizRobot(unittest.TestCase):
         tok = self.pv.tokenize(test)
         end = data["token_end"]
         self.assertEqual(tok, end)
-        gc.collect()
         
     def test_annotate(self):
         ''' test for PICOVizRobot.annotate(data) '''
@@ -78,7 +75,6 @@ class TestPICOVizRobot(unittest.TestCase):
         self.assertEqual(md.data["ml"]["o_vector"], o_vector)
         o_words = data["o_words"]
         self.assertEqual(md.data["ml"]["o_words"], o_words)
-        gc.collect()
 
 class TestPubmedRobot(unittest.TestCase):
 
@@ -133,7 +129,6 @@ class TestRCTRobot(unittest.TestCase):
         md = self.rct.annotate(md)
         test = {'is_rct': True, 'model_class': 'svm_cnn_ptyp', 'decision_score': 7.7760185186526991}
         self.assertEqual(md.ml["rct"], test)
-        gc.collect()
         
     def test_kv_transform(self):
         ''' test for KerasVectorizer.transform(raw_documents) '''
@@ -143,4 +138,3 @@ class TestRCTRobot(unittest.TestCase):
         raw_documents = data["raw_documents"]
         test = np.load(self.ex_path + "kv_transform.npy")
         self.assertTrue(np.array_equal(kv.transform(raw_documents), test))
-        gc.collect()

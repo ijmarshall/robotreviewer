@@ -129,8 +129,7 @@ The following
 python -m unittest
 ```
 
-will run the testing modules. These should be used to assure that changes made do
-not break or have an affect on the core of the code.
+will run the testing modules. These should be used to assure that changes made do not break or have an affect on the core of the code. If `Ran X tests in Ys` is displayed, the tests have completed successfully.
 
 ## Help
 
