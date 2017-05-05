@@ -55,7 +55,6 @@ from robotreviewer.robots import pico_viz_robot
 from robotreviewer.robots.pico_viz_robot import PICOVizRobot
 
 from robotreviewer.data_structures import MultiDict
-from robotreviewer import report_view
 
 from robotreviewer import config
 import robotreviewer

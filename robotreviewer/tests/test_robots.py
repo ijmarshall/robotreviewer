@@ -127,7 +127,11 @@ class TestRCTRobot(unittest.TestCase):
         md.data["gold"]["abstract"] = data["abstract"]
         md.data["pubmed"] = True
         md = self.rct.annotate(md)
-        test = {'is_rct': True, 'model_class': 'svm_cnn_ptyp', 'decision_score': 7.7760185186526991}
+        test = {
+            'is_rct': True,
+            'model_class': 'svm_cnn_ptyp',
+            'decision_score': 7.791535554772796
+        }
         self.assertEqual(md.ml["rct"], test)
         
     def test_kv_transform(self):

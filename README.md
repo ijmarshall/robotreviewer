@@ -61,8 +61,19 @@ a. If you are using Anaconda:
 ```bash
 conda config --add channels spacy  # only needed once
 conda install flask numpy scipy scikit-learn spacy Flask-WTF requests pandas
-pip install fuzzywuzzy mpld3 python-dateutil python-Levenshtein # (this is not yet in the anaconda repo)
-# then install theano and keras direct from source
+pip install fuzzywuzzy mpld3 python-dateutil python-Levenshtein # (not yet in the anaconda repo)
+```
+
+b. If you are NOT using Anaconda:
+
+```bash
+pip install flask numpy scipy scikit-learn spacy fuzzywuzzy
+```
+
+For everyone:
+
+``` bash
+# install theano and keras from source
 pip install git+https://github.com/Theano/Theano.git
 pip install git+https://github.com/fchollet/keras.git
 
@@ -71,19 +82,12 @@ python -m spacy.en.download
 python -m nltk.downloader punkt
 ```
 
-b. For everyone else:
+Ensure `keras` is set to use `theano` as its default backend. Steps on how to do this can be found [here](https://keras.io/backend/).
 
-
-```bash
-pip install flask numpy scipy scikit-learn spacy fuzzywuzzy
-
-# then install sentence processing data
-python -m spacy.en.download
-```
 
 5. This version of RobotReviewer requires Grobid, which in turn uses Java. Follow the instructions [here](https://grobid.readthedocs.io/en/latest/Install-Grobid/) to download and build it.
 
-6. Create the `robotreviewer/config.json` file and ensure it contains the path to the directory where you have installed Grobid. (RobotReviewer will start it automatically in a subprocess). Note that this should be the path to the entire (parent) Grobid directory, not the bin subfolder. An example of this file is provided in `robotreviewer/config.json.example`.
+6. Create the `robotreviewer/config.json` file and ensure it contains the path to the directory where you have installed Grobid. (RobotReviewer will start it automatically in a subprocess). Note that this should be the path to the entire (parent) Grobid directory, not the bin subfolder. An example of this file is provided in `robotreviewer/config.json.example` (it is only necessary to change the `grobid_path` attribute).
 
 ## Running
 
@@ -112,7 +116,7 @@ Hypertension: `http://localhost:5000/#report/HBkzX1I3Uz_kZEQYeqXJf`
 
 The big change in this version of RobotReviewer is that we now deal with *groups* of clinical trial reports, rather than one at a time. This is to allow RobotReviewer to synthesise the results of multiple trials.
 
-As a consequence API has become more sophisticated than previously, and we will add further documentation about it here.
+As a consequence, the API has become more sophisticated than previously and we will add further documentation about it here.
 
 In the meantime, the code for the API endpoints can be found in `/robotreviewer/app.py`.
 
@@ -133,7 +137,7 @@ will run the testing modules. These should be used to assure that changes made d
 
 ## Help
 
-Feel free to contact us on [mail@ijmarshall.com](mailto:mail@ijmarshall) with any questions.
+Feel free to contact us at [mail@ijmarshall.com](mailto:mail@ijmarshall) with any questions.
 
 ## References
 
