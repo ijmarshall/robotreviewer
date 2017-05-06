@@ -10,11 +10,12 @@ from robotreviewer.robots.pico_viz_robot import PICOVizRobot
 from robotreviewer.robots.pubmed_robot import PubmedRobot
 from robotreviewer.robots.rct_robot import RCTRobot
 
+from robotreviewer.tests import ex_path
 
 class TestPICORobot(unittest.TestCase):
         
     pr = PICORobot()
-    ex_file = os.path.dirname(__file__) + "/ex/pico.json"
+    ex_file = ex_path + "pico.json"
         
     def test_get_positional_features(self):
         ''' test for PICORobot._get_positional_features(sentences) '''
@@ -37,18 +38,17 @@ class TestPICORobot(unittest.TestCase):
 class TestPICOVizRobot(unittest.TestCase):
     
     pv = PICOVizRobot()
-    ex_path = os.path.dirname(__file__) + "/ex/"
         
     def test_postprocess_embedding(self):
         ''' test for PICOVizRobot.postprocess_embedding(H) '''
-        before = np.load(self.ex_path + "before.npy")
-        after = np.load(self.ex_path + "after.npy")
+        before = np.load(ex_path + "before.npy")
+        after = np.load(ex_path + "after.npy")
         test = self.pv.postprocess_embedding(before)
         self.assertTrue(np.array_equal(after, test))
         
     def test_tokenize(self):
         ''' test for PICOVizRobot.tokenize(text) '''
-        with open(self.ex_path + "pico_viz.json") as datafile:
+        with open(ex_path + "pico_viz.json") as datafile:
             data = json.load(datafile)
         test = data["token_start"]
         tok = self.pv.tokenize(test)
@@ -57,7 +57,7 @@ class TestPICOVizRobot(unittest.TestCase):
         
     def test_annotate(self):
         ''' test for PICOVizRobot.annotate(data) '''
-        with open(self.ex_path + "pico_viz.json") as datafile:
+        with open(ex_path + "pico_viz.json") as datafile:
             data = json.load(datafile)
         md = MultiDict()
         md.data["gold"]["abstract"] = data["abstract"]
@@ -79,7 +79,7 @@ class TestPICOVizRobot(unittest.TestCase):
 class TestPubmedRobot(unittest.TestCase):
 
     pr = PubmedRobot()
-    ex_file = os.path.dirname(__file__) + "/ex/pubmedtest.json"
+    ex_file = ex_path + "pubmedtest.json"
 
     def test_annotate(self):
         ''' test for PubmedRobot.annotate(data) '''
@@ -116,11 +116,10 @@ class TestPubmedRobot(unittest.TestCase):
 class TestRCTRobot(unittest.TestCase):
     
     rct = RCTRobot()
-    ex_path = os.path.dirname(__file__) + "/ex/"
     
     def test_annotate(self):
         ''' test for RCTRobot.annotate(data) '''
-        with open(self.ex_path + "rct.json") as data:
+        with open(ex_path + "rct.json") as data:
             data = json.load(data)
         md = MultiDict()
         md.data["gold"]["title"] = data["title"]
@@ -136,9 +135,9 @@ class TestRCTRobot(unittest.TestCase):
         
     def test_kv_transform(self):
         ''' test for KerasVectorizer.transform(raw_documents) '''
-        with open(self.ex_path + "rct.json") as data:
+        with open(ex_path + "rct.json") as data:
             data = json.load(data)
         kv = self.rct.cnn_vectorizer
         raw_documents = data["raw_documents"]
-        test = np.load(self.ex_path + "kv_transform.npy")
+        test = np.load(ex_path + "kv_transform.npy")
         self.assertTrue(np.array_equal(kv.transform(raw_documents), test))

@@ -11,16 +11,16 @@ from robotreviewer.ml.vectorizer import ModularVectorizer
 from robotreviewer.ml.vectorizer import InteractionHashingVectorizer
 from robotreviewer.ml.vectorizer import Vectorizer
 
+from robotreviewer.tests import ex_path
+
 class Utilities(object):
 
-    ex_path = os.path.dirname(__file__) + "/ex/"
-
     def save_sparse_csr(self, filename, array):
-        np.savez(self.ex_path + filename, data=array.data,
+        np.savez(ex_path + filename, data=array.data,
                  indices=array.indices, indptr=array.indptr, shape=array.shape)
 
     def load_sparse_csr(self, filename):
-        loader = np.load(self.ex_path + filename)
+        loader = np.load(ex_path + filename)
         return csr_matrix((loader['data'], loader['indices'],
                           loader['indptr']), shape=loader['shape'])
 
@@ -54,7 +54,7 @@ class TestMiniClassifier(unittest.TestCase):
 
     def test_predict_proba(self):
         ''' tests for MiniClassifier.predict_proba(X) '''
-        with open(self.util.ex_path + "rationale_robot_data.json") as data:
+        with open(ex_path + "rationale_robot_data.json") as data:
             data = json.load(data)
         bpl = data["bias_prob_linear"]
         X = self.util.load_sparse_csr("X_data.npz")
@@ -97,7 +97,7 @@ class TestModularVectorizer(unittest.TestCase):
     def test_builder_add_docs(self):
         ''' test for ModularVectorizer.builder_add_docs() '''
         self.m.builder_clear()
-        with open(self.util.ex_path + "vector_si.json") as data:
+        with open(ex_path + "vector_si.json") as data:
             data = json.load(data)
         X_si = [(data["X_si0"], data["X_si1"])]
         self.assertEqual(self.m.X, None)
@@ -120,7 +120,7 @@ class TestInteractionHashingVectorizer(unittest.TestCase):
         ih = InteractionHashingVectorizer(norm=None, non_negative=True,
                                           binary=True, ngram_range=(1, 2),
                                           n_features=2**26)
-        with open(self.util.ex_path + "vector_si.json") as data:
+        with open(ex_path + "vector_si.json") as data:
             data = json.load(data)
         X_si = [(data["X_si0"], data["X_si1"])]
         X_part_Test = ih.transform(X_si)
@@ -128,8 +128,6 @@ class TestInteractionHashingVectorizer(unittest.TestCase):
         self.assertEqual((X_part != X_part_Test).nnz, 0)
 
 class TestVectorizer(unittest.TestCase):
-    
-    util = Utilities()
     
     def test_init(self):
         ''' test for Vectorizer.__init__() '''
@@ -139,7 +137,7 @@ class TestVectorizer(unittest.TestCase):
         
     def test_fit(self):
         ''' test for Vectorizer.fit(texts) '''
-        with open(self.util.ex_path + "vector_tests.json") as data:
+        with open(ex_path + "vector_tests.json") as data:
             data = json.load(data)
         v = Vectorizer()
         v.fit(data["text"])

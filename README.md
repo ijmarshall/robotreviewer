@@ -75,7 +75,7 @@ For everyone:
 ``` bash
 # install theano and keras from source
 pip install git+https://github.com/Theano/Theano.git
-pip install git+https://github.com/fchollet/keras.git
+pip install git+https://github.com/fchollet/keras.git@1.2.2
 
 # then install sentence processing data
 python -m spacy.en.download
