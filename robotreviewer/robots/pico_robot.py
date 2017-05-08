@@ -1,12 +1,19 @@
 """
 the PICORobot class takes the full text of a clinical trial as
-input as a string, and returns Population, Comparator/Intervention
-Outcome information as a dict which can be easily converted to JSON.
+input as a robotreviewer.data_structures.MultiDict, and returns
+Population, Comparator/Intervention Outcome information in the same
+format, which can easily be converted to JSON.
 
-    text = "Streptomycin Treatment of Pulmonary Tuberculosis: A Medical Research Council Investigation..."
+there are multiple ways to build a MultiDict, however the most common
+way used in this project is as a PDF binary.
+
+    pdf_binary = ...
+
+    pdfr = PDFReader()
+    data = pdfr.convert(pdf_binary)
 
     robot = PICORobot()
-    annotations = robot.annotate(text)
+    annotations = robot.annotate(data)
 
 The model was derived using the "Supervised Distant Supervision" strategy
 introduced in our paper "Extracting PICO Sentences from Clinical Trial Reports
@@ -15,40 +22,26 @@ using Supervised Distant Supervision".
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
 #           Joel Kuiper <me@joelkuiper.com>
-#           Byron Wallce <byron.wallace@utexas.edu>
+#           Byron Wallace <byron@ccs.neu.edu>
 
 
-
-import json
 import uuid
-import numpy as np
-import sys
-import os
 import logging
-from scipy.sparse import diags
-import fnmatch
-import re
-import sklearn
-from scipy.sparse import lil_matrix, csc_matrix
+
 import numpy as np
+
+from scipy.sparse import diags, lil_matrix, csc_matrix
 import scipy as sp
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.preprocessing import normalize
-from scipy.sparse import diags
-
-
 
 import robotreviewer
-from robotreviewer import config
 from robotreviewer.ml.classifier import MiniClassifier
 from robotreviewer.lexicons.drugbank import Drugbank
-# from robotreviewer.textprocessing.abbreviations import Abbreviations
-from robotreviewer.textprocessing import tokenizer
 
 
 log = logging.getLogger(__name__)
-
 
 
 class PICORobot:
@@ -113,7 +106,7 @@ class PICORobot:
 
 
         doc_text = data.get("parsed_text")
-        
+
         if not doc_text:
             # we've got to know the text at least..
             return data
@@ -291,7 +284,6 @@ class PICO_vectorizer:
 
 
     def extract_structural_features(self, sentence):
-
         fv = np.zeros(12)
 
         sent_text = sentence.text

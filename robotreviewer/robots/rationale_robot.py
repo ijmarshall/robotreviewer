@@ -1,44 +1,45 @@
 """
 the BiasRobot class takes the full text of a clinical trial as
-input as a string, and returns bias information as a dict which
-can be easily converted to JSON.
+input as a robotreviewer.data_structures.MultiDict, and returns
+bias information in the same format, which can easily be converted
+to JSON.
 
-    text = "Streptomycin Treatment of Pulmonary Tuberculosis: A Medical Research Council Investigation..."
+there are multiple ways to build a MultiDict, however the most common
+way used in this project is as a PDF binary.
+
+    pdf_binary = ...
+
+    pdfr = PDFReader()
+    data = pdfr.convert(pdf_binary)
 
     robot = BiasRobot()
-    annotations = robot.annotate(text)
+    annotations = robot.annotate(data)
 
 Implements the models which were validated in the paper:
 
-Marshall IJ, Kuiper J, & Wallace BC. RobotReviewer: evaluation of a system for automatically assessing bias in clinical trials. Journal of the American Medical Informatics Association 2015.doi:10.1093/jamia/ocv044
+Marshall IJ, Kuiper J, & Wallace BC. RobotReviewer: evaluation of a system for
+automatically assessing bias in clinical trials. Journal of the American
+Medical Informatics Association 2015.doi:10.1093/jamia/ocv044
 """
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
 #           Joel Kuiper <me@joelkuiper.com>
-#           Byron Wallce <byron.wallace@utexas.edu>
+#           Byron Wallace <byron@ccs.neu.edu>
 
-import json
+
 import uuid
-import os
 import operator
 import pickle
+import numpy as np
 from collections import OrderedDict, defaultdict
 
 import robotreviewer
-from robotreviewer.textprocessing import tokenizer
 from robotreviewer.ml.classifier import MiniClassifier
 from robotreviewer.ml.vectorizer import ModularVectorizer
 
 import sys
 sys.path.append('robotreviewer/ml') # need this for loading the rationale_CNN module
 from rationale_CNN import RationaleCNN, Document
-
-import numpy as np
-import re
-
-import keras
-import keras.backend as K
-from keras.models import load_model
 
 
 class BiasRobot:
@@ -66,7 +67,7 @@ class BiasRobot:
         }
 
         ###
-        # Here we take a simple ensembling approach in which we combine the 
+        # Here we take a simple ensembling approach in which we combine the
         # predictions made by our rationaleCNN model and the JAMIA (linear)
         # multi task variant.
         ###
@@ -92,27 +93,27 @@ class BiasRobot:
         # Linear domains (these are joint models!)
         self.linear_sent_clf = MiniClassifier(robotreviewer.get_data('bias/bias_sent_level.npz'))
         self.linear_doc_clf = MiniClassifier(robotreviewer.get_data('bias/bias_doc_level.npz'))
-        self.linear_vec = ModularVectorizer(norm=None, non_negative=True, binary=True, ngram_range=(1, 2), 
+        self.linear_vec = ModularVectorizer(norm=None, non_negative=True, binary=True, ngram_range=(1, 2),
                                                 n_features=2**26)
 
 
 
     def simple_borda_count(self, a, b, weights=None):
-        ''' 
-        Basic Borda count implementation for just two lists. 
+        '''
+        Basic Borda count implementation for just two lists.
         Assumes that a and b are lists of indices sorted
         in *increasing* preference (so top-ranked sentence
         should be the last element).
         '''
         rank_scores_dict = defaultdict(int)
 
-        if weights is None: 
+        if weights is None:
             weights = np.ones(2)
 
         # ensure list sizes are equal. note that the CNN
         # model will always assume/force 200 sentences,
         # whereas BoW model will not. so here we trim if
-        # necessary, effectively taking the max_index 
+        # necessary, effectively taking the max_index
         # top sentences from each model and pooling these.
         a_n, b_n = len(a), len(b)
         max_index = min(a_n, b_n)
@@ -121,7 +122,7 @@ class BiasRobot:
         for i in range(max_index):
             score = i+1 # 1 ... m
             rank_scores_dict[a[i]] += weights[0]*score
-            rank_scores_dict[b[i]] += weights[1]*score 
+            rank_scores_dict[b[i]] += weights[1]*score
 
         sorted_indices = sorted(rank_scores_dict.items(), key=operator.itemgetter(1), reverse=True)
         return [index[0] for index in sorted_indices]
@@ -161,37 +162,36 @@ class BiasRobot:
             vec.builder_add_docs(doc_X_i)
             doc_sents_X = vec.builder_transform()
             doc_sents_preds = sent_clf.decision_function(doc_sents_X)
-            linear_high_prob_sent_indices = np.argsort(doc_sents_preds) 
+            linear_high_prob_sent_indices = np.argsort(doc_sents_preds)
 
-            ### 
+            ###
             # CNN predictions
             bias_prob_CNN = None
             if domain in self.CNN_models:
                 model = self.CNN_models[domain]
                 doc = Document(doc_id=None, sentences=doc_sents) # vectorize document
                 bias_prob_CNN, high_prob_sent_indices_CNN = model.predict_and_rank_sentences_for_doc(doc, num_rationales=len(doc))
-                
-                
-                high_prob_sent_indices = self.simple_borda_count(high_prob_sent_indices_CNN, 
+
+
+                high_prob_sent_indices = self.simple_borda_count(high_prob_sent_indices_CNN,
                                                                  linear_high_prob_sent_indices)[:top_k]
 
-              
+
                 # and now the overall (doc-level) prediction from the CNN model.
-                # bias_prob = 1 --> low risk 
+                # bias_prob = 1 --> low risk
                 # from riskofbias2:
                 #        doc_y[mapped_domain] = 1 if domain["RATING"] == "YES" else -1
                 #        # simplifying to LOW risk of bias = 1 *v* HIGH/UNKNOWN risk = -1
                 ####
                 bias_pred = int(bias_prob_CNN >= threshold) # low risk if True and high/unclear otherwise
-               
-            else: 
+
+            else:
                 # no aggregation here (since no CNN model for this domain)
                 high_prob_sent_indices = linear_high_prob_sent_indices[-top_k:]
-                high_prob_sent_indices = linear_high_prob_sent_indices[::-1] # put highest prob sentence first 
-        
+                high_prob_sent_indices = linear_high_prob_sent_indices[::-1] # put highest prob sentence first
+
 
             #if domain == "BOA":
-            #import pdb; pdb.set_trace() 
             # high_prob_sents_CNN = [doc_sents[i] for i in high_prob_sent_indices_CNN]
 
             # Find high probability sentences
@@ -211,13 +211,13 @@ class BiasRobot:
             vec.builder_add_docs([(high_prob_sents_j, sent_domain_interaction)])
             X = vec.builder_transform()
             bias_prob_linear = doc_clf.predict_proba(X)[0]
-            
+
             # if we have a CNN pred, too, then average; otherwise
             # rely on linear model.
             bias_prob = bias_prob_linear
             if bias_prob_CNN is not None:
                 bias_prob = (bias_prob_CNN + bias_prob_linear) / 2.0
-            
+
             bias_pred = int(bias_prob >= threshold)
 
             bias_class = ["high/unclear", "low"][bias_pred] # prediction
@@ -227,7 +227,7 @@ class BiasRobot:
                                  "position": sent[1],
                                  "uuid": str(uuid.uuid1()),
                                  "prefix": sent[2],
-                                 "suffix": sent[3]} 
+                                 "suffix": sent[3]}
 
                 annotation_metadata.append(sent_metadata)
 

@@ -45,7 +45,7 @@ A BibTeX entry for LaTeX users is
 
 ## Installation
 
-1. Ensure you have a working version of Python 2.7+ or 3.4+. We recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience. However, if you have Python already installed that will probably work fine too.
+1. Ensure you have a working version of 3.4+. We recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience. However, if you have Python already installed that will probably work fine too.
 
 2. [Install git-lfs](https://git-lfs.github.com/) for managing the model file versions (on Mac: `brew install git-lfs`). NB! If you already have git lfs installed, make sure it's the most recent version, since older versions have not downloaded files properly.
 
@@ -54,40 +54,40 @@ A BibTeX entry for LaTeX users is
     git clone https://github.com/ijmarshall/robotreviewer3.git
     cd robotreviewer3
     ```
-3. Install the Python libraries that RobotReviewer needs - do one of the following.
+4. Install the Python libraries that RobotReviewer needs - do one of the following.
 
-    a. If you are using Anaconda:
+a. If you are using Anaconda:
 
 ```bash
 conda config --add channels spacy  # only needed once
 conda install flask numpy scipy scikit-learn spacy Flask-WTF requests pandas
-pip install fuzzywuzzy mpld3 python-dateutil python-Levenshtein # (th # (this is not yet in the anaconda repo)
-# then install theano and keras direct from source
-pip install git+https://github.com/Theano/Theano.git
-pip install git+https://github.com/fchollet/keras.git
+pip install fuzzywuzzy mpld3 python-dateutil python-Levenshtein # (not yet in the anaconda repo)
 ```
 
-
-5. Install the sentence processing data:
-    ```bash
-    python -m spacy.en.download
-    python -m nltk.downloader punkt # to be shortly removed...
-    ```
-
-    b. For everyone else:
+b. If you are NOT using Anaconda:
 
 ```bash
 pip install flask numpy scipy scikit-learn spacy fuzzywuzzy
 ```
 
-4. Install the sentence processing data:
-```bash
+For everyone:
+
+``` bash
+# install theano and keras from source
+pip install git+https://github.com/Theano/Theano.git
+pip install git+https://github.com/fchollet/keras.git@1.2.2
+
+# then install sentence processing data
 python -m spacy.en.download
+python -m nltk.downloader punkt
 ```
+
+Ensure `keras` is set to use `theano` as its default backend. Steps on how to do this can be found [here](https://keras.io/backend/).
+
 
 5. This version of RobotReviewer requires Grobid, which in turn uses Java. Follow the instructions [here](https://grobid.readthedocs.io/en/latest/Install-Grobid/) to download and build it.
 
-6. Edit the `robotreviewer/config.py` file to contain the path to the directory where you have installed Grobid. (RobotReviewer will start it automatically in a subprocess). Note that this should be the path to the entire (parent) Grobid directory, not the bin subfolder.
+6. Create the `robotreviewer/config.json` file and ensure it contains the path to the directory where you have installed Grobid. (RobotReviewer will start it automatically in a subprocess). Note that this should be the path to the entire (parent) Grobid directory, not the bin subfolder. An example of this file is provided in `robotreviewer/config.json.example` (it is only necessary to change the `grobid_path` attribute).
 
 ## Running
 
@@ -116,7 +116,7 @@ Hypertension: `http://localhost:5000/#report/HBkzX1I3Uz_kZEQYeqXJf`
 
 The big change in this version of RobotReviewer is that we now deal with *groups* of clinical trial reports, rather than one at a time. This is to allow RobotReviewer to synthesise the results of multiple trials.
 
-As a consequence API has become more sophisticated than previously, and we will add further documentation about it here.
+As a consequence, the API has become more sophisticated than previously and we will add further documentation about it here.
 
 In the meantime, the code for the API endpoints can be found in `/robotreviewer/app.py`.
 
@@ -125,9 +125,19 @@ Some things remain simple; e.g., for an example of using RR to classify abstract
 If you are interested in incorporating RobotReviewer into your own software, please [contact us](mailto:mail@ijmarshall) and we'd be pleased to assist.
 
 
+## Testing
+
+The following
+
+```bash
+python -m unittest
+```
+
+will run the testing modules. These should be used to assure that changes made do not break or have an affect on the core of the code. If `Ran X tests in Ys` is displayed, the tests have completed successfully.
+
 ## Help
 
-Feel free to contact us on [mail@ijmarshall.com](mailto:mail@ijmarshall) with any questions.
+Feel free to contact us at [mail@ijmarshall.com](mailto:mail@ijmarshall) with any questions.
 
 ## References
 
@@ -137,7 +147,7 @@ Feel free to contact us on [mail@ijmarshall.com](mailto:mail@ijmarshall) with an
 3. Kuiper, J., Marshall, I. J., Wallace, B. C., & Swertz, M. A. (2014). Spá: A Web-Based Viewer for Text Mining in Evidence Based Medicine. In Proceedings of the European Conference on Machine Learning and Principles and Practice of Knowledge Discovery in Databases (ECML-PKDD 2014) (Vol. 8726, pp. 452–455). Springer Berlin Heidelberg. [[doi]](http://dx.doi.org/10.1007/978-3-662-44845-8_33)
 4. Marshall, I. J., Kuiper, J., & Wallace, B. C. (2014). Automating Risk of Bias Assessment for Clinical Trials. In Proceedings of the ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (ACM-BCB) (pp. 88–95). ACM. [[doi]](http://dx.doi.org/10.1145/2649387.2649406)
 
-Copyright (c) 2016 Iain Marshall, Joël Kuiper, and Byron Wallace
+Copyright (c) 2017 Iain Marshall, Joël Kuiper, and Byron Wallace
 
 ## Support
 

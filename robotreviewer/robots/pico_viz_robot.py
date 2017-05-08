@@ -6,17 +6,10 @@ import numpy as np
 from nltk import word_tokenize
 from nltk.corpus import stopwords
 
-import keras
 from keras.models import model_from_json
 import keras.backend as K
 
-import sklearn
-from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA
-from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import StandardScaler
-
-import matplotlib 
+import matplotlib
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
@@ -228,8 +221,6 @@ class PICOVizRobot:
 
             if keep_word(cur_n_gram, already_observed=ngrams):
                 ngrams.append(cur_n_gram)
-
-        #import pdb; pdb.set_trace()
 
         words = list(ngrams)[:num_words]
         return words

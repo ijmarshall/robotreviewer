@@ -1,13 +1,12 @@
-from sklearn.feature_extraction.text import HashingVectorizer
-import robotreviewer
+import logging
+
+from fuzzywuzzy import fuzz
 import numpy as np
 from scipy.sparse import csr_matrix
-from fuzzywuzzy import process
-from fuzzywuzzy import fuzz
-
 import sqlite3
-import os
-import logging
+from sklearn.feature_extraction.text import HashingVectorizer
+
+import robotreviewer
 
 
 log = logging.getLogger(__name__)
@@ -130,4 +129,3 @@ class PubmedRobot:
                                   "annotations": [],
                                   "description": v_str})
         return marginalia
-

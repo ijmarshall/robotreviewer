@@ -4,7 +4,7 @@ RobotReviewer server
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
 #           Joel Kuiper <me@joelkuiper.com>
-#           Byron Wallce <byron@ccs.neu.edu>
+#           Byron Wallace <byron@ccs.neu.edu>
 
 import logging, os
 from datetime import datetime, timedelta
@@ -55,7 +55,6 @@ from robotreviewer.robots import pico_viz_robot
 from robotreviewer.robots.pico_viz_robot import PICOVizRobot
 
 from robotreviewer.data_structures import MultiDict
-from robotreviewer import report_view
 
 from robotreviewer import config
 import robotreviewer
@@ -178,17 +177,18 @@ def download_report(report_uuid, format):
                      as_attachment=True)
 
 
-# @TODO improve
-# also should maybe be moved?
 def get_study_name(article):
     authors = article.get("authors")
-    study_str = ""
-    if not authors is None:
-        study_str = authors[0]["lastname"] + " et al."
+    if authors:
+        if len(authors) == 1:
+            return authors[0]["lastname"] + ", " + \
+                authors[0]["forename"] + " " + \
+                authors[0]["initials"] + "."
+        else:
+            return authors[0]["lastname"] + " et al."
     else:
         #import pdb; pdb.set_trace()
-        study_str = article['filename'][:20].lower().replace(".pdf", "") + " ..."
-    return study_str
+        return article['filename'][:20].lower().replace(".pdf", "") + " ..."
 
 
 def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True):
@@ -307,8 +307,6 @@ def annotation_pipeline(bot_names, data):
         log.debug("{} done!".format(bots[bot_name].__class__.__name__))
     return data
 
-
-# TODO make something that calls this
 def cleanup_database(days=1):
     """
     remove any PDFs which have been here for more than
@@ -328,12 +326,14 @@ def cleanup_database(days=1):
 
 
 try:
-  from apscheduler.schedulers.background import BackgroundScheduler
-  @app.before_first_request
-  def initialize():
-    log.info("initializing clean-up task")
-    scheduler = BackgroundScheduler()
-    scheduler.start()
-    scheduler.add_job(cleanup_database, 'interval', hours=12)
+    from apscheduler.schedulers.background import BackgroundScheduler
+
+    @app.before_first_request
+    def initialize():
+        log.info("Initializing clean-up task")
+        scheduler = BackgroundScheduler()
+        scheduler.start()
+        scheduler.add_job(cleanup_database, 'interval', hours=12)
+
 except Exception:
-  log.warn("could not start scheduled clean-up task")
+    log.warn("Could not start scheduled clean-up task")

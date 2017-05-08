@@ -6,44 +6,37 @@ the Randomized Control Trial (RCT) robot predicts whether a given
     abstract = '''PURPOSE: It is undisputed for more than 200 years that the use of a parachute prevents major trauma when falling from a great height. Nevertheless up to date no prospective randomised controlled trial has proven the superiority in preventing trauma when falling from a great height instead of a free fall. The aim of this prospective randomised controlled trial was to prove the effectiveness of a parachute when falling from great height. METHODS: In this prospective randomised-controlled trial a commercially acquirable rag doll was prepared for the purposes of the study design as in accordance to the Declaration of Helsinki, the participation of human beings in this trial was impossible. Twenty-five falls were performed with a parachute compatible to the height and weight of the doll. In the control group, another 25 falls were realised without a parachute. The main outcome measures were the rate of head injury; cervical, thoracic, lumbar, and pelvic fractures; and pneumothoraxes, hepatic, spleen, and bladder injuries in the control and parachute groups. An interdisciplinary team consisting of a specialised trauma surgeon, two neurosurgeons, and a coroner examined the rag doll for injuries. Additionally, whole-body computed tomography scans were performed to identify the injuries. RESULTS: All 50 falls-25 with the use of a parachute, 25 without a parachute-were successfully performed. Head injuries (right hemisphere p = 0.008, left hemisphere p = 0.004), cervical trauma (p < 0.001), thoracic trauma (p < 0.001), lumbar trauma (p < 0.001), pelvic trauma (p < 0.001), and hepatic, spleen, and bladder injures (p < 0.001) occurred more often in the control group. Only the pneumothoraxes showed no statistically significant difference between the control and parachute groups. CONCLUSIONS: A parachute is an effective tool to prevent major trauma when falling from a great height.'''
     ptyp_is_rct = True
 
+    RCTRobot.annotate() takes a robotreviewer.data_structures.MultiDict
+    containing the article info. there are multiple ways to build a MultiDict,
+    however the most common way used in this project is as a PDF binary.
+
+    pdfr = PDFReader()
+    data = pdfr.convert(pdf_binary)
+
     rct_robot = RCTRobot()
-    annotations = rct_robot.annotate(title, abstract, ptyp)
+    annotations = rct_robot.annotate(data)
 
 This model was trained on the Cochrane crowd dataset, and validated on the Clinical Hedges dataset
 """
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
 #           Joel Kuiper <me@joelkuiper.com>
-#           Byron Wallce <byron.wallace@utexas.edu>
+#           Byron Wallace <byron@ccs.neu.edu>
 
 import json
-import uuid
 import os
 
+import glob
+import numpy as np
 import pickle
+from keras.preprocessing import sequence
+from keras.models import model_from_json
+from scipy.sparse import lil_matrix, hstack
+from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.feature_extraction.text import VectorizerMixin
 
 import robotreviewer
 from robotreviewer.ml.classifier import MiniClassifier
-from sklearn.feature_extraction.text import HashingVectorizer
-
-from scipy.sparse import lil_matrix, hstack
-
-import numpy as np
-import re
-import glob
-from sklearn.feature_extraction.text import VectorizerMixin
-from sklearn.base import ClassifierMixin
-from keras.preprocessing import sequence
-from collections import Counter
-from keras.models import Sequential
-from keras.preprocessing import sequence
-from keras.layers import Dense, Dropout, Activation, Lambda, Input, merge, Flatten
-from keras.layers import Embedding
-from keras.layers import Convolution1D, MaxPooling1D
-from keras import backend as K
-from keras.models import Model
-from keras.regularizers import l2, activity_l2
-from keras.models import model_from_json
 
 
 class KerasVectorizer(VectorizerMixin):
@@ -69,9 +62,6 @@ class KerasVectorizer(VectorizerMixin):
             self.vocab_map = pickle.load(f)
 
     def transform(self, raw_documents, maxlen=400):
-        """
-        returns lists of integers
-        """
         analyzer = self.build_analyzer()
         int_lists = [[1]+[self.vocab_map.get(w, 2) for w in analyzer(t)] for t in raw_documents]
         # 0 = pad, 1 = start, 2 = OOV
@@ -97,7 +87,7 @@ class RCTRobot:
         self.svm_vectorizer = HashingVectorizer(binary=False, ngram_range=(1, 1), stop_words='english')
         self.cnn_vectorizer = KerasVectorizer(vocab_map_file=os.path.join(robotreviewer.DATA_ROOT, 'rct/rct_cnn_vocab_map.pck'))
 
-        
+
 
 
         self.scale_constants =  {'cnn': {'mean': 0.15592811611054261,

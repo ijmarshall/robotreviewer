@@ -9,7 +9,7 @@ reasonably quickly, and makes for feasible memory usage.
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
 #           Joel Kuiper <me@joelkuiper.com>
-#           Byron Wallace <byron.wallace@utexas.edu>
+#           Byron Wallace <byron@ccs.neu.edu>
 
 from scipy.sparse import csr_matrix
 import numpy as np
@@ -70,37 +70,3 @@ class MiniClassifier:
             return s
         scores = self.decision_function(X)
         return sigmoid(scores)
-
-class MiniOneVsAllClassifier():
-    """
-    Wraps a bunch of mini classifiers to do One vs All
-    """
-    def __init__(self, filenames, classes):
-        self.classes = classes
-        self.clfs = [MiniClassifier(f) for f in filenames]
-
-    def decision_function(self, X):
-        """
-        run the X through all the included models
-        """
-        return np.array([clf.decision_function(X) for clf in self.clfs])
-
-    def predict(self, X):
-        """
-        Get the highest scoring
-        """
-        scores = self.decision_function(X)
-        return np.array([self.classes[i] for i in np.argmax(scores, axis=0)])
-
-
-
-
-
-
-
-def main():
-    pass
-
-
-if __name__ == '__main__':
-    main()
