@@ -1,14 +1,14 @@
 FROM ubuntu:16.04
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN echo "UTC" > /etc/timezone
-RUN dpkg-reconfigure tzdata
+#RUN echo "UTC" > /etc/timezone
+#RUN dpkg-reconfigure tzdata
 
 # Set locale
-RUN locale-gen en_US.UTF-8
-RUN update-locale LANG=en_US.UTF-8
+#RUN locale-gen en_US.UTF-8
+#RUN update-locale LANG=en_US.UTF-8
 
-ENV LANG C.UTF-8
+#ENV LANG C.UTF-8
 
 # create deploy user
 RUN useradd --create-home --home /var/lib/deploy deploy
@@ -42,11 +42,12 @@ RUN cd /var/lib/deploy/grobid-grobid-parent-0.4.1 && mvn -Dmaven.test.skip=true 
 RUN aria2c -s 16 -x 16 -k 30M https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /var/lib/deploy/Anaconda.sh
 RUN cd /var/lib/deploy && bash Anaconda.sh -b && rm -rf Anaconda.sh
 ENV PATH=/var/lib/deploy/miniconda3/bin:$PATH
-run conda install python=3.5.0
-run conda config --add channels spacy
-run conda install system flask numpy scipy scikit-learn spacy flask-wtf requests pandas gensim mkl mkl-service matplotlib seaborn h5py
-run conda install pyqt=4.11
-run python -m spacy.en.download
+RUN conda install python=3.5.0
+RUN conda config --add channels spacy
+RUN conda install cython
+RUN conda install system flask numpy scipy scikit-learn spacy flask-wtf requests gensim mkl mkl-service matplotlib seaborn h5py
+RUN conda install pyqt=4.11
+RUN python -m spacy.en.download
 
 # install Python dependencies
 ADD requirements.txt /tmp/requirements.txt

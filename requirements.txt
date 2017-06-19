@@ -11,5 +11,6 @@ apscheduler
 gevent
 greenlet
 
-git+https://github.com/Theano/Theano.git
+git+https://github.com/pandas-dev/pandas.git@v0.19.1
+git+https://github.com/Theano/Theano.git@rel-0.9.0
 git+https://github.com/fchollet/keras.git@1.2.2
