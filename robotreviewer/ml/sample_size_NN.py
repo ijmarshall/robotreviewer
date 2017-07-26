@@ -74,7 +74,7 @@ class MLPSampleSizeClassifier:
 
             other_inputs.append(np.array(x["other features"]))
 
-            
+        
         X_inputs_dict = {"left token input":np.vstack(left_token_inputs), 
                         "target token input":np.vstack(target_token_inputs),
                         "right token input":np.vstack(right_token_inputs),
@@ -120,8 +120,12 @@ class MLPSampleSizeClassifier:
         abstract_text_w_numbers = self.number_tagger.swap(abstract_text)
         abstract_tokens = tokenize_abstract(abstract_text_w_numbers, self.nlp)
         abstract_features, numeric_token_indices = abstract2features(abstract_tokens)
+
+        # no numbers in the abstract, then!
+        if len(abstract_features) == 0: 
+            return None 
+
         X = self.featurize_for_input(abstract_features)
-        
         preds = self.model.predict(X)
         most_likely_idx = np.argmax(preds)
         

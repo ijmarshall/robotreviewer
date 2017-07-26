@@ -39,6 +39,7 @@
         <tr class='bias-header-row'>
           <th class='trial-id-header'>trial</th>
           <th class='trial-id-header'>design</th>
+          <th class='trial-id-header'>n</th>
           {% for header in headers %}
           <th class="rotate"><div><span>{{ header }}</span></div></th>
           {% endfor %}
@@ -65,6 +66,9 @@
           {% else %}
             not RCT
           {% endif %}
+          </td>
+          <td class="risk-studyid">
+          {{ study.get('sample_size', []) }}
           </td>
           {% for domain in study.get('bias', []) %}
           <td class="{% if domain['judgement'] == 'low' %}risk-low{% elif domain['judgement'] == 'high/unclear' %}risk-high{% endif %}">{{ '+' if domain['judgement'] == 'low' else '?' }}</td>

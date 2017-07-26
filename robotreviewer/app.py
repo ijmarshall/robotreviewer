@@ -53,6 +53,7 @@ from robotreviewer.robots.pubmed_robot import PubmedRobot
 # from robotreviewer.robots.ictrp_robot import ICTRPRobot
 from robotreviewer.robots import pico_viz_robot
 from robotreviewer.robots.pico_viz_robot import PICOVizRobot
+from robotreviewer.robots.sample_size_robot import SampleSizeBot
 
 from robotreviewer.data_structures import MultiDict
 
@@ -86,7 +87,8 @@ bots = {"bias_bot": BiasRobot(top_k=3),
         "pubmed_bot": PubmedRobot(),
         # "ictrp_bot": ICTRPRobot(),
         "rct_bot": RCTRobot(),
-        "pico_viz_bot": PICOVizRobot()}
+        "pico_viz_bot": PICOVizRobot(),
+        "sample_size_bot":SampleSizeBot()}
         # "mendeley_bot": MendeleyRobot()}
 
 log.info("Robots loaded successfully! Ready...")
@@ -142,7 +144,7 @@ def upload_and_annotate():
         pdf_hash = hashlib.md5(blob).hexdigest()
         pdf_uuid = rand_id()
         pdf_uuids.append(pdf_uuid)
-        data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot", "pico_viz_bot"])
+        data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot", "pico_viz_bot", "sample_size_bot"])
         data.gold['pdf_uuid'] = pdf_uuid
         data.gold['filename'] = filename
 
@@ -187,7 +189,6 @@ def get_study_name(article):
         else:
             return authors[0]["lastname"] + " et al."
     else:
-        #import pdb; pdb.set_trace()
         return article['filename'][:20].lower().replace(".pdf", "") + " ..."
 
 
@@ -240,7 +241,6 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
                                             "{0}-PICO-embeddings".format(report_uuid))
 
 
-        #import pdb; pdb.set_trace()
         return render_template('reportview.{}'.format(reportformat), headers=bots['bias_bot'].get_domains(), articles=articles,
                                 pico_plot=pico_plot_html, report_uuid=report_uuid, online=(not download),
                                 errors=error_messages, reportformat=reportformat)

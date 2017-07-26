@@ -32,11 +32,13 @@ class SampleSizeBot:
             ABSTRACT_LEN = 420
             abstract = data['parsed_text'][:ABSTRACT_LEN].text
         
-        sample_size_str = "Unreported or failed to infer"
+        sample_size_str = "???"
         if abstract is not None:
-            confidence, n = self.sample_size_model.predict_for_abstract(abstract)
-            if confidence >= self.magic_threshold:
-                sample_size_str = n
+            sample_size_pred = self.sample_size_model.predict_for_abstract(abstract)
+            if sample_size_pred is not None:
+                confidence, n = sample_size_pred
+                if confidence >= self.magic_threshold:
+                    sample_size_str = n
 
         data.ml["sample_size"] = sample_size_str
 
