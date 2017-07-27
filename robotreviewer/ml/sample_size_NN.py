@@ -19,6 +19,14 @@ from keras.preprocessing.text import text_to_word_sequence, Tokenizer
 
 import index_numbers
 
+def replace_n_equals(abstract_tokens):
+    for j, t in enumerate(abstract_tokens):
+        if "n=" in t.lower():
+            # special case for sample size reporting 
+            t_n = t.split("=")[1].replace(")", "") # also replace closing paren, if present
+            abstract_tokens[j] = t_n 
+    return abstract_tokens
+
 class MLPSampleSizeClassifier:
 
     def __init__(self, preprocessor, architecture_path=None, weights_path=None):
@@ -97,20 +105,20 @@ class MLPSampleSizeClassifier:
                                           input_length=1)(right_token_input)
         right_token_embedding = Flatten(name="right token embedding")(right_token_embedding)
 
-        one_hot_features_input = Input(name='other feature inputs', shape=(1,))
+        other_features_input = Input(name='other feature inputs', shape=(3,))
 
-        #x = Merge([left_token_embedding, target_token_embedding, right_token_embedding,  one_hot_features_input], mode='concat')
-        x = merge([left_token_embedding, target_token_input, right_token_embedding,  one_hot_features_input],  
+        x = merge([left_token_embedding, target_token_input, right_token_embedding,  other_features_input],  
                         mode='concat', concat_axis=1)
         x = Dense(128, name="hidden 1", activation='relu')(x)
         x = Dense(64, name="hidden 2", activation='relu')(x) 
 
         output = Dense(1, name="prediction", activation='sigmoid')(x)
 
-        self.model = Model([left_token_input, target_token_input, right_token_input, one_hot_features_input], 
+        self.model = Model([left_token_input, target_token_input, right_token_input, other_features_input], 
                            output=[output])
 
         self.model.compile(optimizer="adam", loss="binary_crossentropy")
+
 
     def predict_for_abstract(self, abstract_text):
         ''' 
@@ -119,6 +127,9 @@ class MLPSampleSizeClassifier:
         '''
         abstract_text_w_numbers = self.number_tagger.swap(abstract_text)
         abstract_tokens = tokenize_abstract(abstract_text_w_numbers, self.nlp)
+        #import pdb; pdb.set_trace()
+        abstract_tokens = replace_n_equals(abstract_tokens)
+
         abstract_features, numeric_token_indices = abstract2features(abstract_tokens)
 
         # no numbers in the abstract, then!
@@ -129,9 +140,11 @@ class MLPSampleSizeClassifier:
         preds = self.model.predict(X)
         most_likely_idx = np.argmax(preds)
         
+        
         return (preds[most_likely_idx][0], abstract_tokens[numeric_token_indices[most_likely_idx]])
 
-    
+
+
 
 
 def load_trained_w2v_model(path):
@@ -232,6 +245,7 @@ def get_X_y(df):
         instance = instance[1]
   
         abstract_tokens = tokenize_abstract(instance["ab_numbers"], nlp)
+        abstract_tokens = replace_n_equals(abstract_tokens)
         
         nums_to_labels = {instance["enrolled_totals"]:"N", instance["enrolled_P1"]:"n1", instance["enrolled_P2"]:"n2"}
         cur_y = annotate(abstract_tokens, nums_to_labels)
@@ -269,9 +283,20 @@ def tokenize_abstract(abstract, nlp=None):
     return tokens
 
 def abstract2features(abstract_tokens):
-    # we use all the numbers to induce global features
-    all_nums_in_abstract = []
-    for t in abstract_tokens:
+
+    ####
+    # some of the features we use rely on 'global' info,
+    # so we take a pass over the entire abstract here
+    # to extract what we need:
+    #   1. keep track of all numbers in the abstract
+    #   2. keep track of indices where "years" mentioned
+    # the latter because years are a potential source of
+    # confusion!
+    years_tokens = ["years", "year"]
+    all_nums_in_abstract, years_indices = [], []
+    for idx, t in enumerate(abstract_tokens):
+        if t.lower() in years_tokens:
+            years_indices.append(idx)
         try:
             num = int(t)
             all_nums_in_abstract.append(num)
@@ -284,13 +309,19 @@ def abstract2features(abstract_tokens):
     for word_idx in range(len(abstract_tokens)):
         if (_is_an_int(abstract_tokens[word_idx])):   
             numeric_token_indices.append(word_idx)         
-            features = word2features(abstract_tokens, word_idx, all_nums_in_abstract)
+            features = word2features(abstract_tokens, word_idx, all_nums_in_abstract, years_indices)
             x.append(features)
 
     return x, numeric_token_indices
 
 
-def word2features(abstract_tokens, i, all_nums_in_abstract):
+def get_window_indices(all_tokens, i, window_size):
+    lower_idx = max(0, i-window_size)
+    upper_idx = min(i+window_size, len(all_tokens)-1)
+    return (lower_idx, upper_idx)
+
+def word2features(abstract_tokens, i, all_nums_in_abstract, 
+                    years_indices, window_size_for_years=5):
     l_word, r_word = "", ""
     t_word = abstract_tokens[i]
 
@@ -309,7 +340,23 @@ def word2features(abstract_tokens, i, all_nums_in_abstract):
     biggest_num_in_abstract = 0.0
     if target_num >= max(all_nums_in_abstract):
         biggest_num_in_abstract = 1.0
-    return {"left word":l_word, "target": target_num, "right word":r_word, "other features":[biggest_num_in_abstract]}
+
+    # this feature encodes whether "year" or "years" is mentioned
+    # within window_size_for_years tokens of the target (i)
+    years_mention_within_window = 0.0
+    lower_idx, upper_idx = get_window_indices(abstract_tokens, i, window_size_for_years)
+    for year_idx in years_indices:
+        if lower_idx < year_idx <= upper_idx:
+            years_mention_within_window = 1.0
+            break 
+
+    target_looks_like_a_year = 0.0
+    lower_year, upper_year = 1940, 2020 # totally made up.
+    if lower_year <= target_num <= upper_year:
+        target_looks_like_a_year = 1.0
+
+    return {"left word":l_word, "target": target_num, "right word":r_word, 
+            "other features":[biggest_num_in_abstract, years_mention_within_window, target_looks_like_a_year]}
 
 def load_data(csv_path="ctgov_with_tags.csv"):
     return pd.read_csv(csv_path)
