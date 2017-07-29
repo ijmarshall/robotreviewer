@@ -36,12 +36,17 @@ class MLPSampleSizeClassifier:
         and re-instantiation of trained models.
         '''
         self.preprocessor = preprocessor
-        # threshold governing whether to abstain from predicting
-        # this as a sample size altogether (for highest scoring 
-        # integer). As always, this was definitely set in a totally
-        # scientifically sound way ;).
+
         self.nlp = spacy.load('en') # to avoid instantiating multiple times.
+
+        # this is for POS tags
+        self.PoS_tags_to_indices = {}
+        for idx, tag in enumerate(self.nlp.tagger.tag_names):
+            self.PoS_tags_to_indices[tag] = idx
+      
         self.number_tagger = index_numbers.NumberTagger()
+  
+        self.n_tags = len(self.nlp.tagger.tag_names)
 
         # check if we're loading in a pre-trained model
         if architecture_path is not None: 
@@ -54,9 +59,14 @@ class MLPSampleSizeClassifier:
             
             self.model.load_weights(weights_path)
 
+    def PoS_tags_to_one_hot(self, tag):
+        one_hot = np.zeros(self.n_tags)
+        one_hot[self.PoS_tags_to_indices[tag]] = 1.0
+        return one_hot
 
     def featurize_for_input(self, X):
-        left_token_inputs, target_token_inputs, right_token_inputs, other_inputs = [], [], [], []
+        left_token_inputs, left_PoS, target_token_inputs, \
+            right_token_inputs, right_PoS, other_inputs = [], [], [], [], [], []
 
         # helper func for looking up word indices
         def get_w_index(w):
@@ -71,25 +81,32 @@ class MLPSampleSizeClassifier:
                 return unk_idx
 
 
+        
         for x in X:
             l_word_idx = get_w_index(x["left word"])
             left_token_inputs.append(np.array([l_word_idx]))
+            
+            left_PoS.append(self.PoS_tags_to_one_hot(x["left PoS"]))
 
             target_token_inputs.append(np.array(x["target"]))
 
             r_word_idx = get_w_index(x["right word"])
             right_token_inputs.append(np.array(r_word_idx))
 
+            right_PoS.append(self.PoS_tags_to_one_hot(x["right PoS"]))
+
             other_inputs.append(np.array(x["other features"]))
 
-        
+            
         X_inputs_dict = {"left token input":np.vstack(left_token_inputs), 
+                        "left PoS input":np.vstack(left_PoS),
                         "target token input":np.vstack(target_token_inputs),
                         "right token input":np.vstack(right_token_inputs),
+                        "right PoS input":np.vstack(right_PoS),
                         "other feature inputs":np.vstack(other_inputs)}
 
         return X_inputs_dict
-    
+
 
     def build_MLP_model(self):
 
@@ -97,27 +114,34 @@ class MLPSampleSizeClassifier:
         left_token_embedding = Embedding(output_dim=self.preprocessor.embedding_dims, input_dim=self.preprocessor.max_features, 
                                         input_length=1)(left_token_input)
         left_token_embedding = Flatten(name="left token embedding")(left_token_embedding)
-                      
+        
+        n_PoS_tags = len(self.nlp.tagger.tag_names)
+        left_PoS_input = Input(name='left PoS input', shape=(n_PoS_tags,))
         target_token_input = Input(name='target token input', shape=(1,))
 
         right_token_input = Input(name='right token input', shape=(1,))
         right_token_embedding = Embedding(output_dim=self.preprocessor.embedding_dims, input_dim=self.preprocessor.max_features, 
                                           input_length=1)(right_token_input)
+        right_PoS_input = Input(name='right PoS input', shape=(n_PoS_tags,))
+
         right_token_embedding = Flatten(name="right token embedding")(right_token_embedding)
 
-        other_features_input = Input(name='other feature inputs', shape=(3,))
+        other_features_input = Input(name='other feature inputs', shape=(4,))
 
-        x = merge([left_token_embedding, target_token_input, right_token_embedding,  other_features_input],  
-                        mode='concat', concat_axis=1)
+        x = merge([left_token_embedding, target_token_input, right_token_embedding, 
+                    left_PoS_input, right_PoS_input, other_features_input],  
+                    mode='concat', concat_axis=1)
         x = Dense(128, name="hidden 1", activation='relu')(x)
         x = Dense(64, name="hidden 2", activation='relu')(x) 
 
         output = Dense(1, name="prediction", activation='sigmoid')(x)
 
-        self.model = Model([left_token_input, target_token_input, right_token_input, other_features_input], 
+        self.model = Model([left_token_input, left_PoS_input, target_token_input, 
+                            right_token_input, right_PoS_input, other_features_input], 
                            output=[output])
 
         self.model.compile(optimizer="adam", loss="binary_crossentropy")
+
 
 
     def predict_for_abstract(self, abstract_text):
@@ -126,11 +150,14 @@ class MLPSampleSizeClassifier:
         be located. 
         '''
         abstract_text_w_numbers = self.number_tagger.swap(abstract_text)
-        abstract_tokens = tokenize_abstract(abstract_text_w_numbers, self.nlp)
-        #import pdb; pdb.set_trace()
+        abstract_tokens, POS_tags = tokenize_abstract(abstract_text_w_numbers, self.nlp)
+        
         abstract_tokens = replace_n_equals(abstract_tokens)
 
-        abstract_features, numeric_token_indices = abstract2features(abstract_tokens)
+        abstract_features, numeric_token_indices = abstract2features(abstract_tokens, POS_tags)
+
+
+        #import pdb; pdb.set_trace()
 
         # no numbers in the abstract, then!
         if len(abstract_features) == 0: 
@@ -140,6 +167,7 @@ class MLPSampleSizeClassifier:
         preds = self.model.predict(X)
         most_likely_idx = np.argmax(preds)
         
+      
         
         return (preds[most_likely_idx][0], abstract_tokens[numeric_token_indices[most_likely_idx]])
 
@@ -275,14 +303,15 @@ def tokenize_abstract(abstract, nlp=None):
     if nlp is None:
         nlp = spacy.load('en')
 
-    tokens = []
+    tokens, POS_tags = [], []
     ab = nlp(abstract)
     for word in ab:
         tokens.append(word.text)
-        
-    return tokens
+        POS_tags.append(word.tag_)
+       
+    return tokens, POS_tags
 
-def abstract2features(abstract_tokens):
+def abstract2features(abstract_tokens, POS_tags):
 
     ####
     # some of the features we use rely on 'global' info,
@@ -290,13 +319,21 @@ def abstract2features(abstract_tokens):
     # to extract what we need:
     #   1. keep track of all numbers in the abstract
     #   2. keep track of indices where "years" mentioned
+    #   3. keep track of indices where "patients" mentioned
     # the latter because years are a potential source of
     # confusion!
     years_tokens = ["years", "year"]
-    all_nums_in_abstract, years_indices = [], []
+    patients_tokens = ["patients", "subjects"]
+    all_nums_in_abstract, years_indices, patient_indices = [], [], []
     for idx, t in enumerate(abstract_tokens):
-        if t.lower() in years_tokens:
+        t_lower = t.lower()
+
+        if t_lower in years_tokens:
             years_indices.append(idx)
+
+        if t_lower in patients_tokens:
+            patient_indices.append(idx) 
+
         try:
             num = int(t)
             all_nums_in_abstract.append(num)
@@ -309,31 +346,38 @@ def abstract2features(abstract_tokens):
     for word_idx in range(len(abstract_tokens)):
         if (_is_an_int(abstract_tokens[word_idx])):   
             numeric_token_indices.append(word_idx)         
-            features = word2features(abstract_tokens, word_idx, all_nums_in_abstract, years_indices)
+            features = word2features(abstract_tokens, POS_tags, word_idx, all_nums_in_abstract, 
+                                      years_indices, patient_indices)
             x.append(features)
 
     return x, numeric_token_indices
-
 
 def get_window_indices(all_tokens, i, window_size):
     lower_idx = max(0, i-window_size)
     upper_idx = min(i+window_size, len(all_tokens)-1)
     return (lower_idx, upper_idx)
 
-def word2features(abstract_tokens, i, all_nums_in_abstract, 
-                    years_indices, window_size_for_years=5):
+def word2features(abstract_tokens, POS_tags, i, all_nums_in_abstract, 
+                    years_indices, patient_indices,
+                    window_size_for_years=5,
+                    window_size_patient_mention=4):
     l_word, r_word = "", ""
+    l_POS, r_POS   = "", ""
     t_word = abstract_tokens[i]
 
     if i > 0:
         l_word = abstract_tokens[i-1].lower()
+        l_POS  = POS_tags[i-1]
     else:
         l_word = "BoS"
+        l_POS  = "XX" # i.e., unknown
 
     if i < len(abstract_tokens)-1:
         r_word = abstract_tokens[i+1].lower()
+        r_POS  = POS_tags[i+1]
     else: 
         r_word = "LoS"
+        r_POS  = "XX"
 
     target_num = int(t_word)
     # need to add a feature for being largest in doc??
@@ -350,13 +394,24 @@ def word2features(abstract_tokens, i, all_nums_in_abstract,
             years_mention_within_window = 1.0
             break 
 
+    # ditto the above, but for "patients"
+    patients_mention_follows_within_window = 0.0
+    _, upper_idx = get_window_indices(abstract_tokens, i, window_size_patient_mention)
+    for patient_idx in patient_indices:
+        if i < patient_idx <= upper_idx:
+            patients_mention_follows_within_window = 1.0
+            break
+
     target_looks_like_a_year = 0.0
     lower_year, upper_year = 1940, 2020 # totally made up.
     if lower_year <= target_num <= upper_year:
         target_looks_like_a_year = 1.0
 
-    return {"left word":l_word, "target": target_num, "right word":r_word, 
-            "other features":[biggest_num_in_abstract, years_mention_within_window, target_looks_like_a_year]}
+    return {"left word":l_word, "target": target_num, "right word":r_word,  
+            "left PoS":l_POS, "right PoS":r_POS, 
+            "other features":[biggest_num_in_abstract, years_mention_within_window, 
+                                target_looks_like_a_year, 
+                                patients_mention_follows_within_window]}
 
 def load_data(csv_path="ctgov_with_tags.csv"):
     return pd.read_csv(csv_path)

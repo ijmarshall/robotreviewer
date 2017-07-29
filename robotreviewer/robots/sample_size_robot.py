@@ -14,7 +14,7 @@ class SampleSizeBot:
     def __init__(self):
         # as always, this was set in a totally and 
         # completely scientific way.
-        self.magic_threshold = 0.0205 
+        self.magic_threshold = 0.2
 
         with open(preprocessor_path, 'rb') as preprocessor_file:
             p = pickle.load(preprocessor_file)
