@@ -10,7 +10,7 @@ import logging, os
 from datetime import datetime, timedelta
 
 def str2bool(v):
-  return v.lower() in ("yes", "true", "t", "1")
+    return v.lower() in ("yes", "true", "t", "1")
 
 DEBUG_MODE = str2bool(os.environ.get("DEBUG", "true"))
 LOCAL_PATH = "robotreviewer/uploads"
