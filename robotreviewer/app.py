@@ -9,6 +9,11 @@ RobotReviewer server
 import logging, os
 from datetime import datetime, timedelta
 
+
+DEBUG_MODE = str2bool(os.environ.get("DEBUG", "true"))
+LOCAL_PATH = "robotreviewer/uploads"
+LOG_LEVEL = (logging.DEBUG if DEBUG_MODE else logging.INFO)
+
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
@@ -25,6 +30,8 @@ from werkzeug.utils import secure_filename
 from flask_wtf.csrf import CsrfProtect
 import zipfile
 import robotreviewer
+from celery import Celery
+from celery.result import AsyncResult
 
 try:
     from cStringIO import StringIO # py2
@@ -47,6 +54,12 @@ app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 csrf = CsrfProtect()
 csrf.init_app(app)
 
+#####
+## connect to celery app
+#####
+
+celery_app = Celery('ml_worker', backend='amqp', broker='pyamqp://')
+celery_tasks = {"annotate": celery_app.signature('ml_worker.annotate')}
 
 #####
 ## connect to database
@@ -80,12 +93,22 @@ def upload_and_annotate():
     articles = pdf_reader.convert_batch(blobs)
     parsed_articles = []
     # tokenize full texts here
-    c.execute("INSERT INTO doc_queue (report_uuid, pdf_uuid, pdf_file, timestamp)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), datetime.now())
+    c.execute("INSERT INTO doc_queue (report_uuid, pdf_uuid, pdf_file, timestamp)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), datetime.now()))
     rr_sql_conn.commit()
     c.close()
     # TODO send task to celery with report_uuid in it
-
+    celery_app['annotate'].apply_async((report_uuid, ), task_id=report_uuid)
     return json.dumps({"report_uuid": report_uuid})
+
+@csrf.exempt
+@app.route('/annotate_status/<report_uuid>')
+def annotate_status(report_uuid):
+    '''
+    check and return status of celery annotation process
+    '''
+    result = AsyncResult(report_uuid, app=celery_app)
+    return json.dumps({"state": result.state, "meta": result.result})
+
 
 
 

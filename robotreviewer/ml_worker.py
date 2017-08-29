@@ -14,9 +14,11 @@ called by `celery -A ml_worker worker --loglevel=info`
 from celery import Celery, current_task
 import logging, os
 
+import sqlite3
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1")
 
 
-log.info("RobotReviewer machine learning tasks starting")
 
 DEBUG_MODE = str2bool(os.environ.get("DEBUG", "true"))
 LOCAL_PATH = "robotreviewer/uploads"
@@ -25,9 +27,10 @@ LOG_LEVEL = (logging.DEBUG if DEBUG_MODE else logging.INFO)
 # (crudely and unscientifically adjusted for grobid)
 NUM_WORDS_IN_ABSTRACT = 450
 
-
 logging.basicConfig(level=LOG_LEVEL, format='[%(levelname)s] %(name)s %(asctime)s: %(message)s')
 log = logging.getLogger(__name__)
+
+log.info("RobotReviewer machine learning tasks starting")
 
 
 from robotreviewer.textprocessing.pdfreader import PdfReader
@@ -63,8 +66,8 @@ bots = {"bias_bot": BiasRobot(top_k=3),
         "pubmed_bot": PubmedRobot(),
         # "ictrp_bot": ICTRPRobot(),
         "rct_bot": RCTRobot(),
-        "pico_viz_bot": PICOVizRobot(),
-        "sample_size_bot":SampleSizeBot()}
+        "pico_viz_bot": PICOVizRobot()}#,
+        #"sample_size_bot":SampleSizeBot()}
         # "mendeley_bot": MendeleyRobot()}
 
 log.info("Robots loaded successfully! Ready...")
@@ -73,7 +76,7 @@ log.info("Robots loaded successfully! Ready...")
 pdf_reader.connect()
 
 # start up Celery service
-app = Celery('ml_worker', backend='ampq://', broker='pyampq://')
+app = Celery('ml_worker', backend='amqp://', broker='pyamqp://')
 
 #####
 ## connect to and set up database
@@ -95,34 +98,45 @@ def annotate(report_uuid):
     searches for pdfs using that id,
     then saves annotations in database
     """
-    pdf_uuids = []
+    pdf_uuids, pdf_hashes, blobs = [], [], []
 
     c = rr.sql_conn.cursor()
 
-    pdf_blobs = []
+    # load in the PDF data from the queue table
+    for pdf_uuid, pdf_hash, pdf_file, timestamp in c.execute("SELECT pdf_uuid, pdf_hash, pdf_file, timestamp FROM doc_queue WHERE report_uuid=?", (report_uuid)):
+        pdf_uuids.append(pdf_uuid)
+        pdf_hashes.append(pdf_hash)
+        blobs.append(pdf_file)
 
-    for pdf_uuid, pdf_hash, pdf_file, timestamp, dont_delete in c.execute("SELECT pdf_uuid, pdf_hash, pdf_file, timestamp FROM doc_queue WHERE report_uuid=?", (report_uuid)):
-        data = MultiDict()
-        articles = pdf_reader.convert_batch(blobs)
-        parsed_articles = []
-        for doc in nlp.pipe((d.get('text', u'') for d in articles), batch_size=1, n_threads=config.SPACY_THREADS, tag=True, parse=True, entity=False):
+    articles = pdf_reader.convert_batch(blobs)
+    parsed_articles = []
+
+    current_task.update_state(state='PROGRESS',                                                                 meta={'process_percentage': 25, 'task': 'reading PDFs'})
+
+    # tokenize full texts here 
+    for doc in nlp.pipe((d.get('text', u'') for d in articles), batch_size=1, n_threads=config.SPACY_THREADS, tag=True, parse=True, entity=False):
         parsed_articles.append(doc)
+    current_task.update_state(state='PROGRESS',                                                                 meta={'process_percentage': 50, 'task': 'parsing text'})
 
-        # adjust the tag, parse, and entity values if these are needed later
-        for article, parsed_text in zip(articles, parsed_articles):
-            article._spacy['parsed_text'] = parsed_text
+    # adjust the tag, parse, and entity values if these are needed later
+    for article, parsed_text in zip(articles, parsed_articles):
+        article._spacy['parsed_text'] = parsed_text
+    current_task.update_state(state='PROGRESS',                                                                 meta={'process_percentage': 75, 'task': 'doing machine learning'})
 
-        for filename, blob, data in zip(filenames, blobs, articles):
-            pdf_hash = hashlib.md5(blob).hexdigest()
-            pdf_uuid = rand_id()
-            pdf_uuids.append(pdf_uuid)
-            data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot", "pico_viz_bot", "sample_size_bot"])
-            data.gold['pdf_uuid'] = pdf_uuid
-            data.gold['filename'] = filename
-            c.execute("INSERT INTO article (report_uuid, pdf_uuid, pdf_hash, pdf_file, annotations, timestamp, dont_delete) VALUES(?, ?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), data.to_json(), datetime.now(), config.DONT_DELETE))
-            rr_sql_conn.commit()
-            c.close()
+    for filename, blob, data in zip(filenames, blobs, articles):
+        pdf_hash = hashlib.md5(blob).hexdigest()
+        pdf_uuid = rand_id()
+        pdf_uuids.append(pdf_uuid)
+        data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot", "pico_viz_bot"])
+        data.gold['pdf_uuid'] = pdf_uuid
+        data.gold['filename'] = filename
+        c.execute("INSERT INTO article (report_uuid, pdf_uuid, pdf_hash, pdf_file, annotations, timestamp, dont_delete) VALUES(?, ?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), data.to_json(), datetime.now(), config.DONT_DELETE))
+        rr_sql_conn.commit()
+    # finally delete the PDFs from the queue
+    c.execute("DELETE FROM doc_queue WHERE report_uuid=?", (report_uuid, ))
 
+    c.close()
+    return {"process_percentage": 100, "task": "completed"}
 
 
 
