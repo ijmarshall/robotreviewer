@@ -45,7 +45,7 @@ A BibTeX entry for LaTeX users is
 
 ## Installation
 
-1. Ensure you have a working version of 3.4+. We recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience. However, if you have Python already installed that will probably work fine too.
+1. Ensure you have a working version of 3.4+. We strongly recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience.
 
 2. [Install git-lfs](https://git-lfs.github.com/) for managing the model file versions (on Mac: `brew install git-lfs`). NB! If you already have git lfs installed, make sure it's the most recent version, since older versions have not downloaded files properly.
 
@@ -54,36 +54,17 @@ A BibTeX entry for LaTeX users is
     git clone https://github.com/ijmarshall/robotreviewer3.git
     cd robotreviewer3
     ```
-4. Install the Python libraries that RobotReviewer needs - do one of the following.
 
-a. If you are using Anaconda:
-
-```bash
-conda config --add channels spacy  # only needed once
-conda install flask numpy scipy scikit-learn spacy Flask-WTF requests pandas
-pip install fuzzywuzzy mpld3 python-dateutil python-Levenshtein # (not yet in the anaconda repo)
-```
-
-b. If you are NOT using Anaconda:
+4. Install the Python libraries that RobotReviewer needs. The most reliable way is through a conda environment. The following downloads the packages, and installs the required data.
 
 ```bash
-pip install flask numpy scipy scikit-learn spacy fuzzywuzzy
-```
-
-For everyone:
-
-``` bash
-# install theano and keras from source
-pip install git+https://github.com/Theano/Theano.git
-pip install git+https://github.com/fchollet/keras.git@1.2.2
-
-# then install sentence processing data
+conda env create -f robotreviewer_env.yml
+source activate robotreviewer
 python -m spacy.en.download
 python -m nltk.downloader punkt
 ```
 
 Ensure `keras` is set to use `theano` as its default backend. Steps on how to do this can be found [here](https://keras.io/backend/).
-
 
 5. This version of RobotReviewer requires Grobid, which in turn uses Java. Follow the instructions [here](https://grobid.readthedocs.io/en/latest/Install-Grobid/) to download and build it.
 
@@ -105,17 +86,13 @@ And to start the webserver (on `localhost:5000`):
 python -m robotreviewer
 ```
 
-will start a flask server running on `http://localhost:5000`. You can run the server in development mode by passing `DEBUG=true python -m robotreviewer`. Visiting this address from a browser will show the new multiple PDF synthesis demonstration.
-
 ## Demonstration reports
 
-We have included some example reports, with open access RCT PDFs in order to demonstrate RobotReviewer. These are saved in the default database, and can be accessed via the following links.
+We have included example reports, with open access RCT PDFs to demonstrate RobotReviewer. These are saved in the default database, and can be accessed via the following links.
 
 Decision aids: `http://localhost:5000/#report/Tvg0-pHV2QBsYpJxE2KW-`
 Influenza vaccination: `http://localhost:5000/#report/_fzGUEvWAeRsqYSmNQbBq`
 Hypertension: `http://localhost:5000/#report/HBkzX1I3Uz_kZEQYeqXJf`
-
-
 
 
 ## Rest API
