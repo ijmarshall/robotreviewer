@@ -12,20 +12,9 @@ from datetime import datetime, timedelta
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
-DEBUG_MODE = str2bool(os.environ.get("DEBUG", "true"))
-LOCAL_PATH = "robotreviewer/uploads"
-LOG_LEVEL = (logging.DEBUG if DEBUG_MODE else logging.INFO)
-# determined empirically by Edward; covers 90% of abstracts
-# (crudely and unscientifically adjusted for grobid)
-NUM_WORDS_IN_ABSTRACT = 450
-
 logging.basicConfig(level=LOG_LEVEL, format='[%(levelname)s] %(name)s %(asctime)s: %(message)s')
 log = logging.getLogger(__name__)
-log.info("Welcome to RobotReviewer :)")
-
-from robotreviewer.textprocessing.pdfreader import PdfReader
-pdf_reader = PdfReader() # launch Grobid process before anything else
-
+log.info("Welcome to RobotReviewer server :)")
 
 from flask import Flask, json, make_response, send_file
 from flask import redirect, url_for, jsonify
@@ -35,31 +24,12 @@ from werkzeug.utils import secure_filename
 
 from flask_wtf.csrf import CsrfProtect
 import zipfile
+import robotreviewer
 
 try:
     from cStringIO import StringIO # py2
 except ImportError:
     from io import BytesIO as StringIO # py3
-
-from robotreviewer.textprocessing.tokenizer import nlp
-
-''' robots! '''
-# from robotreviewer.robots.bias_robot import BiasRobot
-from robotreviewer.robots.rationale_robot import BiasRobot
-from robotreviewer.robots.pico_robot import PICORobot
-from robotreviewer.robots.rct_robot import RCTRobot
-from robotreviewer.robots.pubmed_robot import PubmedRobot
-# from robotreviewer.robots.mendeley_robot import MendeleyRobot
-# from robotreviewer.robots.ictrp_robot import ICTRPRobot
-from robotreviewer.robots import pico_viz_robot
-from robotreviewer.robots.pico_viz_robot import PICOVizRobot
-from robotreviewer.robots.sample_size_robot import SampleSizeBot
-
-from robotreviewer.data_structures import MultiDict
-
-from robotreviewer import config
-import robotreviewer
-
 import uuid
 from robotreviewer.util import rand_id
 import sqlite3
@@ -78,35 +48,11 @@ csrf = CsrfProtect()
 csrf.init_app(app)
 
 
-######
-## default annotation pipeline defined here
-######
-log.info("Loading the robots...")
-bots = {"bias_bot": BiasRobot(top_k=3),
-        "pico_bot": PICORobot(),
-        "pubmed_bot": PubmedRobot(),
-        # "ictrp_bot": ICTRPRobot(),
-        "rct_bot": RCTRobot(),
-        "pico_viz_bot": PICOVizRobot(),
-        "sample_size_bot":SampleSizeBot()}
-        # "mendeley_bot": MendeleyRobot()}
-
-log.info("Robots loaded successfully! Ready...")
-
 #####
-## connect to and set up database
+## connect to database
 #####
 rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES)
-c = rr_sql_conn.cursor()
 
-c.execute('CREATE TABLE IF NOT EXISTS article(id INTEGER PRIMARY KEY, report_uuid TEXT, pdf_uuid TEXT, pdf_hash TEXT, pdf_file BLOB, annotations TEXT, timestamp TIMESTAMP, dont_delete INTEGER)')
-c.close()
-rr_sql_conn.commit()
-
-
-
-# lastly wait until Grobid is connected
-pdf_reader.connect()
 
 @app.route('/')
 def main():
@@ -116,7 +62,9 @@ def main():
 @csrf.exempt # TODO: add csrf back in
 @app.route('/upload_and_annotate', methods=['POST'])
 def upload_and_annotate():
-    # uploads a bunch of PDFs, do the RobotReviewer annotation
+    # uploads a bunch of PDFs to the database,
+    # then sends a Celery task for the
+    # worker to do the RobotReviewer annotation
     # save PDFs + annotations to database
     # returns the report run uuid + list of article uuids
 
@@ -132,29 +80,15 @@ def upload_and_annotate():
     articles = pdf_reader.convert_batch(blobs)
     parsed_articles = []
     # tokenize full texts here
-    for doc in nlp.pipe((d.get('text', u'') for d in articles), batch_size=1, n_threads=config.SPACY_THREADS, tag=True, parse=True, entity=False):
-        parsed_articles.append(doc)
-
-
-    # adjust the tag, parse, and entity values if these are needed later
-    for article, parsed_text in zip(articles, parsed_articles):
-        article._spacy['parsed_text'] = parsed_text
-
-    for filename, blob, data in zip(filenames, blobs, articles):
-        pdf_hash = hashlib.md5(blob).hexdigest()
-        pdf_uuid = rand_id()
-        pdf_uuids.append(pdf_uuid)
-        data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot", "pico_viz_bot", "sample_size_bot"])
-        data.gold['pdf_uuid'] = pdf_uuid
-        data.gold['filename'] = filename
-
-
-        c.execute("INSERT INTO article (report_uuid, pdf_uuid, pdf_hash, pdf_file, annotations, timestamp, dont_delete) VALUES(?, ?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), data.to_json(), datetime.now(), config.DONT_DELETE))
-        rr_sql_conn.commit()
+    c.execute("INSERT INTO doc_queue (report_uuid, pdf_uuid, pdf_file, timestamp)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), datetime.now())
+    rr_sql_conn.commit()
     c.close()
+    # TODO send task to celery with report_uuid in it
 
-    return json.dumps({"report_uuid": report_uuid,
-                       "pdf_uuids": pdf_uuids})
+    return json.dumps({"report_uuid": report_uuid})
+
+
+
 
 @app.errorhandler(413)
 def request_entity_too_large(error):

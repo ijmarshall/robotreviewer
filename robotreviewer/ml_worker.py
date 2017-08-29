@@ -80,6 +80,14 @@ app = Celery('ml_worker', backend='ampq://', broker='pyampq://')
 #####
 rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES)
 
+
+c = rr_sql_conn.cursor()
+c.execute('CREATE TABLE IF NOT EXISTS doc_queue (id INTEGER PRIMARY KEY, report_uuid TEXT, pdf_uuid TEXT, pdf_file BLOB, timestamp TIMESTAMP)')
+
+c.execute('CREATE TABLE IF NOT EXISTS article(id INTEGER PRIMARY KEY, report_uuid TEXT, pdf_uuid TEXT, pdf_hash TEXT, pdf_file BLOB, annotations TEXT, timestamp TIMESTAMP, dont_delete INTEGER)')
+c.close()
+rr_sql_conn.commit()
+
 @app.task
 def annotate(report_uuid):
     """
@@ -93,7 +101,7 @@ def annotate(report_uuid):
 
     pdf_blobs = []
 
-    for pdf_uuid, pdf_hash, pdf_file, timestamp, dont_delete in c.execute("SELECT pdf_uuid, pdf_hash, pdf_file, timestamp, dont_delete) WHERE report_uuid=?", (report_uuid)):
+    for pdf_uuid, pdf_hash, pdf_file, timestamp, dont_delete in c.execute("SELECT pdf_uuid, pdf_hash, pdf_file, timestamp FROM doc_queue WHERE report_uuid=?", (report_uuid)):
         data = MultiDict()
         articles = pdf_reader.convert_batch(blobs)
         parsed_articles = []
@@ -111,6 +119,9 @@ def annotate(report_uuid):
             data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot", "pico_viz_bot", "sample_size_bot"])
             data.gold['pdf_uuid'] = pdf_uuid
             data.gold['filename'] = filename
+            c.execute("INSERT INTO article (report_uuid, pdf_uuid, pdf_hash, pdf_file, annotations, timestamp, dont_delete) VALUES(?, ?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), data.to_json(), datetime.now(), config.DONT_DELETE))
+            rr_sql_conn.commit()
+            c.close()
 
 
 
