@@ -76,7 +76,7 @@ log.info("Robots loaded successfully! Ready...")
 pdf_reader.connect()
 
 # start up Celery service
-app = Celery('ml_worker', backend='amqp://', broker='pyamqp://')
+app = Celery('ml_worker', backend='amqp://', broker='amqp://')
 
 #####
 ## connect to and set up database

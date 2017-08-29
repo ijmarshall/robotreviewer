@@ -71,7 +71,7 @@ csrf.init_app(app)
 ## connect to celery app
 #####
 
-celery_app = Celery('robotreviewer.ml_worker', backend='amqp', broker='pyamqp://')
+celery_app = Celery('robotreviewer.ml_worker', backend='amqp://', broker='amqp://')
 celery_tasks = {"annotate": celery_app.signature('robotreviewer.ml_worker.annotate')}
 
 #####
