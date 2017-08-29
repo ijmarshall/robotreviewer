@@ -66,8 +66,8 @@ bots = {"bias_bot": BiasRobot(top_k=3),
         "pubmed_bot": PubmedRobot(),
         # "ictrp_bot": ICTRPRobot(),
         "rct_bot": RCTRobot(),
-        "pico_viz_bot": PICOVizRobot()}#,
-        #"sample_size_bot":SampleSizeBot()}
+        "pico_viz_bot": PICOVizRobot(),
+        "sample_size_bot":SampleSizeBot()}
         # "mendeley_bot": MendeleyRobot()}
 
 log.info("Robots loaded successfully! Ready...")
@@ -100,15 +100,17 @@ def annotate(report_uuid):
     """
     pdf_uuids, pdf_hashes, filenames, blobs, timestamps = [], [], [], [], []
 
-    c = rr.sql_conn.cursor()
+    c = rr_sql_conn.cursor()
 
     # load in the PDF data from the queue table
-    for pdf_uuid, pdf_hash, filename, pdf_file, timestamp in c.execute("SELECT pdf_uuid, pdf_hash, pdf_filename, pdf_file, timestamp FROM doc_queue WHERE report_uuid=?", (report_uuid)):
+    for pdf_uuid, pdf_hash, filename, pdf_file, timestamp in c.execute("SELECT pdf_uuid, pdf_hash, pdf_filename, pdf_file, timestamp FROM doc_queue WHERE report_uuid=?", (report_uuid, )):
         pdf_uuids.append(pdf_uuid)
         pdf_hashes.append(pdf_hash)
         filenames.append(filename)
         blobs.append(pdf_file)
         timestamps.append(timestamp)
+    
+    c.close()
 
     current_task.update_state(state='PROGRESS',                                                                 meta={'process_percentage': 25, 'task': 'reading PDFs'})
     articles = pdf_reader.convert_batch(blobs)
@@ -124,19 +126,38 @@ def annotate(report_uuid):
     for article, parsed_text in zip(articles, parsed_articles):
         article._spacy['parsed_text'] = parsed_text
     current_task.update_state(state='PROGRESS',                                                                 meta={'process_percentage': 75, 'task': 'doing machine learning'})
-
-    for pdf_uuid, pdf_hash, filename, blob, data in zip(pdf_uuids, pdf_hashes, filenames, blobs, articles):
-        data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot", "pico_viz_bot"])
+    for pdf_uuid, pdf_hash, filename, blob, data, timestamp in zip(pdf_uuids, pdf_hashes, filenames, blobs, articles, timestamps):
+        data = annotate_study(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot", "pico_viz_bot", "sample_size_bot"])
         data.gold['pdf_uuid'] = pdf_uuid
         data.gold['filename'] = filename
-        c.execute("INSERT INTO article (report_uuid, pdf_uuid, pdf_hash, pdf_file, annotations, timestamp, dont_delete) VALUES(?, ?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), data.to_json(), datetime.now(), config.DONT_DELETE))
+        c = rr_sql_conn.cursor()
+        c.execute("INSERT INTO article (report_uuid, pdf_uuid, pdf_hash, pdf_file, annotations, timestamp, dont_delete) VALUES(?, ?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), data.to_json(), timestamp, config.DONT_DELETE))
         rr_sql_conn.commit()
+        c.close()
     # finally delete the PDFs from the queue
+    c = rr_sql_conn.cursor()
     c.execute("DELETE FROM doc_queue WHERE report_uuid=?", (report_uuid, ))
-
+    rr_sql_conn.commit()
     c.close()
     return {"process_percentage": 100, "task": "completed"}
 
+
+def annotate_study(data, bot_names=["bias_bot"]):
+    #
+    # ANNOTATION TAKES PLACE HERE
+    # change the line below if you wish to customise or
+    # add a new annotator
+    #
+    annotations = annotation_pipeline(bot_names, data)
+    return annotations
+
+def annotation_pipeline(bot_names, data):
+    for bot_name in bot_names:
+        log.debug("Sending doc to {} for annotation...".format(bots[bot_name].__class__.__name__))
+
+        data = bots[bot_name].annotate(data)
+        log.debug("{} done!".format(bots[bot_name].__class__.__name__))
+    return data
 
 
 

@@ -71,8 +71,8 @@ csrf.init_app(app)
 ## connect to celery app
 #####
 
-celery_app = Celery('ml_worker', backend='amqp', broker='pyamqp://')
-celery_tasks = {"annotate": celery_app.signature('ml_worker.annotate')}
+celery_app = Celery('robotreviewer.ml_worker', backend='amqp', broker='pyamqp://')
+celery_tasks = {"annotate": celery_app.signature('robotreviewer.ml_worker.annotate')}
 
 #####
 ## connect to database
@@ -121,11 +121,11 @@ def upload_and_annotate():
     pdf_uuids = [rand_id() for fn in filenames]
 
     for pdf_uuid, pdf_hash, filename, blob in zip(pdf_uuids, pdf_hashes, filenames, blobs):
-        c.execute("INSERT INTO doc_queue (report_uuid, pdf_uuid, pdf_hash, pdf_filename, pdf_file, timestamp)", (report_uuid, pdf_uuid, pdf_hash, filename, sqlite3.Binary(blob), datetime.now()))
+        c.execute("INSERT INTO doc_queue (report_uuid, pdf_uuid, pdf_hash, pdf_filename, pdf_file, timestamp) VALUES (?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, filename, sqlite3.Binary(blob), datetime.now()))
         rr_sql_conn.commit()
     c.close()
     # send async request to Celery
-    celery_app['annotate'].apply_async((report_uuid, ), task_id=report_uuid)
+    celery_tasks['annotate'].apply_async((report_uuid, ), task_id=report_uuid)
 
     return json.dumps({"report_uuid": report_uuid})
 

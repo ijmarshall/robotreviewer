@@ -45,10 +45,21 @@ define(function (require) {
         cache: false,
         processData: false,
         success: function(data) {
-          self.setState({inProgress: false, message: ""});
           var resp = JSON.parse(data);
           var reportId = resp["report_uuid"];
-          window.router.navigate('report/' + reportId, {trigger: true});
+          var pollDelay = 1000; // in ms
+          var monitorProgress = function(){
+            $.getJSON('annotate_status/' + reportId, function(status_data){
+                if (status_data.state == 'SUCCESS') {
+                    self.setState({inProgress: false, message: ""});
+                    window.router.navigate('report/' + reportId, {trigger: true});
+                } else {
+                    self.setState({inProgress: true, message: status_data.meta.process_percentage + '% done: ' + status_data.meta.task});
+                    setTimeout(monitorProgress, pollDelay);
+                };
+            });
+          };
+          setTimeout(monitorProgress, pollDelay);
         },
         error: function (xhr, ajaxOptions, thrownError) {
           // probably want to yell @ the user here?

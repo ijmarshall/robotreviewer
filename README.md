@@ -91,7 +91,15 @@ Ensure `keras` is set to use `theano` as its default backend. Steps on how to do
 
 ## Running
 
-The following
+RobotReviewer requires a 'worker' process (which does the Machine Learning), and a webserver to be started.
+
+To start the Machine Learning worker:
+
+```bash
+celery -A robotreviewer.ml_worker worker --loglevel=info
+```
+
+And to start the webserver (on `localhost:5000`):
 
 ```bash
 python -m robotreviewer
@@ -110,8 +118,6 @@ Hypertension: `http://localhost:5000/#report/HBkzX1I3Uz_kZEQYeqXJf`
 
 
 
-
-
 ## Rest API
 
 The big change in this version of RobotReviewer is that we now deal with *groups* of clinical trial reports, rather than one at a time. This is to allow RobotReviewer to synthesise the results of multiple trials.
@@ -123,7 +129,6 @@ In the meantime, the code for the API endpoints can be found in `/robotreviewer/
 Some things remain simple; e.g., for an example of using RR to classify abstracts as RCTs (or not) see [this gist](https://gist.github.com/bwallace/beebf6d7bbacfbb91704f66c28dcc537).
 
 If you are interested in incorporating RobotReviewer into your own software, please [contact us](mailto:mail@ijmarshall) and we'd be pleased to assist.
-
 
 ## Testing
 
