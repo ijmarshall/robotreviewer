@@ -41,12 +41,25 @@ import uuid
 from robotreviewer.util import rand_id
 import sqlite3
 
+''' robots! '''
+# from robotreviewer.robots.bias_robot import BiasRobot
+from robotreviewer.robots.rationale_robot import BiasRobot
+from robotreviewer.robots.pico_robot import PICORobot
+from robotreviewer.robots.rct_robot import RCTRobot
+from robotreviewer.robots.pubmed_robot import PubmedRobot
+# from robotreviewer.robots.mendeley_robot import MendeleyRobot
+# from robotreviewer.robots.ictrp_robot import ICTRPRobot
+from robotreviewer.robots import pico_viz_robot
+from robotreviewer.robots.pico_viz_robot import PICOVizRobot
+from robotreviewer.robots.sample_size_robot import SampleSizeBot
+
 import hashlib
 
 import numpy as np # note - this should probably be moved!
 
 app = Flask(__name__,  static_url_path='')
 from robotreviewer import formatting
+from robotreviewer.data_structures import MultiDict
 app.secret_key = os.environ.get("SECRET", "super secret key")
 # setting max file upload size 100 mbs
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
@@ -67,6 +80,22 @@ celery_tasks = {"annotate": celery_app.signature('ml_worker.annotate')}
 rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES)
 
 
+
+######
+## default annotation pipeline defined here
+## note we are using static methods, so not instantiating the classes
+######
+log.info("Loading the robots...")
+bots = {"bias_bot": BiasRobot,
+        "pico_bot": PICORobot,
+        "pubmed_bot": PubmedRobot,
+        # "ictrp_bot": ICTRPRobot(),
+        "rct_bot": RCTRobot,
+        "pico_viz_bot": PICOVizRobot}#,
+        #"sample_size_bot":SampleSizeBot()}
+        # "mendeley_bot": MendeleyRobot()}
+
+log.info("Robots loaded successfully! Ready...")
 @app.route('/')
 def main():
     resp = make_response(render_template('index.html'))
@@ -92,7 +121,7 @@ def upload_and_annotate():
     pdf_uuids = [rand_id() for fn in filenames]
 
     for pdf_uuid, pdf_hash, filename, blob in zip(pdf_uuids, pdf_hashes, filenames, blobs):
-        c.execute("INSERT INTO doc_queue (report_uuid, pdf_uuid, pdf_hash, pdf_filename, pdf_file, timestamp)", (report_uuid, pdf_uuid, pdf_hash, pdf_filename, sqlite3.Binary(blob), datetime.now()))
+        c.execute("INSERT INTO doc_queue (report_uuid, pdf_uuid, pdf_hash, pdf_filename, pdf_file, timestamp)", (report_uuid, pdf_uuid, pdf_hash, filename, sqlite3.Binary(blob), datetime.now()))
         rr_sql_conn.commit()
     c.close()
     # send async request to Celery
@@ -168,6 +197,7 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
             PICO_vectors = False
 
         pico_plot_html = u""
+        PICO_vectors = False # just to avoid rendering for now TODO fix up
         if PICO_vectors:
             study_names, p_vectors, i_vectors, o_vectors = [], [], [], []
             p_words, i_words, o_words = [], [], []
