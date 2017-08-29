@@ -9,17 +9,17 @@ This software is the *web-service* version, meaning it's aimed at people who mak
 
 **For most systematic review authors, if you want to try out RobotReviewer, you'd probably be better using the demo version on our website, available [here](https://robot-reviewer.vortext.systems).** If you like it, you could email the person who maintains your systematic review software a link to this site - they might be interested in adding it.
 
-(Alternatively, individual authors who are adept at installing unix software from the terminal are free to install this version on their own machines by following the optional 'Web UI' instructions below).
+(Alternatively, individual authors who are adept at installing unix software from the terminal are free to install this version on their own machines by following the instructions below).
 
 ## Developers of systematic review software?
 
-RobotReviewer is open source and free to use under the GPL licence, version 3.0 (see the LICENCE.txt file in this repository).
+RobotReviewer is open source and free to use under the GPL licence, version 3.0 (see the LICENCE.txt file in this directory).
 
 We offer RobotReviewer free of charge, but we'd be most grateful if you would cite us if you use it. We're academics, and thrive on links and citations! Getting RobotReviewer widely used and cited helps us obtain the funding to maintain the project and make RobotReviewer better.
 
 It also makes your methods transparent to your readers, and not least we'd love to see where RobotReviewer is used! :)
 
-We'd appreciate it you could:
+We'd appreciate it if you would:
 
 1. Display the text, 'Risk of Bias automation by RobotReviewer ([how to cite](http://vortext.systems/robotreviewer))' on the same screen or webpage on which the RobotReviewer results (highlighted text or risk of bias judgements) are displayed.
 2. For web-based tools, the text 'how to cite' should link to our website `http://vortext.systems/robotreviewer`
