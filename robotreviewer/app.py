@@ -10,12 +10,12 @@ import logging, os
 from datetime import datetime, timedelta
 
 
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1")
+
 DEBUG_MODE = str2bool(os.environ.get("DEBUG", "true"))
 LOCAL_PATH = "robotreviewer/uploads"
 LOG_LEVEL = (logging.DEBUG if DEBUG_MODE else logging.INFO)
-
-def str2bool(v):
-    return v.lower() in ("yes", "true", "t", "1")
 
 logging.basicConfig(level=LOG_LEVEL, format='[%(levelname)s] %(name)s %(asctime)s: %(message)s')
 log = logging.getLogger(__name__)
@@ -82,22 +82,22 @@ def upload_and_annotate():
     # returns the report run uuid + list of article uuids
 
     report_uuid = rand_id()
-    pdf_uuids = []
 
     uploaded_files = request.files.getlist("file")
     c = rr_sql_conn.cursor()
 
     blobs = [f.read() for f in uploaded_files]
+    pdf_hashes = [hashlib.md5(blob).hexdigest() for blob in blobs]
     filenames = [f.filename for f in uploaded_files]
+    pdf_uuids = [rand_id() for fn in filenames]
 
-    articles = pdf_reader.convert_batch(blobs)
-    parsed_articles = []
-    # tokenize full texts here
-    c.execute("INSERT INTO doc_queue (report_uuid, pdf_uuid, pdf_file, timestamp)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), datetime.now()))
-    rr_sql_conn.commit()
+    for pdf_uuid, pdf_hash, filename, blob in zip(pdf_uuids, pdf_hashes, filenames, blobs):
+        c.execute("INSERT INTO doc_queue (report_uuid, pdf_uuid, pdf_hash, pdf_filename, pdf_file, timestamp)", (report_uuid, pdf_uuid, pdf_hash, pdf_filename, sqlite3.Binary(blob), datetime.now()))
+        rr_sql_conn.commit()
     c.close()
-    # TODO send task to celery with report_uuid in it
+    # send async request to Celery
     celery_app['annotate'].apply_async((report_uuid, ), task_id=report_uuid)
+
     return json.dumps({"report_uuid": report_uuid})
 
 @csrf.exempt

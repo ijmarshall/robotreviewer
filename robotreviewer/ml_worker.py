@@ -85,7 +85,7 @@ rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdf
 
 
 c = rr_sql_conn.cursor()
-c.execute('CREATE TABLE IF NOT EXISTS doc_queue (id INTEGER PRIMARY KEY, report_uuid TEXT, pdf_uuid TEXT, pdf_file BLOB, timestamp TIMESTAMP)')
+c.execute('CREATE TABLE IF NOT EXISTS doc_queue (id INTEGER PRIMARY KEY, report_uuid TEXT, pdf_uuid TEXT, pdf_hash TEXT, pdf_filename TEXT, pdf_file BLOB, timestamp TIMESTAMP)')
 
 c.execute('CREATE TABLE IF NOT EXISTS article(id INTEGER PRIMARY KEY, report_uuid TEXT, pdf_uuid TEXT, pdf_hash TEXT, pdf_file BLOB, annotations TEXT, timestamp TIMESTAMP, dont_delete INTEGER)')
 c.close()
@@ -98,35 +98,34 @@ def annotate(report_uuid):
     searches for pdfs using that id,
     then saves annotations in database
     """
-    pdf_uuids, pdf_hashes, blobs = [], [], []
+    pdf_uuids, pdf_hashes, filenames, blobs, timestamps = [], [], [], [], []
 
     c = rr.sql_conn.cursor()
 
     # load in the PDF data from the queue table
-    for pdf_uuid, pdf_hash, pdf_file, timestamp in c.execute("SELECT pdf_uuid, pdf_hash, pdf_file, timestamp FROM doc_queue WHERE report_uuid=?", (report_uuid)):
+    for pdf_uuid, pdf_hash, filename, pdf_file, timestamp in c.execute("SELECT pdf_uuid, pdf_hash, pdf_filename, pdf_file, timestamp FROM doc_queue WHERE report_uuid=?", (report_uuid)):
         pdf_uuids.append(pdf_uuid)
         pdf_hashes.append(pdf_hash)
+        filenames.append(filename)
         blobs.append(pdf_file)
+        timestamps.append(timestamp)
 
+    current_task.update_state(state='PROGRESS',                                                                 meta={'process_percentage': 25, 'task': 'reading PDFs'})
     articles = pdf_reader.convert_batch(blobs)
     parsed_articles = []
 
-    current_task.update_state(state='PROGRESS',                                                                 meta={'process_percentage': 25, 'task': 'reading PDFs'})
 
+    current_task.update_state(state='PROGRESS',                                                                 meta={'process_percentage': 50, 'task': 'parsing text'})
     # tokenize full texts here 
     for doc in nlp.pipe((d.get('text', u'') for d in articles), batch_size=1, n_threads=config.SPACY_THREADS, tag=True, parse=True, entity=False):
         parsed_articles.append(doc)
-    current_task.update_state(state='PROGRESS',                                                                 meta={'process_percentage': 50, 'task': 'parsing text'})
 
     # adjust the tag, parse, and entity values if these are needed later
     for article, parsed_text in zip(articles, parsed_articles):
         article._spacy['parsed_text'] = parsed_text
     current_task.update_state(state='PROGRESS',                                                                 meta={'process_percentage': 75, 'task': 'doing machine learning'})
 
-    for filename, blob, data in zip(filenames, blobs, articles):
-        pdf_hash = hashlib.md5(blob).hexdigest()
-        pdf_uuid = rand_id()
-        pdf_uuids.append(pdf_uuid)
+    for pdf_uuid, pdf_hash, filename, blob, data in zip(pdf_uuids, pdf_hashes, filenames, blobs, articles):
         data = annotate(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot", "pico_viz_bot"])
         data.gold['pdf_uuid'] = pdf_uuid
         data.gold['filename'] = filename
