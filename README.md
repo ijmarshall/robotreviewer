@@ -56,19 +56,18 @@ A BibTeX entry for LaTeX users is
     ```
 
 4. Install the Python libraries that RobotReviewer needs. The most reliable way is through a conda environment. The following downloads the packages, and installs the required data.
+    ```bash
+    conda env create -f robotreviewer_env.yml
+    source activate robotreviewer
+    python -m spacy.en.download
+    python -m nltk.downloader punkt
+    ```
 
-```bash
-conda env create -f robotreviewer_env.yml
-source activate robotreviewer
-python -m spacy.en.download
-python -m nltk.downloader punkt
-```
+5. Ensure `keras` is set to use `theano` as its default backend. Steps on how to do this can be found [here](https://keras.io/backend/).
 
-Ensure `keras` is set to use `theano` as its default backend. Steps on how to do this can be found [here](https://keras.io/backend/).
+6. This version of RobotReviewer requires Grobid, which in turn uses Java. Follow the instructions [here](https://grobid.readthedocs.io/en/latest/Install-Grobid/) to download and build it.
 
-5. This version of RobotReviewer requires Grobid, which in turn uses Java. Follow the instructions [here](https://grobid.readthedocs.io/en/latest/Install-Grobid/) to download and build it.
-
-6. Create the `robotreviewer/config.json` file and ensure it contains the path to the directory where you have installed Grobid. (RobotReviewer will start it automatically in a subprocess). Note that this should be the path to the entire (parent) Grobid directory, not the bin subfolder. An example of this file is provided in `robotreviewer/config.json.example` (it is only necessary to change the `grobid_path` attribute).
+7. Create the `robotreviewer/config.json` file and ensure it contains the path to the directory where you have installed Grobid. (RobotReviewer will start it automatically in a subprocess). Note that this should be the path to the entire (parent) Grobid directory, not the bin subfolder. An example of this file is provided in `robotreviewer/config.json.example` (it is only necessary to change the `grobid_path` attribute).
 
 ## Running
 
