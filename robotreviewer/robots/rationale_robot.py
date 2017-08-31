@@ -39,7 +39,7 @@ from robotreviewer.ml.vectorizer import ModularVectorizer
 
 import sys
 sys.path.append('robotreviewer/ml') # need this for loading the rationale_CNN module
-from rationale_CNN import RationaleCNN, Document
+from robotreviewer.ml.rationale_CNN import RationaleCNN, Document
 
 
 class BiasRobot:
