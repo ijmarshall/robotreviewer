@@ -56,8 +56,6 @@ ADD server.py /var/lib/deploy/
 ADD run /var/lib/deploy/
 ADD robotreviewer /var/lib/deploy/robotreviewer
 RUN chown -R deploy:deploy /var/lib/deploy/robotreviewer
-RUN python -m nltk.downloader punkt stopwords
-RUN python -m spacy.en.download all
 
 USER deploy
 VOLUME /var/lib/deploy/src/robotreviewer/data
@@ -73,4 +71,6 @@ ENV ROBOTREVIEWER_GROBID_HOST=http://0.0.0.0:8080
 ENV DEV false
 ENV DEBUG false
 ENV KERAS_BACKEND=theano
+RUN python -m nltk.downloader punkt stopwords
+RUN python -m spacy.en.download all
 ENTRYPOINT ["/var/lib/deploy/run"]
