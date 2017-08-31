@@ -1,4 +1,3 @@
 #!/bin/sh
-
-cd /var/lib/deploy/ && ./server
+cd /var/lib/deploy/ && celery -A robotreviewer.ml_worker worker --loglevel=info & python /var/lib/deploy/server.py
 

@@ -15,7 +15,7 @@ RUN useradd --create-home --home /var/lib/deploy deploy
 
 # install apt-get requirements
 ADD apt-requirements.txt /tmp/apt-requirements.txt
-RUN apt-get update -y
+RUN apt-get -qq update -y
 RUN xargs -a /tmp/apt-requirements.txt apt-get install -y
 
 # Certs
@@ -29,9 +29,8 @@ ENV NODE_PATH $NODE_PATH:/usr/local/lib/node_modules
 RUN npm install -g requirejs
 RUN ln -s /usr/bin/nodejs /usr/bin/node
 
-
 RUN chown -R deploy.deploy /var/lib/deploy/
-
+RUN service rabbitmq-server start
 ## From here on we're the deploy user
 USER deploy
 RUN cd /var/lib/deploy/ && wget https://github.com/kermitt2/grobid/archive/grobid-parent-0.4.1.zip -O grobid.zip
@@ -42,26 +41,22 @@ RUN cd /var/lib/deploy/grobid-grobid-parent-0.4.1 && mvn -Dmaven.test.skip=true 
 RUN aria2c -s 16 -x 16 -k 30M https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /var/lib/deploy/Anaconda.sh
 RUN cd /var/lib/deploy && bash Anaconda.sh -b && rm -rf Anaconda.sh
 ENV PATH=/var/lib/deploy/miniconda3/bin:$PATH
-RUN conda install python=3.5.0
-RUN conda config --add channels spacy
-RUN conda install cython
-RUN conda install system flask numpy scipy scikit-learn spacy flask-wtf requests gensim mkl mkl-service matplotlib seaborn h5py
-RUN conda install pyqt=4.11
-RUN python -m spacy.en.download
+ADD robotreviewer_env.yml tmp/robotreviewer_env.yml
+RUN conda env create -f tmp/robotreviewer_env.yml
+# from https://stackoverflow.com/questions/37945759/condas-source-activate-virtualenv-does-not-work-within-dockerfile
+ENV PATH /var/lib/deploy/miniconda3/envs/robotreviewer/bin:$PATH
 
-# install Python dependencies
-ADD requirements.txt /tmp/requirements.txt
-RUN pip install --upgrade pip
-RUN pip install -r /tmp/requirements.txt
-RUN python -m nltk.downloader punkt stopwords
 
 # Get data
 USER root
 RUN mkdir -p /var/lib/deploy/robotreviewer/data
-ADD server /var/lib/deploy/
+ADD server.py /var/lib/deploy/
 ADD run /var/lib/deploy/
 ADD robotreviewer /var/lib/deploy/robotreviewer
 RUN chown -R deploy:deploy /var/lib/deploy/robotreviewer
+RUN python -m nltk.downloader punkt stopwords
+RUN python -m spacy.en.download all
+
 USER deploy
 VOLUME /var/lib/deploy/src/robotreviewer/data
 
