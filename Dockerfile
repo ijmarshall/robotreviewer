@@ -18,6 +18,9 @@ ADD apt-requirements.txt /tmp/apt-requirements.txt
 RUN apt-get -qq update -y
 RUN xargs -a /tmp/apt-requirements.txt apt-get install -y
 
+# add deploy to rabbitmq
+RUN usermod -G rabbitmq deploy
+
 # Certs
 RUN mkdir -p /etc/pki/tls/certs
 RUN ln -s /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
@@ -30,7 +33,6 @@ RUN npm install -g requirejs
 RUN ln -s /usr/bin/nodejs /usr/bin/node
 
 RUN chown -R deploy.deploy /var/lib/deploy/
-RUN service rabbitmq-server start
 ## From here on we're the deploy user
 USER deploy
 RUN cd /var/lib/deploy/ && wget https://github.com/kermitt2/grobid/archive/grobid-parent-0.4.1.zip -O grobid.zip
