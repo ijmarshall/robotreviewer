@@ -1,5 +1,6 @@
 #!/bin/sh
-rabbitmq-server --detatched
+nohup rabbitmq-server -detached
+
 
 export ROBOTREVIEWER_GROBID_PATH="/var/lib/deploy/grobid-grobid-parent-0.4.1"
 export ROBOTREVIEWER_GROBID_HOST="http://0.0.0.0:8080"
