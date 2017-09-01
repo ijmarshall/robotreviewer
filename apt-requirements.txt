@@ -13,3 +13,4 @@ libxrender1
 libfontconfig1
 git
 rabbitmq-server
+sudo

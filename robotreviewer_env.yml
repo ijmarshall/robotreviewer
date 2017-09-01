@@ -1,5 +1,8 @@
-name: robotreviewer 
+name: robotreviewer
 dependencies:
+- system
+- mkl
+- mkl-service
 - python=3.5
 - Cython=0.25.2
 - Flask=0.12
