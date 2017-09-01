@@ -68,7 +68,6 @@ bots = {"bias_bot": BiasRobot(top_k=3),
         "rct_bot": RCTRobot(),
         "pico_viz_bot": PICOVizRobot(),
         "sample_size_bot":SampleSizeBot()}
-        # "mendeley_bot": MendeleyRobot()}
 
 log.info("Robots loaded successfully! Ready...")
 
@@ -109,23 +108,23 @@ def annotate(report_uuid):
         filenames.append(filename)
         blobs.append(pdf_file)
         timestamps.append(timestamp)
-    
+
     c.close()
 
-    current_task.update_state(state='PROGRESS',                                                                 meta={'process_percentage': 25, 'task': 'reading PDFs'})
+    current_task.update_state(state='PROGRESS', meta={'process_percentage': 25, 'task': 'reading PDFs'})
     articles = pdf_reader.convert_batch(blobs)
     parsed_articles = []
 
 
-    current_task.update_state(state='PROGRESS',                                                                 meta={'process_percentage': 50, 'task': 'parsing text'})
-    # tokenize full texts here 
+    current_task.update_state(state='PROGRESS',meta={'process_percentage': 50, 'task': 'parsing text'})
+    # tokenize full texts here
     for doc in nlp.pipe((d.get('text', u'') for d in articles), batch_size=1, n_threads=config.SPACY_THREADS, tag=True, parse=True, entity=False):
         parsed_articles.append(doc)
 
     # adjust the tag, parse, and entity values if these are needed later
     for article, parsed_text in zip(articles, parsed_articles):
         article._spacy['parsed_text'] = parsed_text
-    current_task.update_state(state='PROGRESS',                                                                 meta={'process_percentage': 75, 'task': 'doing machine learning'})
+        current_task.update_state(state='PROGRESS',meta={'process_percentage': 75, 'task': 'doing machine learning'})
     for pdf_uuid, pdf_hash, filename, blob, data, timestamp in zip(pdf_uuids, pdf_hashes, filenames, blobs, articles, timestamps):
         data = annotate_study(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot", "pico_viz_bot", "sample_size_bot"])
         data.gold['pdf_uuid'] = pdf_uuid
@@ -134,11 +133,13 @@ def annotate(report_uuid):
         c.execute("INSERT INTO article (report_uuid, pdf_uuid, pdf_hash, pdf_file, annotations, timestamp, dont_delete) VALUES(?, ?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), data.to_json(), timestamp, config.DONT_DELETE))
         rr_sql_conn.commit()
         c.close()
+
     # finally delete the PDFs from the queue
     c = rr_sql_conn.cursor()
     c.execute("DELETE FROM doc_queue WHERE report_uuid=?", (report_uuid, ))
     rr_sql_conn.commit()
     c.close()
+    current_task.update_state(state='SUCCESS', meta={'process_percentage': 100, 'task': 'done!'})
     return {"process_percentage": 100, "task": "completed"}
 
 
@@ -158,8 +159,3 @@ def annotation_pipeline(bot_names, data):
         data = bots[bot_name].annotate(data)
         log.debug("{} done!".format(bots[bot_name].__class__.__name__))
     return data
-
-
-
-
-
