@@ -7,7 +7,7 @@ RUN useradd --create-home --home /var/lib/deploy deploy
 # install apt-get requirements
 ADD apt-requirements.txt /tmp/apt-requirements.txt
 RUN apt-get -qq update -y
-RUN xargs -a /tmp/apt-requirements.txt apt-get install -y --no-install-recommends && apt-get clean
+RUN xargs -a /tmp/apt-requirements.txt apt-get install -y && apt-get clean
 
 # Certs
 RUN mkdir -p /etc/pki/tls/certs && \
@@ -26,8 +26,7 @@ USER deploy
 RUN cd /var/lib/deploy/ && wget https://github.com/kermitt2/grobid/archive/grobid-parent-0.4.1.zip -O grobid.zip && \
     unzip grobid.zip && \
     cd /var/lib/deploy/grobid-grobid-parent-0.4.1 && \
-    mvn -Dmaven.test.skip=true clean install && \
-    rm -f /var/lib/deploy/grobid.zip
+    mvn -Dmaven.test.skip=true clean install
 
 # install Anaconda
 RUN aria2c -s 16 -x 16 -k 30M https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /var/lib/deploy/Anaconda.sh
