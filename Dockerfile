@@ -7,7 +7,7 @@ RUN useradd --create-home --home /var/lib/deploy deploy
 # install apt-get requirements
 ADD apt-requirements.txt /tmp/apt-requirements.txt
 RUN apt-get -qq update -y
-RUN xargs -a /tmp/apt-requirements.txt apt-get install -y no-install-recommends && apt-get clean
+RUN xargs -a /tmp/apt-requirements.txt apt-get install -y && apt-get clean
 
 # Certs
 RUN mkdir -p /etc/pki/tls/certs && \
@@ -41,8 +41,6 @@ ENV PATH /var/lib/deploy/miniconda3/envs/robotreviewer/bin:$PATH
 
 # Get data
 USER root
-RUN python -m nltk.downloader punkt stopwords
-RUN python -m spacy.en.download all
 
 RUN mkdir -p /var/lib/deploy/robotreviewer/data
 ADD server.py /var/lib/deploy/
@@ -60,6 +58,8 @@ RUN cd /var/lib/deploy/robotreviewer/ && \
     mv build static && \
     rm -rf static.bak
 
+RUN python -m nltk.downloader punkt stopwords
+RUN python -m spacy.en.download all
 EXPOSE 5000
 ENV HOME /var/lib/deploy
 
