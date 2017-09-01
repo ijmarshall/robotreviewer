@@ -37,7 +37,8 @@ ADD robotreviewer_env.yml tmp/robotreviewer_env.yml
 RUN conda env create -f tmp/robotreviewer_env.yml
 # from https://stackoverflow.com/questions/37945759/condas-source-activate-virtualenv-does-not-work-within-dockerfile
 ENV PATH /var/lib/deploy/miniconda3/envs/robotreviewer/bin:$PATH
-
+RUN python -m nltk.downloader punkt stopwords
+RUN python -m spacy.en.download all
 
 # Get data
 USER root
@@ -50,9 +51,6 @@ RUN chown -R deploy.deploy /var/lib/deploy/robotreviewer
 
 USER deploy
 VOLUME /var/lib/deploy/src/robotreviewer/data
-RUN python -m nltk.downloader punkt stopwords
-RUN python -m spacy.en.download all
-
 # compile client side assets
 RUN cd /var/lib/deploy/robotreviewer/ && \
     r.js -o static/build.js && \
