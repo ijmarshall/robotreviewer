@@ -116,7 +116,7 @@ def annotate(report_uuid):
     parsed_articles = []
 
 
-    current_task.update_state(state='PROGRESS',meta={'process_percentage': 50, 'task': 'parsing text'})
+    current_task.update_state(state='PROGRESS', meta={'process_percentage': 50, 'task': 'parsing text'})
     # tokenize full texts here
     for doc in nlp.pipe((d.get('text', u'') for d in articles), batch_size=1, n_threads=config.SPACY_THREADS, tag=True, parse=True, entity=False):
         parsed_articles.append(doc)
