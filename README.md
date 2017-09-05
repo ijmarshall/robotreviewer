@@ -75,13 +75,17 @@ A BibTeX entry for LaTeX users is
 
 RobotReviewer requires a 'worker' process (which does the Machine Learning), and a webserver to be started.
 
-To start the Machine Learning worker:
+First, be sure that rabbitmq-server is running. If you haven't set this to start on login, you can invoke manually: 
+
+```rabbitmq-server```
+
+Then, to start the Machine Learning worker:
 
 ```bash
 celery -A robotreviewer.ml_worker worker --loglevel=info
 ```
 
-And to start the webserver (on `localhost:5000`):
+Finally, to start the webserver (on `localhost:5000`):
 
 ```bash
 python -m robotreviewer
