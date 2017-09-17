@@ -50,6 +50,7 @@
 
 
         {% for study in articles %}
+           {% set study_is_rct = study.get('rct', {}).get('is_rct') %}
         <tr>
           <td class ="risk-studyid">
           {% if online %}
@@ -61,7 +62,7 @@
           {% endif %}
           </td>
           <td class = "risk-studyid">
-          {% if study.get('rct', {}).get('is_rct') %}
+          {% if study_is_rct %}
             RCT
           {% else %}
             not RCT
@@ -70,9 +71,13 @@
           <td class="risk-studyid">
           {{ study.get('sample_size', []) }}
           </td>
-          {% for domain in study.get('bias', []) %}
-          <td class="{% if domain['judgement'] == 'low' %}risk-low{% elif domain['judgement'] == 'high/unclear' %}risk-high{% endif %}">{{ '+' if domain['judgement'] == 'low' else '?' }}</td>
-          {% endfor %}
+          {% if study_is_rct %}
+            {% for domain in study.get('bias', []) %}
+              <td class="{% if domain['judgement'] == 'low' %}risk-low{% elif domain['judgement'] == 'high/unclear' %}risk-high{% endif %}">{{ '+' if domain['judgement'] == 'low' else '?' }}</td>
+            {% endfor %}
+          {% else %}
+             <td class="risk-na" colspan="{{ headers|length }}">available for RCTs only</td>
+          {% endif %}
         </tr>
         {% endfor %}
       </table>
@@ -113,8 +118,10 @@
           <th>Bias</th><th>Judgement</th>
           <th>Support for judgement</th>
         </tr>
-        {% for domain in study.get('bias', []) %}
-        <tr>
+
+        {% if study.get('rct', {}).get('is_rct') %}
+          {% for domain in study.get('bias', []) %}
+          <tr>
           <td>{{ domain['domain'] }}</td>
           <td>{{ domain['judgement'] }}</td>
           <td>
@@ -131,9 +138,11 @@
           </td>
         </tr>
         {% endfor %}
+      {% else %}
+        <tr><td colspan="3">Bias assessment not available for non-RCT study design</td></tr>
+      {% endif %}
       </table>
       {% endfor %}
-
       <h2>References</h2>
 
       {% for study in articles %}
