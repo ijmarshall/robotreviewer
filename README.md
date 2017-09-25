@@ -45,6 +45,23 @@ A BibTeX entry for LaTeX users is
 
 ## Installation
 
+An automatic installation is currently supported for OS X.
+
+1. Ensure you have a working version of 3.4+. We strongly recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience.
+
+2. Ensure you have the following requirements: [brew](ht), [Grobid](https://grobid.readthedocs.io/en/latest/Install-Grobid/).
+
+3. Get a copy of the RobotReviewer repo:
+    ```bash
+    git clone https://github.com/ijmarshall/robotreviewer3.git
+    cd robotreviewer3
+    ```
+
+4. Run the setup script with `. ./setup.sh`
+
+
+## Manual Installation
+
 1. Ensure you have a working version of 3.4+. We strongly recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience.
 
 2. [Install git-lfs](https://git-lfs.github.com/) for managing the model file versions (on Mac: `brew install git-lfs`). NB! If you already have git lfs installed, make sure it's the most recent version, since older versions have not downloaded files properly.
@@ -75,7 +92,7 @@ A BibTeX entry for LaTeX users is
 
 RobotReviewer requires a 'worker' process (which does the Machine Learning), and a webserver to be started.
 
-First, be sure that rabbitmq-server is running. If you haven't set this to start on login, you can invoke manually: 
+First, be sure that rabbitmq-server is running. If you haven't set this to start on login, you can invoke manually:
 
 ```rabbitmq-server```
 
