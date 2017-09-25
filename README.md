@@ -49,7 +49,7 @@ An automatic installation is currently supported for OS X. This will automatical
 
 1. Ensure you have a working version of 3.4+. We strongly recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience.
 
-2. Ensure you have the following requirements: [brew](https://brew.sh/), [Grobid](https://grobid.readthedocs.io/en/latest/Install-Grobid/).
+2. Ensure you have the following requirements: [Homebrew](https://brew.sh/), [Grobid](https://grobid.readthedocs.io/en/latest/Install-Grobid/).
 
 3. Get a copy of the RobotReviewer repo:
     ```bash
@@ -147,6 +147,10 @@ Feel free to contact us at [mail@ijmarshall.com](mailto:mail@ijmarshall) with an
 
 ##### Grobid isn't working properly
 Most likely the problem is that your path to Grobid in `robotreviewer/config.json` is incorrect. If your path uses a `~`, try using a path without one.
+
+##### rabbitmq-server: command not found
+Often found on OS X. If you installed `rabbitmq` using Homebrew, running the command `brew services start rabbitmq` should work.
+
 
 ## References
 
