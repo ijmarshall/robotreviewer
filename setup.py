@@ -34,8 +34,3 @@ if __name__ == '__main__':
     if not os.path.isfile('robotreviewer/config.json'):
         create_config()
     print('')
-
-    print('Installing spacy.en...')
-    # Install spacy.en
-    from spacy.en import download
-    download.main()
