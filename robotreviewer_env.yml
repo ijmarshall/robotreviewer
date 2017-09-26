@@ -1,6 +1,6 @@
 name: robotreviewer
 dependencies:
-- server
+- system
 - mkl
 - mkl-service
 - python=3.5

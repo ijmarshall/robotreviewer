@@ -62,6 +62,8 @@ An automatic installation is currently supported for OS X. This will automatical
 
 ## Manual Installation
 
+For other operating systems or for more control, a manual installation may be preferred.
+
 1. Ensure you have a working version of 3.4+. We strongly recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience.
 
 2. [Install git-lfs](https://git-lfs.github.com/) for managing the model file versions (on Mac: `brew install git-lfs`). NB! If you already have git lfs installed, make sure it's the most recent version, since older versions have not downloaded files properly.
