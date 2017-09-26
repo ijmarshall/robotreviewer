@@ -1,5 +1,5 @@
 echo "Creating conda environment.."
-conda env create -f robotreviewer_env.yml
+conda env create -f robotreviewer_env_local.yml
 echo "Done.\n\n"
 
 echo "Setting up requirements.."

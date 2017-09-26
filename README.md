@@ -74,7 +74,7 @@ An automatic installation is currently supported for OS X. This will automatical
 
 4. Install the Python libraries that RobotReviewer needs. The most reliable way is through a conda environment. The following downloads the packages, and installs the required data.
     ```bash
-    conda env create -f robotreviewer_env.yml
+    conda env create -f robotreviewer_env_local.yml
     source activate robotreviewer
     python -m spacy.en.download
     python -m nltk.downloader punkt
