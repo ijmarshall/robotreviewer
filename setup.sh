@@ -3,7 +3,7 @@ conda env create -f robotreviewer_env_local.yml
 echo "Done."
 
 echo "Setting up requirements.."
-source activate robotreviewer3
+source activate robotreviewer
 python setup.py
 echo "Done."
 
