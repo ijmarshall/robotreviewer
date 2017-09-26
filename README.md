@@ -13,7 +13,7 @@ This software is the *web-service* version, meaning it's aimed at people who mak
 
 ## Developers of systematic review software?
 
-RobotReviewer is open source and free to use under the GPL licence, version 3.0 (see the LICENCE.txt file in this directory).
+RobotReviewer is open source and free to use under the GPL license, version 3.0 (see the LICENSE.txt file in this directory).
 
 We offer RobotReviewer free of charge, but we'd be most grateful if you would cite us if you use it. We're academics, and thrive on links and citations! Getting RobotReviewer widely used and cited helps us obtain the funding to maintain the project and make RobotReviewer better.
 
@@ -45,7 +45,7 @@ A BibTeX entry for LaTeX users is
 
 ## Installation
 
-An automatic installation is currently supported for OS X. This will automatically create a new [conda](d) environment and install the required dependencies into it.
+An automatic installation is currently supported for OS X. This will automatically create a new [conda](https://www.anaconda.com/download/) environment and install the required dependencies into it.
 
 1. Ensure you have a working version of 3.4+. We strongly recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience.
 
