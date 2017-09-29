@@ -45,6 +45,8 @@ A BibTeX entry for LaTeX users is
 
 ## Installation
 
+For Windows and Linux, please follow the 'Manual Installation' instructions below.
+
 An automatic installation is currently supported for OS X. This will automatically create a new [conda](https://www.anaconda.com/download/) environment and install the required dependencies into it.
 
 1. Ensure you have a working version of 3.4+. We strongly recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience.
