@@ -13,7 +13,7 @@ This software is the *web-service* version, meaning it's aimed at people who mak
 
 ## Developers of systematic review software?
 
-RobotReviewer is open source and free to use under the GPL licence, version 3.0 (see the LICENCE.txt file in this directory).
+RobotReviewer is open source and free to use under the GPL license, version 3.0 (see the LICENSE.txt file in this directory).
 
 We offer RobotReviewer free of charge, but we'd be most grateful if you would cite us if you use it. We're academics, and thrive on links and citations! Getting RobotReviewer widely used and cited helps us obtain the funding to maintain the project and make RobotReviewer better.
 
@@ -45,6 +45,25 @@ A BibTeX entry for LaTeX users is
 
 ## Installation
 
+An automatic installation is currently supported for OS X. This will automatically create a new [conda](https://www.anaconda.com/download/) environment and install the required dependencies into it.
+
+1. Ensure you have a working version of 3.4+. We strongly recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience.
+
+2. Ensure you have the following requirements: [Homebrew](https://brew.sh/), [Grobid](https://grobid.readthedocs.io/en/latest/Install-Grobid/).
+
+3. Get a copy of the RobotReviewer repo:
+    ```bash
+    git clone https://github.com/ijmarshall/robotreviewer3.git
+    cd robotreviewer3
+    ```
+
+4. Run the setup script with `. ./setup.sh`
+
+
+## Manual Installation
+
+For other operating systems or for more control, a manual installation may be preferred.
+
 1. Ensure you have a working version of 3.4+. We strongly recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience.
 
 2. [Install git-lfs](https://git-lfs.github.com/) for managing the model file versions (on Mac: `brew install git-lfs`). NB! If you already have git lfs installed, make sure it's the most recent version, since older versions have not downloaded files properly.
@@ -57,7 +76,7 @@ A BibTeX entry for LaTeX users is
 
 4. Install the Python libraries that RobotReviewer needs. The most reliable way is through a conda environment. The following downloads the packages, and installs the required data.
     ```bash
-    conda env create -f robotreviewer_env.yml
+    conda env create -f robotreviewer_env_local.yml
     source activate robotreviewer
     python -m spacy.en.download
     python -m nltk.downloader punkt
@@ -73,9 +92,9 @@ A BibTeX entry for LaTeX users is
 
 ## Running
 
-RobotReviewer requires a 'worker' process (which does the Machine Learning), and a webserver to be started.
+RobotReviewer requires a 'worker' process (which does the Machine Learning), and a webserver to be started. Ensure that you are within the conda environment (default name: robotreviewer) when running the following processes.
 
-First, be sure that rabbitmq-server is running. If you haven't set this to start on login, you can invoke manually: 
+First, be sure that rabbitmq-server is running. If you haven't set this to start on login, you can invoke manually:
 
 ```rabbitmq-server```
 
@@ -125,6 +144,15 @@ will run the testing modules. These should be used to assure that changes made d
 ## Help
 
 Feel free to contact us at [mail@ijmarshall.com](mailto:mail@ijmarshall) with any questions.
+
+### Common Problems
+
+##### Grobid isn't working properly
+Most likely the problem is that your path to Grobid in `robotreviewer/config.json` is incorrect. If your path uses a `~`, try using a path without one.
+
+##### rabbitmq-server: command not found
+Often found on OS X. If you installed `rabbitmq` using Homebrew, running the command `brew services start rabbitmq` should work.
+
 
 ## References
 
