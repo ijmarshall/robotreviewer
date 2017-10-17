@@ -3,6 +3,8 @@ Automatic extraction of data from clinical trial reports
 
 RobotReviewer is a system for providing automatic annotations from clinical trials (in PDF format). Currently, RobotReviewer provides data on the trial *PICO* characteristics (Population, Interventions/Comparators, and Outcomes), and also automatically assesses trials for likely biases using the Cochrane Risk of Bias tool.
 
+You can cite the current version as [![DOI](https://zenodo.org/badge/63896496.svg)](https://zenodo.org/badge/latestdoi/63896496).
+
 ## Systematic review author?
 
 This software is the *web-service* version, meaning it's aimed at people who make systematic review software.
