@@ -83,7 +83,7 @@ For other operating systems or for more control, a manual installation may be pr
     conda env create -f robotreviewer_env_local.yml
     source activate robotreviewer
     python -m spacy.en.download
-    python -m nltk.downloader punkt
+    python -m nltk.downloader punkt stopwords
     ```
 
 5. Ensure `keras` is set to use `theano` as its default backend. Steps on how to do this can be found [here](https://keras.io/backend/).
