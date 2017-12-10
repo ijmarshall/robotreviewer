@@ -18,11 +18,10 @@ def create_config():
 
 
 if __name__ == '__main__':
-    print('Installing nltk.punkt...')
-    # Install punkt from nltk
+    print('Installing nltk.')
     import nltk
     nltk.download('punkt')
-    print('Done installing nltk.punkt.\n')
+    nltk.download('stopwords')
 
     print('Ensuring Keras backend is set to theano.')
     # Ensure Keras backend is Theano
