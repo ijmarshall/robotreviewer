@@ -15,11 +15,6 @@ way used in this project is as a PDF binary.
     robot = BiasRobot()
     annotations = robot.annotate(data)
 
-Implements the models which were validated in the paper:
-
-Marshall IJ, Kuiper J, & Wallace BC. RobotReviewer: evaluation of a system for
-automatically assessing bias in clinical trials. Journal of the American
-Medical Informatics Association 2015.doi:10.1093/jamia/ocv044
 """
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
@@ -41,6 +36,20 @@ import sys
 sys.path.append('robotreviewer/ml') # need this for loading the rationale_CNN module
 from robotreviewer.ml.rationale_CNN import RationaleCNN, Document
 
+
+__version__ = {"name": "Risk of bias (CNN/SVM ensemble)",
+               "version_number": "3",
+               "publication_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5300751/",
+               "cite_bibtex": """@inproceedings{zhang2016rationale,
+  title={Rationale-augmented convolutional neural networks for text classification},
+  author={Zhang, Ye and Marshall, Iain and Wallace, Byron C},
+  booktitle={Proceedings of the Conference on Empirical Methods in Natural Language Processing. Conference on Empirical Methods in Natural Language Processing},
+  volume={2016},
+  pages={795},
+  year={2016},
+  organization={NIH Public Access}
+}""",           "cite_text": "Zhang, Ye, Iain J Marshall, and Byron C. Wallace. “Rationale-Augmented Convolutional Neural Networks for Text Classification.” Proceedings of Empirical Methods in Natural Language Processing (EMNLP), 2016."
+              }
 
 class BiasRobot:
 
