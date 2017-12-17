@@ -8,6 +8,6 @@ export DEV false
 export DEBUG false
 export KERAS_BACKEND=theano
 
-cd /var/lib/deploy/ && nohup celery -u deploy -A robotreviewer.ml_worker worker --loglevel=info &
-cd /var/lib/deploy/ && nohup su python /var/lib/deploy/server.py &
+cd /var/lib/deploy/ && nohup celery -A robotreviewer.ml_worker worker --loglevel=info -u deploy &
+cd /var/lib/deploy/ && nohup python /var/lib/deploy/server.py &
 sleep infinity
