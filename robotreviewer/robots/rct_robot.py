@@ -39,6 +39,14 @@ import robotreviewer
 from robotreviewer.ml.classifier import MiniClassifier
 
 
+__version__ = {"name": "Randomized controlled trial",
+               "version_number": "0",
+               "publication_url": "",
+               "cite_bibtex": """In press""",
+               "cite_text": ""
+              }
+
+
 class KerasVectorizer(VectorizerMixin):
     def __init__(self, input='content', encoding='utf-8',
                  decode_error='strict', strip_accents=None,
