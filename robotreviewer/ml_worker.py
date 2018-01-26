@@ -12,12 +12,14 @@ called by `celery -A ml_worker worker --loglevel=info`
 
 
 from celery import Celery, current_task
+from celery.contrib import rdb
+from celery.signals import worker_init
+
 import logging, os
 
 import sqlite3
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
-
 
 
 DEBUG_MODE = str2bool(os.environ.get("DEBUG", "true"))
@@ -47,8 +49,8 @@ from robotreviewer.robots.rct_robot import RCTRobot
 from robotreviewer.robots.pubmed_robot import PubmedRobot
 # from robotreviewer.robots.mendeley_robot import MendeleyRobot
 # from robotreviewer.robots.ictrp_robot import ICTRPRobot
-from robotreviewer.robots import pico_viz_robot
-from robotreviewer.robots.pico_viz_robot import PICOVizRobot
+# from robotreviewer.robots import pico_viz_robot
+# from robotreviewer.robots.pico_viz_robot import PICOVizRobot
 from robotreviewer.robots.sample_size_robot import SampleSizeBot
 
 from robotreviewer.data_structures import MultiDict
@@ -60,16 +62,18 @@ import robotreviewer
 ######
 ## default annotation pipeline defined here
 ######
+'''
 log.info("Loading the robots...")
 bots = {"bias_bot": BiasRobot(top_k=3),
         "pico_bot": PICORobot(),
         "pubmed_bot": PubmedRobot(),
         # "ictrp_bot": ICTRPRobot(),
-        "rct_bot": RCTRobot(),
-        "pico_viz_bot": PICOVizRobot(),
+        #"rct_bot": RCTRobot(),
+        #"pico_viz_bot": PICOVizRobot(),
         "sample_size_bot":SampleSizeBot()}
 
 log.info("Robots loaded successfully! Ready...")
+'''
 
 # lastly wait until Grobid is connected
 pdf_reader.connect()
@@ -90,6 +94,21 @@ c.execute('CREATE TABLE IF NOT EXISTS article(id INTEGER PRIMARY KEY, report_uui
 c.close()
 rr_sql_conn.commit()
 
+@worker_init.connect
+def on_worker_init(**_):
+    global bots
+    log.info("Loading the robots...")
+    bots = {"bias_bot": BiasRobot(top_k=3),
+            "pico_bot": PICORobot(),
+            "pubmed_bot": PubmedRobot(),
+            # "ictrp_bot": ICTRPRobot(),
+            #"rct_bot": RCTRobot(),
+            #"pico_viz_bot": PICOVizRobot(),
+            "sample_size_bot":SampleSizeBot()}
+
+    log.info("Robots loaded successfully! Ready...")
+
+
 @app.task
 def annotate(report_uuid):
     """
@@ -101,6 +120,8 @@ def annotate(report_uuid):
 
     c = rr_sql_conn.cursor()
 
+    #import pdb; pdb.set_trace()
+    
     # load in the PDF data from the queue table
     for pdf_uuid, pdf_hash, filename, pdf_file, timestamp in c.execute("SELECT pdf_uuid, pdf_hash, pdf_filename, pdf_file, timestamp FROM doc_queue WHERE report_uuid=?", (report_uuid, )):
         pdf_uuids.append(pdf_uuid)
@@ -125,8 +146,12 @@ def annotate(report_uuid):
     for article, parsed_text in zip(articles, parsed_articles):
         article._spacy['parsed_text'] = parsed_text
         current_task.update_state(state='PROGRESS',meta={'process_percentage': 75, 'task': 'doing machine learning'})
+    
+
     for pdf_uuid, pdf_hash, filename, blob, data, timestamp in zip(pdf_uuids, pdf_hashes, filenames, blobs, articles, timestamps):
-        data = annotate_study(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "rct_bot", "pico_viz_bot", "sample_size_bot"])
+        # "pico_viz_bot",
+        data = annotate_study(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "sample_size_bot"])
+        #data = annotate_study(data, bot_names=["bias_bot"])
         data.gold['pdf_uuid'] = pdf_uuid
         data.gold['filename'] = filename
         c = rr_sql_conn.cursor()
@@ -153,6 +178,8 @@ def annotate_study(data, bot_names=["bias_bot"]):
     return annotations
 
 def annotation_pipeline(bot_names, data):
+    # makes it here!
+    # rdb.set_trace() 
     for bot_name in bot_names:
         log.debug("Sending doc to {} for annotation...".format(bots[bot_name].__class__.__name__))
 

@@ -49,8 +49,8 @@ from robotreviewer.robots.rct_robot import RCTRobot
 from robotreviewer.robots.pubmed_robot import PubmedRobot
 # from robotreviewer.robots.mendeley_robot import MendeleyRobot
 # from robotreviewer.robots.ictrp_robot import ICTRPRobot
-from robotreviewer.robots import pico_viz_robot
-from robotreviewer.robots.pico_viz_robot import PICOVizRobot
+#from robotreviewer.robots import pico_viz_robot
+#from robotreviewer.robots.pico_viz_robot import PICOVizRobot
 from robotreviewer.robots.sample_size_robot import SampleSizeBot
 
 import hashlib
@@ -91,8 +91,8 @@ bots = {"bias_bot": BiasRobot,
         "pubmed_bot": PubmedRobot,
         # "ictrp_bot": ICTRPRobot(),
         "rct_bot": RCTRobot,
-        "pico_viz_bot": PICOVizRobot}#,
-        #"sample_size_bot":SampleSizeBot()}
+        #"pico_viz_bot": PICOVizRobot}#,
+        "sample_size_bot":SampleSizeBot}
         # "mendeley_bot": MendeleyRobot()}
 
 log.info("Robots loaded successfully! Ready...")
@@ -124,6 +124,7 @@ def upload_and_annotate():
         c.execute("INSERT INTO doc_queue (report_uuid, pdf_uuid, pdf_hash, pdf_filename, pdf_file, timestamp) VALUES (?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, filename, sqlite3.Binary(blob), datetime.now()))
         rr_sql_conn.commit()
     c.close()
+
     # send async request to Celery
     celery_tasks['annotate'].apply_async((report_uuid, ), task_id=report_uuid)
 
@@ -178,7 +179,7 @@ def get_study_name(article):
         return article['filename'][:20].lower().replace(".pdf", "") + " ..."
 
 
-def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True):
+def produce_report(report_uuid, reportformat, download=False, PICO_vectors=False):
     c = rr_sql_conn.cursor()
     articles, article_ids = [], []
     error_messages = [] # accumulate any errors over articles
@@ -197,6 +198,7 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
             PICO_vectors = False
 
         pico_plot_html = u""
+        '''
         PICO_vectors = False # just to avoid rendering for now TODO fix up
         if PICO_vectors:
             study_names, p_vectors, i_vectors, o_vectors = [], [], [], []
@@ -226,7 +228,7 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=True)
 
             pico_plot_html = bots["pico_viz_bot"].generate_2d_viz(study_names, vectors_d, words_d,
                                             "{0}-PICO-embeddings".format(report_uuid))
-
+        '''
 
         return render_template('reportview.{}'.format(reportformat), headers=bots['bias_bot'].get_domains(), articles=articles,
                                 pico_plot=pico_plot_html, report_uuid=report_uuid, online=(not download),
@@ -283,6 +285,7 @@ def annotate(data, bot_names=["bias_bot"]):
     # change the line below if you wish to customise or
     # add a new annotator
     #
+    import pdb; pdb.set_trace()
     annotations = annotation_pipeline(bot_names, data)
     return annotations
 

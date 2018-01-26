@@ -14,7 +14,7 @@ class SampleSizeBot:
     def __init__(self):
         # as always, this was set in a totally and 
         # completely scientific way.
-        self.magic_threshold = 0.2
+        self.magic_threshold = 0.1
 
         with open(preprocessor_path, 'rb') as preprocessor_file:
             p = pickle.load(preprocessor_file)
@@ -36,7 +36,7 @@ class SampleSizeBot:
         if abstract is not None:
             sample_size_pred = self.sample_size_model.predict_for_abstract(abstract)
             if sample_size_pred is not None:
-                confidence, n = sample_size_pred
+                n, confidence = sample_size_pred
                 if confidence >= self.magic_threshold:
                     sample_size_str = n
 
