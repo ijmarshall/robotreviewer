@@ -77,7 +77,7 @@ celery_tasks = {"annotate": celery_app.signature('robotreviewer.ml_worker.annota
 #####
 ## connect to database
 #####
-rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES)
+rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES,  check_same_thread=False)
 
 
 

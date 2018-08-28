@@ -84,7 +84,7 @@ app = Celery('ml_worker', backend='amqp://', broker='amqp://')
 #####
 ## connect to and set up database
 #####
-rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES)
+rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES,  check_same_thread=False)
 
 
 c = rr_sql_conn.cursor()
@@ -139,7 +139,7 @@ def annotate(report_uuid):
 
     current_task.update_state(state='PROGRESS', meta={'process_percentage': 50, 'task': 'parsing text'})
     # tokenize full texts here
-    for doc in nlp.pipe((d.get('text', u'') for d in articles), batch_size=1, n_threads=config.SPACY_THREADS, tag=True, parse=True, entity=False):
+    for doc in nlp.pipe((d.get('text', u'') for d in articles), batch_size=1, n_threads=config.SPACY_THREADS):
         parsed_articles.append(doc)
 
     # adjust the tag, parse, and entity values if these are needed later

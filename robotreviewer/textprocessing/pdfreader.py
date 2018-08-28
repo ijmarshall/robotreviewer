@@ -48,7 +48,7 @@ class Grobid():
         self.devnull = open(os.devnull, 'wb')
         atexit.register(self.cleanup)
         log.info('Launching Grobid process... (from {0})'.format(config.GROBID_PATH))
-        self.connection = subprocess.Popen(['mvn', '-q', '-Dmaven.test.skip=true', 'jetty:run-war'], cwd=os.path.join(config.GROBID_PATH, 'grobid-service'), stdout=self.devnull, stderr=subprocess.STDOUT) # skip tests since they will not run properly from python subprocess
+        self.connection = subprocess.Popen(['./gradlew', 'run'], cwd=config.GROBID_PATH, stdout=self.devnull, stderr=subprocess.STDOUT) # skip tests since they will not run properly from python subprocess
 
     def connect(self, check_delay=2):
         connected = False
@@ -75,7 +75,7 @@ class Grobid():
 class PdfReader():
 
     def __init__(self):
-        self.url = urlparse.urljoin(config.GROBID_HOST, 'processFulltextDocument')
+        self.url = urlparse.urljoin(config.GROBID_HOST, 'api/processFulltextDocument')
         log.info('Attempting to start Grobid sever...')
         self.grobid_process = Grobid()
         log.info('Success! :)')
