@@ -32,6 +32,10 @@ import robotreviewer
 from robotreviewer.ml.classifier import MiniClassifier
 from robotreviewer.ml.vectorizer import ModularVectorizer
 
+import logging
+log = logging.getLogger(__name__)
+
+
 import sys
 sys.path.append('robotreviewer/ml') # need this for loading the rationale_CNN module
 from robotreviewer.ml.rationale_CNN import RationaleCNN, Document
@@ -95,6 +99,9 @@ class BiasRobot:
             arch_loc = arch_str.format(bias_domain)
             weight_loc = weight_str.format(bias_domain)
             preprocessor = pickle.load(open(vectorizer_loc, 'rb'))
+
+            preprocessor.tokenizer.oov_token = None # TODO check with Byron
+
             self.CNN_models[bias_domain] = RationaleCNN(preprocessor,
                                                     document_model_architecture_path=arch_loc,
                                                     document_model_weights_path=weight_loc)
@@ -145,24 +152,32 @@ class BiasRobot:
         default set in __init__
 
         """
+        log.info('getting top k')
         top_k = self.top_k if not top_k else top_k
 
+        log.info('retrieving text')
         doc_text = data.get('parsed_text')
         if not doc_text:
             return data # we've got to know the text at least..
 
         doc_len = len(data['text'])
-        doc_sents = [sent.string for sent in doc_text.sents]
+        doc_sents = [sent.text for sent in doc_text.sents]
+
+
 
         doc_sent_start_i = [sent.start_char for sent in doc_text.sents]
         doc_sent_end_i = [sent.end_char for sent in doc_text.sents]
 
         structured_data = []
         #for domain, model in self.models.items():
+
+        log.info('starting modeling')
         for domain in self.all_domains:
+            log.info('STARTING DOMAIN {}'.format(domain))
             ###
             # linear model predictions (all domains)
             #if type(model) == tuple: # linear model
+            log.info('doing linear predictions')
             (vec, sent_clf, doc_clf) = (self.linear_vec, self.linear_sent_clf, self.linear_doc_clf)
             doc_domains = [self.bias_domains[domain]] * len(doc_sents)
             doc_X_i = zip(doc_sents, doc_domains)
@@ -175,14 +190,20 @@ class BiasRobot:
 
             ###
             # CNN predictions
+            log.info('doing cnn predictions')
             bias_prob_CNN = None
             if domain in self.CNN_models:
+
                 model = self.CNN_models[domain]
+                log.info('model selected for  {}'.format(domain))
                 
                 doc = Document(doc_id=None, sentences=doc_sents) # make consumable for RA-CNN
+                log.info('Doc done {}'.format(domain))
+
 
                 # this never comes back
                 bias_prob_CNN, high_prob_sent_indices_CNN = model.predict_and_rank_sentences_for_doc(doc, num_rationales=len(doc), return_rationale_indices=True)
+                log.info('got probs  {}'.format(domain))
 
 
                 high_prob_sent_indices = self.simple_borda_count(high_prob_sent_indices_CNN,
@@ -212,8 +233,8 @@ class BiasRobot:
             high_prob_sents = [doc_sents[i] for i in high_prob_sent_indices]
             high_prob_start_i = [doc_sent_start_i[i] for i in high_prob_sent_indices]
             high_prob_end_i = [doc_sent_end_i[i] for i in high_prob_sent_indices]
-            high_prob_prefixes = [doc_text.string[max(0, offset-20):offset] for offset in high_prob_start_i]
-            high_prob_suffixes = [doc_text.string[offset: min(doc_len, offset+20)] for offset in high_prob_end_i]
+            high_prob_prefixes = [doc_text.text[max(0, offset-20):offset] for offset in high_prob_start_i]
+            high_prob_suffixes = [doc_text.text[offset: min(doc_len, offset+20)] for offset in high_prob_end_i]
             high_prob_sents_j = " ".join(high_prob_sents)
 
 
@@ -249,8 +270,9 @@ class BiasRobot:
                                     "judgement": bias_class,
                                     "annotations": annotation_metadata})
 
-        data.ml["bias"] = structured_data
 
+        data.ml["bias"] = structured_data
+        log.info('done predictions, ready to return answers')
         return data
 
     @staticmethod

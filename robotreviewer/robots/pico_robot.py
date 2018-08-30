@@ -160,8 +160,8 @@ class PICORobot:
             high_prob_sents = [doc_sents[i] for i in high_prob_sent_indices]
             high_prob_start_i = [doc_sent_start_i[i] for i in high_prob_sent_indices]
             high_prob_end_i = [doc_sent_end_i[i] for i in high_prob_sent_indices]
-            high_prob_prefixes = [doc_text.string[max(0, offset-20):offset] for offset in high_prob_start_i]
-            high_prob_suffixes = [doc_text.string[offset: min(doc_len, offset+20)] for offset in high_prob_end_i]
+            high_prob_prefixes = [doc_text.text[max(0, offset-20):offset] for offset in high_prob_start_i]
+            high_prob_suffixes = [doc_text.text[offset: min(doc_len, offset+20)] for offset in high_prob_end_i]
 
             annotations = [{"content": sent[0],
                             "position": sent[1],

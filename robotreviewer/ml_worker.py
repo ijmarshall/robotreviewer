@@ -68,7 +68,7 @@ bots = {"bias_bot": BiasRobot(top_k=3),
         "pico_bot": PICORobot(),
         "pubmed_bot": PubmedRobot(),
         # "ictrp_bot": ICTRPRobot(),
-        #"rct_bot": RCTRobot(),
+        "rct_bot": RCTRobot(),
         #"pico_viz_bot": PICOVizRobot(),
         "sample_size_bot":SampleSizeBot()}
 
@@ -94,6 +94,7 @@ c.execute('CREATE TABLE IF NOT EXISTS article(id INTEGER PRIMARY KEY, report_uui
 c.close()
 rr_sql_conn.commit()
 
+
 @worker_init.connect
 def on_worker_init(**_):
     global bots
@@ -102,7 +103,7 @@ def on_worker_init(**_):
             "pico_bot": PICORobot(),
             "pubmed_bot": PubmedRobot(),
             # "ictrp_bot": ICTRPRobot(),
-            #"rct_bot": RCTRobot(),
+            "rct_bot": RCTRobot(),
             #"pico_viz_bot": PICOVizRobot(),
             "sample_size_bot":SampleSizeBot()}
 
@@ -145,12 +146,22 @@ def annotate(report_uuid):
     # adjust the tag, parse, and entity values if these are needed later
     for article, parsed_text in zip(articles, parsed_articles):
         article._spacy['parsed_text'] = parsed_text
-        current_task.update_state(state='PROGRESS',meta={'process_percentage': 75, 'task': 'doing machine learning'})
     
+    current_task.update_state(state='PROGRESS',meta={'process_percentage': 75, 'task': 'doing machine learning'})
+   
 
     for pdf_uuid, pdf_hash, filename, blob, data, timestamp in zip(pdf_uuids, pdf_hashes, filenames, blobs, articles, timestamps):
+
         # "pico_viz_bot",
-        data = annotate_study(data, bot_names=["pubmed_bot", "bias_bot", "pico_bot", "sample_size_bot"])
+
+        # DEBUG
+        current_task.update_state(state='PROGRESS',meta={'process_percentage': 76, 'task': 'processing PDF {}'.format(filename)})
+
+
+        data = annotate_study(data, bot_names=["rct_bot", "pubmed_bot", "bias_bot", "pico_bot", "sample_size_bot"])
+
+
+
         #data = annotate_study(data, bot_names=["bias_bot"])
         data.gold['pdf_uuid'] = pdf_uuid
         data.gold['filename'] = filename
@@ -174,15 +185,26 @@ def annotate_study(data, bot_names=["bias_bot"]):
     # change the line below if you wish to customise or
     # add a new annotator
     #
+    log.info("REQUESTING ANNOTATIONS FROM SET OF PDFs (annotate_study)")
     annotations = annotation_pipeline(bot_names, data)
     return annotations
 
 def annotation_pipeline(bot_names, data):
     # makes it here!
     # rdb.set_trace() 
+    log.info("STARTING PIPELINE (made it to annotation_pipeline)")
+
+    # DEBUG
+    current_task.update_state(state='PROGRESS',meta={'process_percentage': 78, 'task': 'starting annotation pipeline'})
+
+
     for bot_name in bot_names:
+        log.info("STARTING {} BOT (annotation_pipeline)".format(bot_name))
         log.debug("Sending doc to {} for annotation...".format(bots[bot_name].__class__.__name__))
+        current_task.update_state(state='PROGRESS',meta={'process_percentage': 79, 'task': 'Running {}'.format(bot_name)})
 
         data = bots[bot_name].annotate(data)
         log.debug("{} done!".format(bots[bot_name].__class__.__name__))
+        log.info("COMPLETED {} BOT (annotation_pipeline)".format(bot_name))
+        current_task.update_state(state='PROGRESS',meta={'process_percentage': 79, 'task': 'Bot {} complete!'.format(bot_name)})
     return data

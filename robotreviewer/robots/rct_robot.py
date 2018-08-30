@@ -4,47 +4,48 @@ the Randomized Control Trial (RCT) robot predicts whether a given
 
     title =    '''Does usage of a parachute in contrast to free fall prevent major trauma?: a prospective randomised-controlled trial in rag dolls.'''
     abstract = '''PURPOSE: It is undisputed for more than 200 years that the use of a parachute prevents major trauma when falling from a great height. Nevertheless up to date no prospective randomised controlled trial has proven the superiority in preventing trauma when falling from a great height instead of a free fall. The aim of this prospective randomised controlled trial was to prove the effectiveness of a parachute when falling from great height. METHODS: In this prospective randomised-controlled trial a commercially acquirable rag doll was prepared for the purposes of the study design as in accordance to the Declaration of Helsinki, the participation of human beings in this trial was impossible. Twenty-five falls were performed with a parachute compatible to the height and weight of the doll. In the control group, another 25 falls were realised without a parachute. The main outcome measures were the rate of head injury; cervical, thoracic, lumbar, and pelvic fractures; and pneumothoraxes, hepatic, spleen, and bladder injuries in the control and parachute groups. An interdisciplinary team consisting of a specialised trauma surgeon, two neurosurgeons, and a coroner examined the rag doll for injuries. Additionally, whole-body computed tomography scans were performed to identify the injuries. RESULTS: All 50 falls-25 with the use of a parachute, 25 without a parachute-were successfully performed. Head injuries (right hemisphere p = 0.008, left hemisphere p = 0.004), cervical trauma (p < 0.001), thoracic trauma (p < 0.001), lumbar trauma (p < 0.001), pelvic trauma (p < 0.001), and hepatic, spleen, and bladder injures (p < 0.001) occurred more often in the control group. Only the pneumothoraxes showed no statistically significant difference between the control and parachute groups. CONCLUSIONS: A parachute is an effective tool to prevent major trauma when falling from a great height.'''
-    ptyp_is_rct = True
-
-    RCTRobot.annotate() takes a robotreviewer.data_structures.MultiDict
-    containing the article info. there are multiple ways to build a MultiDict,
-    however the most common way used in this project is as a PDF binary.
-
-    pdfr = PDFReader()
-    data = pdfr.convert(pdf_binary)
+    ptyp = ["Randomized Controlled Trial", "Intervention Study", "Journal Article"]
 
     rct_robot = RCTRobot()
-    annotations = rct_robot.annotate(data)
+    annotations = rct_robot.annotate(title, abstract, ptyp)
 
 This model was trained on the Cochrane crowd dataset, and validated on the Clinical Hedges dataset
 """
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
 #           Joel Kuiper <me@joelkuiper.com>
-#           Byron Wallace <byron@ccs.neu.edu>
+#           Byron Wallce <byron.wallace@utexas.edu>
 
 import json
+import uuid
 import os
 
-import glob
-import numpy as np
 import pickle
-from keras.preprocessing import sequence
-from keras.models import model_from_json
-from scipy.sparse import lil_matrix, hstack
-from sklearn.feature_extraction.text import HashingVectorizer
-from sklearn.feature_extraction.text import VectorizerMixin
 
 import robotreviewer
 from robotreviewer.ml.classifier import MiniClassifier
+from sklearn.feature_extraction.text import HashingVectorizer
 
 
-__version__ = {"name": "Randomized controlled trial",
-               "version_number": "0",
-               "publication_url": "",
-               "cite_bibtex": """In press""",
-               "cite_text": ""
-              }
+from scipy.sparse import lil_matrix, hstack
+
+import numpy as np
+import re
+import glob
+from sklearn.feature_extraction.text import VectorizerMixin
+from sklearn.base import ClassifierMixin
+from keras.preprocessing import sequence
+from collections import Counter
+from keras.models import load_model
+from keras.models import Sequential
+from keras.preprocessing import sequence
+from keras.layers import Dense, Dropout, Activation, Lambda, Input, merge, Flatten
+from keras.layers import Embedding
+from keras.layers import Convolution1D, MaxPooling1D
+from keras import backend as K
+from keras.models import Model
+from keras.regularizers import l2
+
 
 
 class KerasVectorizer(VectorizerMixin):
@@ -70,64 +71,51 @@ class KerasVectorizer(VectorizerMixin):
             self.vocab_map = pickle.load(f)
 
     def transform(self, raw_documents, maxlen=400):
+        """
+        returns lists of integers
+        """
         analyzer = self.build_analyzer()
         int_lists = [[1]+[self.vocab_map.get(w, 2) for w in analyzer(t)] for t in raw_documents]
         # 0 = pad, 1 = start, 2 = OOV
         return sequence.pad_sequences(int_lists, maxlen=maxlen)
 
 
-def get_model(json_filename, weights_filename):
-    with open(json_filename, 'r') as f:
-        json_string = json.load(f)
-    model = model_from_json(json_string)
-    model.load_weights(weights_filename)
-    return model
 
 
 class RCTRobot:
 
     def __init__(self):
         self.svm_clf = MiniClassifier(os.path.join(robotreviewer.DATA_ROOT, 'rct/rct_svm_weights.npz'))
-
         cnn_weight_files = glob.glob(os.path.join(robotreviewer.DATA_ROOT, 'rct/*.h5'))
-        json_filename = os.path.join(robotreviewer.DATA_ROOT, 'rct/rct_cnn_structure.json')
-        self.cnn_clfs = [get_model(json_filename, cnn_weight_file) for cnn_weight_file in cnn_weight_files]
+        self.cnn_clfs = [load_model(cnn_weight_file) for cnn_weight_file in cnn_weight_files]
         self.svm_vectorizer = HashingVectorizer(binary=False, ngram_range=(1, 1), stop_words='english')
-        self.cnn_vectorizer = KerasVectorizer(vocab_map_file=os.path.join(robotreviewer.DATA_ROOT, 'rct/rct_cnn_vocab_map.pck'))
+        self.cnn_vectorizer = KerasVectorizer(vocab_map_file=os.path.join(robotreviewer.DATA_ROOT, 'rct/cnn_vocab_map.pck'), stop_words='english')
+        with open(os.path.join(robotreviewer.DATA_ROOT, 'rct/rct_model_calibration.json'), 'r') as f:
+            self.constants = json.load(f)
 
-
-
-
-        self.scale_constants =  {'cnn': {'mean': 0.15592811611054261,
-                      'std': 0.22405916984696986,
-                      'weight': 1.6666666666666667},
-                     'ptyp': {'mean': 0.055155532891381948,
-                      'std': 0.22828359573751594},
-                     'svm': {'mean': -0.75481403525485891,
-                      'std': 0.7812955939364481,
-                      'weight': 10.0}} # weighted in mean since we use only 1 SVM model (since produces near identical results to binning 10) and 6 CNN models (since runs faster, and no further reduction in variance for further models)
-
-        self.thresholds = {'cnn': {'precise': 2.1340457758193034,
-              'sensitive': -0.076709540491855063},
-             'cnn_ptyp': {'precise': 3.529609848417909,
-              'sensitive': 0.083502632442633312},
-             'svm': {'precise': 1.9185522606237164,
-              'sensitive': 0.093273630980694439},
-             'svm_cnn': {'precise': 1.8749128673557529,
-              'sensitive': 0.064481902000491614},
-             'svm_cnn_ptyp': {'precise': 3.7674045603568755,
-              'sensitive': 0.1952449060483534},
-             'svm_ptyp': {'precise': 3.7358855328111837,
-              'sensitive': 0.42992224964656178}}# All precise models have been calibrated to 97.6% sensitivity
-        # All sensitive models have been calibrated to 99.1% sensitivity
-
-
+    def _process_ptyp(self, data_row, strict=True):
+        """
+        Takes in a data row which might include rct_ptyp
+        or ptyp fields.
+        If strict=True, then raises exception when passed any
+        contradictory data
+        Returns: 1 = ptyp is RCT
+                 0 = ptyp is NOT RCT
+                 -1 = no ptyp information present
+        """
+        if data_row['use_ptyp'] == False:
+            return -1
+        elif data_row['use_ptyp'] == True:
+            return 1 if any((tag in data_row['ptyp'] for tag in ["Randomized Controlled Trial", "D016449"])) else 0
+        else:
+            raise Exception("unexpcted value for 'use_ptyp'")
 
     def annotate(self, data):
 
         # use the best performing models from the validation paper (in draft...)
-        filter_class = "svm_cnn_ptyp"
-        threshold_class = "precise"
+        filter_class = "svm_cnn"
+        threshold_class = "balanced"
+        auto_use_ptyp=True
 
         if data.get("abstract") is not None and data.get("title") is not None:
             ti = data["title"]
@@ -143,60 +131,171 @@ class RCTRobot:
             # else can't proceed
             return data
 
-        if "pubmed" in data.data:
-            ptyp = 1.0
-        else:
-            ptyp = 0.0
+        # ignore PubMed data for now
+        # if "pubmed" in data.data:
+        #     ptyp = 1.0
+        # else:
+        #     ptyp = 0.0
 
-        X_ti_str = [ti]
-        X_ab_str = ['{}\n\n{}'.format(ti, ab)]
-
-        if "svm" in filter_class:
-
-            X_ti = lil_matrix(self.svm_vectorizer.transform(X_ti_str))
-            X_ab = lil_matrix(self.svm_vectorizer.transform(X_ab_str))
-
-            svm_preds = self.svm_clf.decision_function(hstack([X_ti, X_ab]))
-            svm_scale =  (svm_preds - self.scale_constants['svm']['mean']) / self.scale_constants['svm']['std']
-
-        if "ptyp" in filter_class:
-            ptyp = np.array([ptyp])
-            ptyp_scale =  (ptyp - self.scale_constants['ptyp']['mean']) / self.scale_constants['ptyp']['std']
-
-        if "cnn" in filter_class:
-            X_cnn = self.cnn_vectorizer.transform(X_ab_str)
-            cnn_preds = [clf.predict(X_cnn).T[0] for clf in self.cnn_clfs]
-            cnn_preds = np.vstack(cnn_preds)
-            cnn_scale =  (cnn_preds - self.scale_constants['cnn']['mean']) / self.scale_constants['cnn']['std']
-
-        if filter_class == "svm":
-            y_preds = svm_scale
-        elif filter_class == "svm_ptyp":
-            y_preds = svm_scale + ptyp_scale
-        elif filter_class == "ptyp":
-            y_preds = ptyp_scale
-        elif filter_class == "svm_cnn_ptyp":
-            weights = [self.scale_constants['svm']['weight']] + ([self.scale_constants['cnn']['weight']] * len(self.cnn_clfs))
-            y_preds = np.average(np.vstack([cnn_scale, svm_scale]), axis=0, weights=weights) + ptyp_scale
+        preds = self.predict({"title": ti, "abstract": ab}, auto_use_ptyp=False)[0]
 
 
-
-
-        structured_data = {"is_rct": bool(y_preds[0] > self.thresholds[filter_class][threshold_class]),
-                           "decision_score": y_preds[0],
-                           "model_class": filter_class}
+        structured_data = {"is_rct": preds['is_rct'],
+                           "decision_score": preds['threshold_value'],
+                           "model_class": preds['model'],
+                           "filter_type": preds['threshold_type']}
 
         data.ml["rct"] = structured_data
         return data
 
+    def predict(self, X, filter_class="svm", filter_type="sensitive", auto_use_ptyp=True):
 
-        @staticmethod
-        def get_marginalia(data):
-            """
-            Get marginalia formatted for Spa from structured data
-            """
-            marginalia = [{"type": "Trial Design",
-                          "title": "Is an RCT?",
-                          "annotations": [],
-                          "description":  "{0} (Decision score={1:0.2f} using {} model)".format(data["rct"]["is_rct"], data["rct"]["decision_score"], data["rct"]["model_class"])}]
-            return marginalia
+
+        if isinstance(X, dict):
+            X = [X]
+
+        if auto_use_ptyp:
+            pt_mask = np.array([self._process_ptyp(r) for r in X])
+        else:
+            # don't add for any of them
+            pt_mask = np.array([-1 for r in X])
+
+        # calculate ptyp for all
+        #ptyp = np.copy(pt_mask)
+        # ptyp = np.array([(article.get('rct_ptyp')==True)*1. for article in X])
+        ptyp_scale = (pt_mask - self.constants['scales']['ptyp']['mean']) / self.constants['scales']['ptyp']['std']
+        # but set to 0 if not using
+        ptyp_scale[pt_mask==-1] = 0
+
+        # thresholds vary per article
+        thresholds = []
+        for r in pt_mask:
+            if r != -1:
+                thresholds.append(self.constants['thresholds']["{}_ptyp".format(filter_class)][filter_type])
+            else:
+                thresholds.append(self.constants['thresholds'][filter_class][filter_type])
+
+        X_ti_str = [article.get('title', '') for article in X]
+        X_ab_str = ['{}\n\n{}'.format(article.get('title', ''), article.get('abstract', '')) for article in X]
+
+        if "svm" in filter_class:
+            X_ti = lil_matrix(self.svm_vectorizer.transform(X_ti_str))
+            X_ab = lil_matrix(self.svm_vectorizer.transform(X_ab_str))
+            svm_preds = self.svm_clf.decision_function(hstack([X_ab, X_ti]))
+            svm_scale =  (svm_preds - self.constants['scales']['svm']['mean']) / self.constants['scales']['svm']['std']
+
+        if "cnn" in filter_class:
+            X_cnn = self.cnn_vectorizer.transform(X_ab_str)
+            cnn_preds = []
+            for i, clf in enumerate(self.cnn_clfs):
+                print('\t{} of {}'.format(i+1, len(self.cnn_clfs)))
+                cnn_preds.append(clf.predict(X_cnn).T[0])
+
+            cnn_preds = np.vstack(cnn_preds)
+            cnn_scale =  (cnn_preds - self.constants['scales']['cnn']['mean']) / self.constants['scales']['cnn']['std']
+
+        if filter_class == "svm":
+            y_preds = svm_scale
+        elif filter_class == "cnn":
+            y_preds = np.mean(cnn_scale, axis=0)
+        elif filter_class == "svm_cnn":
+            weights = [self.constants['scales']['svm']['weight']] + ([self.constants['scales']['cnn']['weight']] * len(self.cnn_clfs))
+            y_preds = np.average(np.vstack([svm_scale, cnn_scale]), axis=0, weights=weights)
+
+        y_preds += ptyp_scale
+
+        out = []
+        for pred, threshold, used_ptyp in zip(y_preds, thresholds, pt_mask):
+            row = {}
+            row['score'] = float(pred)
+            if used_ptyp != -1:
+                row['model'] = "{}_ptyp".format(filter_class)
+            else:
+                row['model'] = filter_class
+            row['threshold_type'] = filter_type
+            row['threshold_value'] = float(threshold)
+            row['is_rct'] = bool(pred >= threshold)
+            row['ptyp_rct'] = int(used_ptyp)
+            out.append(row)
+        return out
+
+    @staticmethod
+    def get_marginalia(data):
+        """
+        Get marginalia formatted for Spa from structured data
+        """
+        marginalia = [{"type": "Trial Design",
+                      "title": "Is an RCT?",
+                      "annotations": [],
+                      "description":  "{0} (Decision score={1:0.2f} using {} model)".format(data["rct"]["is_rct"], data["rct"]["decision_score"], data["rct"]["model_class"])}]
+        return marginalia
+
+
+
+
+
+
+def test_calibration():
+    print("Testing RobotSearch...")
+    target_classes = ["svm", "cnn", "svm_cnn"]
+    target_modes = ["balanced", "precise", "sensitive"]
+
+    rct_bot = RCTRobot()
+
+    print("Loading test PubMed file")
+    with open(os.path.join(robotreviewer.DATA_ROOT, 'rct/pubmed_test.txt'), 'r') as f:
+        ris_string = f.read()
+
+
+    print('Parsing RIS data')
+    ris_data = ris.loads(ris_string)
+
+    print("Loading expected results (from validation paper)")
+    with open(os.path.join(robotreviewer.DATA_ROOT, 'rct/pubmed_expected.json'), 'r') as f:
+        expected_results = json.load(f)
+
+
+
+    for target_class in target_classes:
+        for target_mode in target_modes:
+            for use_ptyp in [True, False]:
+
+                expected_model_class = "{}_ptyp".format(target_class) if use_ptyp else target_class
+
+                print("Testing {} model; use_ptyp={}; mode={}".format(target_class, use_ptyp, target_mode))
+                data = rct_bot.predict_ris(ris_data, filter_class=target_class, filter_type=target_mode, auto_use_ptyp=use_ptyp)
+
+                exp_pmids = [str(r['PMID'][0]) for r in ris_data]
+                obs_pmids = [str(r['pmid']) for r in expected_results[expected_model_class][target_mode]]
+
+
+                print("Number matching PMIDS: {}".format(sum([i==j for i, j in zip(exp_pmids, obs_pmids)])))
+
+
+                obs_score = np.array([r['score'] for r in data])
+                obs_clf = np.array([r['is_rct'] for r in data])
+
+
+
+                exp_score = np.array([float(r['score']) for r in expected_results[expected_model_class][target_mode]])
+                exp_clf = np.array([r['is_rct'] for r in expected_results[expected_model_class][target_mode]])
+
+                print("Totals assessed: {} obs, {} exp".format(len(obs_score), len(exp_score)))
+                match_clf = np.sum(np.equal(obs_clf, exp_clf))
+
+
+
+                disag = np.where((np.equal(obs_clf, exp_clf)==False))[0]
+                hedges_y = np.array([r['hedges_is_rct']=='1' for r in expected_results[expected_model_class][target_mode]])
+
+
+                exp_sens = np.sum(exp_clf[hedges_y])/np.sum(hedges_y)
+                exp_spec = np.sum(np.invert(exp_clf)[np.invert(hedges_y)])/np.sum(np.invert(hedges_y))
+
+
+                obs_sens = np.sum(obs_clf[hedges_y])/np.sum(hedges_y)
+                obs_spec = np.sum(np.invert(obs_clf)[np.invert(hedges_y)])/np.sum(np.invert(hedges_y))
+
+                print("Expected: sens {} spec {}".format(exp_sens, exp_spec))
+
+                print("Observed: sens {} spec {}".format(obs_sens, obs_spec))
