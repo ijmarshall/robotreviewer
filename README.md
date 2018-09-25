@@ -82,7 +82,7 @@ For other operating systems or for more control, a manual installation may be pr
     ```bash
     conda env create -f robotreviewer_env_local.yml
     source activate robotreviewer
-    python -m spacy.en.download
+    python -m spacy download en
     python -m nltk.downloader punkt stopwords
     ```
 
