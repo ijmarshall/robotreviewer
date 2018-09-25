@@ -41,4 +41,5 @@ dependencies:
     - keras==2.1.5
     - amqp==2.2.1
     - celery==4.2.1
+    - msgpack-python
     - pyqt5
