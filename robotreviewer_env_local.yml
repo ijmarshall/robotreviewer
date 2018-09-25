@@ -1,5 +1,8 @@
 name: robotreviewer
 dependencies:
+- bz2file
+- pathlib
+- hypothesis
 - mkl
 - mkl-service
 - python=3.6.6
@@ -8,7 +11,7 @@ dependencies:
 - gensim=3.4.0
 - h5py=2.8.0
 - matplotlib=2.2.3
-- mpld3=0.2
+- mpld3
 - murmurhash=0.28.0
 - networkx=1.11
 - nltk=3.3.0
