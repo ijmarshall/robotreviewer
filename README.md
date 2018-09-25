@@ -87,6 +87,7 @@ sudo apt install python-pyqt5
     ```bash
     conda env create -f robotreviewer_env_local.yml
     source activate robotreviewer
+    conda update --all
     python -m spacy download en
     python -m nltk.downloader punkt stopwords
     ```
