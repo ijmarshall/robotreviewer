@@ -80,6 +80,8 @@ For other operating systems or for more control, a manual installation may be pr
 
 4. Install the Python libraries that RobotReviewer needs. The most reliable way is through a conda environment. The following downloads the packages, and installs the required data.
     ```bash
+    sudo apt install python-pyqt5
+    
     conda env create -f robotreviewer_env_local.yml
     source activate robotreviewer
     python -m spacy download en
