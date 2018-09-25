@@ -77,7 +77,7 @@ For other operating systems or for more control, a manual installation may be pr
     git clone https://github.com/ijmarshall/robotreviewer3.git
     cd robotreviewer3
     ```
-3.5 Linux systems need a copy of python-pyqt5:
+3.5 Linux systems need a copy of python-pyqt5. On Debian/Ubuntu systems:
 ```bash
 sudo apt install python-pyqt5
 ```
