@@ -88,7 +88,7 @@ rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdf
 
 
 c = rr_sql_conn.cursor()
-c.execute('CREATE TABLE IF NOT EXISTS doc_queue (id INTEGER PRIMARY KEY, report_uuid TEXT, pdf_uuid TEXT, pdf_hash TEXT, pdf_filename TEXT, pdf_file BLOB, timestamp TIMESTAMP)')
+c.execute('CREATE TABLE IF NOT EXISTS doc_queue(id INTEGER PRIMARY KEY, report_uuid TEXT, pdf_uuid TEXT, pdf_hash TEXT, pdf_filename TEXT, pdf_file BLOB, timestamp TIMESTAMP)')
 
 c.execute('CREATE TABLE IF NOT EXISTS article(id INTEGER PRIMARY KEY, report_uuid TEXT, pdf_uuid TEXT, pdf_hash TEXT, pdf_file BLOB, annotations TEXT, timestamp TIMESTAMP, dont_delete INTEGER)')
 c.close()
@@ -122,7 +122,7 @@ def annotate(report_uuid):
     c = rr_sql_conn.cursor()
 
     #import pdb; pdb.set_trace()
-    
+
     # load in the PDF data from the queue table
     for pdf_uuid, pdf_hash, filename, pdf_file, timestamp in c.execute("SELECT pdf_uuid, pdf_hash, pdf_filename, pdf_file, timestamp FROM doc_queue WHERE report_uuid=?", (report_uuid, )):
         pdf_uuids.append(pdf_uuid)
@@ -146,9 +146,9 @@ def annotate(report_uuid):
     # adjust the tag, parse, and entity values if these are needed later
     for article, parsed_text in zip(articles, parsed_articles):
         article._spacy['parsed_text'] = parsed_text
-    
+
     current_task.update_state(state='PROGRESS',meta={'process_percentage': 75, 'task': 'doing machine learning'})
-   
+
 
     for pdf_uuid, pdf_hash, filename, blob, data, timestamp in zip(pdf_uuids, pdf_hashes, filenames, blobs, articles, timestamps):
 
@@ -191,7 +191,7 @@ def annotate_study(data, bot_names=["bias_bot"]):
 
 def annotation_pipeline(bot_names, data):
     # makes it here!
-    # rdb.set_trace() 
+    # rdb.set_trace()
     log.info("STARTING PIPELINE (made it to annotation_pipeline)")
 
     # DEBUG

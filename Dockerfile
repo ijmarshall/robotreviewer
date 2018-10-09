@@ -20,10 +20,25 @@ ENV NODE_PATH $NODE_PATH:/usr/local/lib/node_modules
 RUN npm install -g requirejs
 RUN ln -s /usr/bin/nodejs /usr/bin/node
 
-RUN cd /var/lib/deploy/ && wget https://github.com/kermitt2/grobid/archive/grobid-parent-0.4.1.zip -O grobid.zip && \
+# Gradle requires jdk to work! Java incoming!
+RUN apt-get -y install openjdk-8-jdk wget unzip
+RUN java -version # check that java works
+
+# install gradle the annoying thing
+RUN mkdir /opt/gradle
+RUN curl -L https://services.gradle.org/distributions/gradle-4.10.2-bin.zip -o gradle-4.10.2.zip && \
+    unzip -d /opt/gradle gradle-4.10.2.zip && \
+    rm gradle-4.10.2.zip
+#ENV GRADLE_HOME=/usr/local/gradle-4.10.2
+ENV PATH=/opt/gradle/gradle-4.10.2/bin:$PATH
+#ENV PATH=$PATH:$GRADLE_HOME/bin
+RUN gradle -v # check that gradle works
+
+RUN cd /var/lib/deploy/ && wget https://github.com/kermitt2/grobid/archive/0.5.1.zip -O grobid.zip && \
     unzip grobid.zip && \
-    cd /var/lib/deploy/grobid-grobid-parent-0.4.1 && \
-    mvn -Dmaven.test.skip=true clean install && \
+    cd /var/lib/deploy/grobid-0.5.1 && \
+    gradle clean install && \
+#    mvn -Dmaven.test.skip=true clean install && \
     rm -f /var/lib/deploy/grobid.zip
 
 RUN chown -R deploy.deploy /var/lib/deploy/
@@ -38,7 +53,11 @@ RUN conda env create -f tmp/robotreviewer_env.yml
 # from https://stackoverflow.com/questions/37945759/condas-source-activate-virtualenv-does-not-work-within-dockerfile
 ENV PATH /var/lib/deploy/miniconda3/envs/robotreviewer/bin:$PATH
 RUN python -m nltk.downloader punkt stopwords
-RUN python -m spacy.en.download all
+#RUN python -m spacy.en.download all
+RUN python -m spacy download en
+
+#strange Theano problem
+ENV MKL_THREADING_LAYER=GNU
 
 # Get data
 USER root

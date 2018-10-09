@@ -14,3 +14,4 @@ libfontconfig1
 git
 rabbitmq-server
 sudo
+gradle

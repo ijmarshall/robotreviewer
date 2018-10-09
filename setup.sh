@@ -14,7 +14,8 @@ brew services start rabbitmq
 echo "Started."
 
 echo "Installing spacy requirements.."
-python -m spacy.en.download
+#python -m spacy.en.download
+python -m spacy download en
 echo "Done."
 
 source deactivate
