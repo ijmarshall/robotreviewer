@@ -57,7 +57,7 @@ RUN python -m nltk.downloader punkt stopwords
 RUN python -m spacy download en
 
 #strange Theano problem
-ENV MKL_THREADING_LAYER=GNU
+#ENV MKL_THREADING_LAYER=GNU
 
 # Get data
 USER root

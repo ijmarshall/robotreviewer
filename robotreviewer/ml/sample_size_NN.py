@@ -73,7 +73,11 @@ class MLPSampleSizeClassifier:
 
     def PoS_tags_to_one_hot(self, tag):
         one_hot = np.zeros(self.n_tags)
-        one_hot[self.PoS_tags_to_indices[tag]] = 1.0
+        if tag in self.PoS_tags_to_indices:
+            one_hot[self.PoS_tags_to_indices[tag]] = 1.0
+        else:
+            print('Tag {} not in list'.format(tag))
+        print(one_hot)
         return one_hot
 
     def featurize_for_input(self, X):

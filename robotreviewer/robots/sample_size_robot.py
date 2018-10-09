@@ -1,7 +1,7 @@
 '''
 The SampleSizeBot consumes abstracts and extracts study sample sizes from these.
 '''
-import pickle 
+import pickle
 
 from robotreviewer.ml.sample_size_NN import MLPSampleSizeClassifier
 
@@ -12,7 +12,7 @@ preprocessor_path  = 'robotreviewer/data/sample_size/preprocessor.pickle'
 class SampleSizeBot:
 
     def __init__(self):
-        # as always, this was set in a totally and 
+        # as always, this was set in a totally and
         # completely scientific way.
         self.magic_threshold = 0.1
 
@@ -24,14 +24,14 @@ class SampleSizeBot:
 
 
     def annotate(self, data):
-        abstract = None 
+        abstract = None
         if data.get("abstract") is not None:
             abstract = data["abstract"]
         elif data.get("parsed_text") is not None:
             # then just use the start of the document
             ABSTRACT_LEN = 420
             abstract = data['parsed_text'][:ABSTRACT_LEN].text
-        
+
         sample_size_str = "???"
         if abstract is not None:
             sample_size_pred = self.sample_size_model.predict_for_abstract(abstract)
@@ -55,4 +55,4 @@ class SampleSizeBot:
                       "annotations": [],
                       "description":  "Sample size: {0}".format(data["sample_size"])}]
         return marginalia
-    
+

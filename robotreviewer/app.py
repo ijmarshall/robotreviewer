@@ -10,7 +10,7 @@ import logging, os
 from datetime import datetime, timedelta
 
 import os
-os.environ["MKL_THREADING_LAYER"] = "GNU"
+#os.environ["MKL_THREADING_LAYER"] = "GNU"
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")

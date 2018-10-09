@@ -1,7 +1,7 @@
 name: robotreviewer
 dependencies:
 - system
-- mkl
+- mkl=2017
 - mkl-service
 - python=3
 - Cython=0.25.2
@@ -35,12 +35,12 @@ dependencies:
 - unicodecsv=0.14.1
 - Unidecode=0.4.19
 - Werkzeug=0.14
+- Theano
 - pip:
     - gevent==1.2.2
     - fuzzywuzzy==0.17.0
     - APScheduler==3.2.0
     - graphviz==0.8
-    - Theano==1.0.2
     - python-Levenshtein==0.12.0
     - keras==2.1.5
     - amqp==2.2.1
