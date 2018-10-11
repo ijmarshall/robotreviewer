@@ -48,7 +48,7 @@ USER deploy
 RUN aria2c -s 16 -x 16 -k 30M https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /var/lib/deploy/Anaconda.sh
 RUN cd /var/lib/deploy && bash Anaconda.sh -b && rm -rf Anaconda.sh
 ENV PATH=/var/lib/deploy/miniconda3/bin:$PATH
-ADD robotreviewer_env.yml tmp/robotreviewer_env.yml
+ADD rr_test_env.yml tmp/robotreviewer_env.yml
 RUN conda env create -f tmp/robotreviewer_env.yml
 # from https://stackoverflow.com/questions/37945759/condas-source-activate-virtualenv-does-not-work-within-dockerfile
 ENV PATH /var/lib/deploy/miniconda3/envs/robotreviewer/bin:$PATH

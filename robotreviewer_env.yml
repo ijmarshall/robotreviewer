@@ -1,47 +1,103 @@
 name: robotreviewer
+channels:
+  - defaults
 dependencies:
-- system
-- mkl=2017
-- mkl-service
-- python=3
-- Cython=0.25.2
-- Flask=1.0.2
-- Flask-Cors=3.0.2
-- Flask-WTF=0.14.2
-- gensim=3.4.0
-- h5py=2.8.0
-- matplotlib
-- mpld3=0.2
-- murmurhash=0.28.0
-- networkx=1.11
-- nltk=3.3.0
-- numba
-- numexpr=2.6.1
-- numpy
-- pandas=0.23.4
-- psutil=5.0.1
-- psycopg2=2.6.2
-- ptyprocess=0.6.0
-- py=1.4.32
-- python-dateutil=2.7.3
-- PyYAML=3.13
-- scikit-learn=0.19.1
-- scipy=1.1.0
-- seaborn=0.7.1
-- six=1.11.0
-- spacy=2.0.11
-- tqdm=4.25.0
-- ujson=1.35
-- unicodecsv=0.14.1
-- Unidecode=0.4.19
-- Werkzeug=0.14
-- Theano
-- pip:
-    - gevent==1.2.2
-    - fuzzywuzzy==0.17.0
-    - APScheduler==3.2.0
-    - graphviz==0.8
-    - python-Levenshtein==0.12.0
-    - keras==2.1.5
-    - amqp==2.2.1
+  - asn1crypto=0.24.0=py36_0
+  - binutils_impl_linux-64=2.31.1=h6176602_1
+  - binutils_linux-64=2.31.1=h6176602_3
+  - blas=1.0=mkl
+  - boto=2.49.0=py36_0
+  - boto3=1.9.13=py36_0
+  - botocore=1.12.14=py36_0
+  - ca-certificates=2018.03.07=0
+  - certifi=2018.8.24=py36_1
+  - cffi=1.11.5=py36he75722e_1
+  - chardet=3.0.4=py36_1
+  - click=7.0=py36_0
+  - cryptography=2.3.1=py36hc365091_0
+  - cymem=1.31.2=py36h6bb024c_0
+  - cytoolz=0.9.0.1=py36h14c3975_1
+  - dill=0.2.8.2=py36_0
+  - docutils=0.14=py36_0
+  - flask=1.0.2=py36_1
+  - gcc_impl_linux-64=7.3.0=habb00fd_1
+  - gcc_linux-64=7.3.0=h553295d_3
+  - gensim=3.4.0=py36h14c3975_0
+  - gxx_impl_linux-64=7.3.0=hdf63c60_1
+  - gxx_linux-64=7.3.0=h553295d_3
+  - idna=2.7=py36_0
+  - intel-openmp=2019.0=118
+  - itsdangerous=0.24=py36_1
+  - jinja2=2.10=py36_0
+  - jmespath=0.9.3=py36_0
+  - libedit=3.1.20170329=h6b74fdf_2
+  - libffi=3.2.1=hd88cf55_4
+  - libgcc-ng=8.2.0=hdf63c60_1
+  - libgfortran-ng=7.3.0=hdf63c60_0
+  - libgpuarray=0.7.6=h14c3975_0
+  - libstdcxx-ng=8.2.0=hdf63c60_1
+  - mako=1.0.7=py36_0
+  - markupsafe=1.0=py36h14c3975_1
+  - mkl=2019.0=118
+  - mkl-service=1.1.2=py36h90e4bf4_5
+  - mkl_fft=1.0.6=py36h7dd41cf_0
+  - mkl_random=1.0.1=py36h4414c95_1
+  - msgpack-numpy=0.4.3.2=py36_0
+  - msgpack-python=0.5.6=py36h6bb024c_1
+  - murmurhash=0.28.0=py36hf484d3e_0
+  - ncurses=6.1=hf484d3e_0
+  - nltk=3.3.0=py36_0
+  - numpy=1.15.2=py36h1d66e8a_1
+  - numpy-base=1.15.2=py36h81de0dd_1
+  - openssl=1.0.2p=h14c3975_0
+  - pandas=0.23.4=py36h04863e7_0
+  - pip=10.0.1=py36_0
+  - plac=0.9.6=py36_0
+  - preshed=1.0.1=py36he6710b0_0
+  - pycparser=2.19=py36_0
+  - pygpu=0.7.6=py36h035aef0_0
+  - pyopenssl=18.0.0=py36_0
+  - pysocks=1.6.8=py36_0
+  - python=3.6.6=h6e4f718_2
+  - python-dateutil=2.7.3=py36_0
+  - pytz=2018.5=py36_0
+  - readline=7.0=h7b6447c_5
+  - regex=2018.07.11=py36h14c3975_0
+  - requests=2.19.1=py36_0
+  - s3transfer=0.1.13=py36_0
+  - scikit-learn=0.20.0=py36h4989274_1
+  - scipy=1.1.0=py36hfa4b5c9_1
+  - setuptools=40.4.3=py36_0
+  - six=1.11.0=py36_1
+  - smart_open=1.6.0=py36_0
+  - spacy=2.0.12=py36h962f231_0
+  - sqlite=3.25.2=h7b6447c_0
+  - termcolor=1.1.0=py36_1
+  - theano=1.0.3=py36hfd86e86_0
+  - thinc=6.10.3=py36h962f231_0
+  - tk=8.6.8=hbc83047_0
+  - toolz=0.9.0=py36_0
+  - tqdm=4.26.0=py36h28b3542_0
+  - ujson=1.35=py36h14c3975_0
+  - urllib3=1.23=py36_0
+  - werkzeug=0.14.1=py36_0
+  - wheel=0.32.1=py36_0
+  - wrapt=1.10.11=py36h14c3975_2
+  - xz=5.2.4=h14c3975_4
+  - zlib=1.2.11=ha838bed_2
+  - pip:
+    - gevent
+    - amqp==2.3.2
+    - billiard==3.5.0.4
     - celery==4.2.1
+    - flask-wtf==0.14.2
+    - fuzzywuzzy==0.17.0
+    - keras==2.1.5
+    - kombu==4.2.1
+    - msgpack==0.5.6
+    - pyyaml==3.13
+    - vine==1.1.4
+    - wtforms==2.2.1
+    - h5py==2.8.0
+prefix: /home/iain/anaconda3/envs/rr_test2
+
