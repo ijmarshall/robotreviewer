@@ -1,0 +1,206 @@
+RobotReviewer RCT model calibration 2017-07-08 10:34
+Binomial 95% CIs calculated with R `binom` package
+Areas under ROC curves and 95% CIs calculated with R `pROC` package
+'balanced' (maximising discriminance [sensitivity + specificity]):
+svm
+sens 93.6 (92.3 to 94.7) [n=1587]
+spec 93.5 (93.3 to 93.8) [n=47438]
+prec 32.7 (31.3 to 34.0) [n=4548.0]
+
+AUROC: 0.975 (0.972 to 0.979)
+Threshold: 1.090994881434483
+
+cnn
+sens 94.1 (92.9 to 95.2) [n=1587]
+spec 97.2 (97.0 to 97.3) [n=47438]
+prec 52.9 (51.1 to 54.8) [n=2823.0]
+
+AUROC: 0.978 (0.974 to 0.982)
+Threshold: 1.7339052923154057
+
+svm_cnn
+sens 94.3 (93.0 to 95.4) [n=1587]
+spec 97.0 (96.8 to 97.2) [n=47438]
+prec 51.3 (49.5 to 53.1) [n=2917.0]
+
+AUROC: 0.982 (0.979 to 0.985)
+Threshold: 1.5311051487529117
+
+svm_ptyp
+sens 96.8 (95.9 to 97.7) [n=1587]
+spec 96.5 (96.4 to 96.7) [n=47438]
+prec 48.4 (46.6 to 50.1) [n=3177.0]
+
+AUROC: 0.986 (0.984 to 0.989)
+Threshold: 1.9138508960754022
+
+cnn_ptyp
+sens 97.4 (96.4 to 98.1) [n=1587]
+spec 96.8 (96.6 to 97.0) [n=47438]
+prec 50.5 (48.7 to 52.3) [n=3061.0]
+
+AUROC: 0.984 (0.981 to 0.988)
+Threshold: 2.266185051254351
+
+svm_cnn_ptyp
+sens 97.4 (96.5 to 98.1) [n=1587]
+spec 96.8 (96.6 to 96.9) [n=47438]
+prec 50.3 (48.5 to 52.0) [n=3076.0]
+
+AUROC: 0.987 (0.984 to 0.989)
+Threshold: 1.8855674604380572
+
+'sensitive' Targeting sensitivity of Cochrane HSSS: 0.985
+sens 98.5 (97.8 to 99.0) [n=1587]
+spec 76.9 (76.6 to 77.3) [n=47438]
+prec 12.5 (11.9 to 13.1) [n=12499.0]
+
+svm
+sens 98.5 (97.8 to 99.0) [n=1587]
+spec 72.0 (71.6 to 72.4) [n=47438]
+prec 10.5 (10.0 to 11.0) [n=14854.0]
+
+AUROC: 0.975 (0.972 to 0.979)
+Threshold: 0.09327205570219824
+
+cnn
+sens 98.5 (97.8 to 99.0) [n=1587]
+spec 66.1 (65.7 to 66.5) [n=47438]
+prec 8.9 (8.4 to 9.3) [n=17647.0]
+
+AUROC: 0.978 (0.974 to 0.982)
+Threshold: -0.07043089698725857
+
+svm_cnn
+sens 98.5 (97.8 to 99.0) [n=1587]
+spec 74.6 (74.2 to 74.9) [n=47438]
+prec 11.5 (10.9 to 12.0) [n=13633.0]
+
+AUROC: 0.982 (0.979 to 0.985)
+Threshold: 0.06523834169172463
+
+svm_ptyp
+sens 98.5 (97.8 to 99.0) [n=1587]
+spec 87.8 (87.5 to 88.1) [n=47438]
+prec 21.3 (20.3 to 22.2) [n=7355.0]
+
+AUROC: 0.986 (0.984 to 0.989)
+Threshold: 0.4299241235329413
+
+cnn_ptyp
+sens 98.5 (97.8 to 99.0) [n=1587]
+spec 83.3 (83.0 to 83.6) [n=47438]
+prec 16.5 (15.7 to 17.2) [n=9481.0]
+
+AUROC: 0.984 (0.981 to 0.988)
+Threshold: 0.0899141205308506
+
+svm_cnn_ptyp
+sens 98.5 (97.8 to 99.0) [n=1587]
+spec 89.3 (89.1 to 89.6) [n=47438]
+prec 23.6 (22.6 to 24.6) [n=6624.0]
+
+AUROC: 0.987 (0.984 to 0.989)
+Threshold: 0.19441410243541343
+
+'max_sensitive' Targeting very high sensitivity: 0.995
+svm
+sens 99.6 (99.1 to 99.8) [n=1587]
+spec 43.6 (43.2 to 44.1) [n=47438]
+prec 5.6 (5.3 to 5.9) [n=28319.0]
+
+AUROC: 0.975 (0.972 to 0.979)
+Threshold: -0.340180090967654
+
+cnn
+sens 99.6 (99.1 to 99.8) [n=1587]
+spec 32.8 (32.4 to 33.2) [n=47438]
+prec 4.7 (4.5 to 5.0) [n=33447.0]
+
+AUROC: 0.978 (0.974 to 0.982)
+Threshold: -0.521884194654504
+
+svm_cnn
+sens 99.6 (99.1 to 99.8) [n=1587]
+spec 51.7 (51.2 to 52.1) [n=47438]
+prec 6.4 (6.1 to 6.8) [n=24498.0]
+
+AUROC: 0.982 (0.979 to 0.985)
+Threshold: -0.2170771235472279
+
+svm_ptyp
+sens 99.6 (99.1 to 99.8) [n=1587]
+spec 59.4 (59.0 to 59.9) [n=47438]
+prec 7.6 (7.2 to 8.0) [n=20824.0]
+
+AUROC: 0.986 (0.984 to 0.989)
+Threshold: -0.3753977160809582
+
+cnn_ptyp
+sens 99.6 (99.1 to 99.8) [n=1587]
+spec 38.7 (38.3 to 39.2) [n=47438]
+prec 5.2 (4.9 to 5.4) [n=30637.0]
+
+AUROC: 0.984 (0.981 to 0.988)
+Threshold: -0.7097813033269522
+
+svm_cnn_ptyp
+sens 99.6 (99.1 to 99.8) [n=1587]
+spec 51.5 (51.1 to 52.0) [n=47438]
+prec 6.4 (6.1 to 6.7) [n=24564.0]
+
+AUROC: 0.987 (0.984 to 0.989)
+Threshold: -0.45868683147736167
+
+'precise' Targeting specificity of PubMed [ptyp]: 0.975
+sens 94.8 (93.6 to 95.9) [n=1587]
+spec 97.5 (97.3 to 97.6) [n=47438]
+prec 55.7 (53.8 to 57.5) [n=2704.0]
+
+svm
+sens 82.4 (80.4 to 84.2) [n=1587]
+spec 97.5 (97.3 to 97.6) [n=47438]
+prec 52.3 (50.3 to 54.2) [n=2501.0]
+
+AUROC: 0.975 (0.972 to 0.979)
+Threshold: 1.9185470355817007
+
+cnn
+sens 93.3 (91.9 to 94.4) [n=1587]
+spec 97.5 (97.3 to 97.6) [n=47438]
+prec 55.4 (53.5 to 57.3) [n=2673.0]
+
+AUROC: 0.978 (0.974 to 0.982)
+Threshold: 2.1267040166885707
+
+svm_cnn
+sens 93.1 (91.8 to 94.3) [n=1587]
+spec 97.5 (97.3 to 97.6) [n=47438]
+prec 55.4 (53.5 to 57.3) [n=2667.0]
+
+AUROC: 0.982 (0.979 to 0.985)
+Threshold: 1.8740940177370162
+
+svm_ptyp
+sens 95.1 (94.0 to 96.2) [n=1587]
+spec 97.5 (97.3 to 97.6) [n=47438]
+prec 55.8 (53.9 to 57.7) [n=2705.0]
+
+AUROC: 0.986 (0.984 to 0.989)
+Threshold: 3.7358852937234395
+
+cnn_ptyp
+sens 95.2 (94.0 to 96.2) [n=1587]
+spec 97.5 (97.4 to 97.6) [n=47438]
+prec 56.0 (54.1 to 57.9) [n=2698.0]
+
+AUROC: 0.984 (0.981 to 0.988)
+Threshold: 3.519417679456011
+
+svm_cnn_ptyp
+sens 95.1 (94.0 to 96.2) [n=1587]
+spec 97.5 (97.3 to 97.6) [n=47438]
+prec 55.9 (54.0 to 57.8) [n=2699.0]
+
+AUROC: 0.987 (0.984 to 0.989)
+Threshold: 3.7561293477900453
