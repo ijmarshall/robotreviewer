@@ -5,21 +5,25 @@ RobotReviewer is a system for providing automatic annotations from clinical tria
 
 You can cite the current version as [![DOI](https://zenodo.org/badge/63896496.svg)](https://zenodo.org/badge/latestdoi/63896496).
 
-## Systematic review author?
+We offer RobotReviewer free of charge, but we'd be most grateful if you would cite us if you use it. We're academics, and thrive on links and citations! Getting RobotReviewer widely used and cited helps us obtain the funding to maintain the project and make RobotReviewer better.
 
-This software is the *web-service* version, meaning it's aimed at people who make systematic review software.
+It also makes your methods transparent to your readers, and not least we'd love to see where RobotReviewer is used! :)
 
-**For most systematic review authors, if you want to try out RobotReviewer, you'd probably be better using the demo version on our website, available [here](https://robot-reviewer.vortext.systems).** If you like it, you could email the person who maintains your systematic review software a link to this site - they might be interested in adding it.
+## The easy way
 
-(Alternatively, individual authors who are adept at installing unix software from the terminal are free to install this version on their own machines by following the instructions below).
+For most people, we encourage you to use RobotReviewer via [our website](https://robotreviewer.vortext.systems).
+
+No need to install anything, simply upload your PDFs, and RobotReviewer will automatically extract key data and present a summary table.
+
+![RobotReviewer web screenshot](rr.png)
+
+[RobotReviewer online](https://robotreviewer.vortext.systems)
+
+For those who are particularly technically minded, or have a pressing need to run the software on their own machines, read on...
 
 ## Developers of systematic review software?
 
 RobotReviewer is open source and free to use under the GPL license, version 3.0 (see the LICENSE.txt file in this directory).
-
-We offer RobotReviewer free of charge, but we'd be most grateful if you would cite us if you use it. We're academics, and thrive on links and citations! Getting RobotReviewer widely used and cited helps us obtain the funding to maintain the project and make RobotReviewer better.
-
-It also makes your methods transparent to your readers, and not least we'd love to see where RobotReviewer is used! :)
 
 We'd appreciate it if you would:
 
@@ -29,46 +33,48 @@ We'd appreciate it if you would:
 
 You can cite RobotReviewer as:
 
-Marshall IJ, Kuiper J, & Wallace BC. RobotReviewer: evaluation of a system for automatically assessing bias in clinical trials. Journal of the American Medical Informatics Association 2015. [doi:10.1093/jamia/ocv044](http://dx.doi.org/10.1093/jamia/ocv044)
+Marshall IJ, Kuiper J, Banner E, Wallace BC. “Automating Biomedical Evidence Synthesis: RobotReviewer.” Proceedings of the Conference of the Association for Computational Linguistics (ACL). 2017 (July): 7–12.
 
-A BibTeX entry for LaTeX users is
 
-    @article{RobotReviewer2015,
-      title = {{RobotReviewer: evaluation of a system for automatically assessing bias in clinical trials}},
-      author = {Marshall, Iain J and Kuiper, Jo\"{e}l and Wallace, Byron C},
-      doi = {10.1093/jamia/ocv044},
-      url = {http://dx.doi.org/10.1093/jamia/ocv044},
-      journal = {Journal of the American Medical Informatics Association},
-      year = {2015}
-      month = jun,
-      pages = {ocv044}
-    }
+A BibTeX entry for LaTeX users is:
+
+@article{RobotReviewer2017,
+  title    = "Automating Biomedical Evidence Synthesis: {RobotReviewer}",
+  author   = "Marshall, Iain J and Kuiper, Jo{\"e}l and Banner, Edward and
+              Wallace, Byron C",
+  journal  = "Proceedings of the Conference of the Association for Computational Linguistics (ACL)",
+  volume   =  2017,
+  pages    = "7--12",
+  month    =  jul,
+  year     =  2017,
+}
+
+## Docker
+
+We maintain a working Dockerfile in the repo, which is usually the easiest way to install locally.
+
+To build and run, from within the code directory run:
+```
+docker build -t robotreviewer
+```
+
+If the build is successful, you can then start the website locally by running:
+
+```
+./start.sh
+```
+
+You can then access the website on any webbrowser on your local machine at: http://localhost:5050.
+
+To stop the websever, run:
+```
+docker stop robotreviewer
+```
 
 
 ## Installation
 
-For Windows and Linux, please follow the 'Manual Installation' instructions below.
-
-An automatic installation is currently supported for OS X. This will automatically create a new [conda](https://www.anaconda.com/download/) environment and install the required dependencies into it.
-
-1. Ensure you have a working version of 3.4+. We strongly recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience.
-
-2. Ensure you have the following requirements: [Homebrew](https://brew.sh/), [Grobid](https://grobid.readthedocs.io/en/latest/Install-Grobid/).
-
-3. Get a copy of the RobotReviewer repo:
-    ```bash
-    git clone https://github.com/ijmarshall/robotreviewer3.git
-    cd robotreviewer3
-    ```
-
-4. Run the setup script with `. ./setup.sh`
-
-
-## Manual Installation
-
-For other operating systems or for more control, a manual installation may be preferred.
-
-1. Ensure you have a working version of 3.4+. We strongly recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience.
+1. Ensure you have a working version of Python 3.6. We strongly recommend using Python from the [Anaconda Python distribution](https://www.continuum.io/downloads) for a quicker and more reliable experience.
 
 2. [Install git-lfs](https://git-lfs.github.com/) for managing the model file versions (on Mac: `brew install git-lfs`). NB! If you already have git lfs installed, make sure it's the most recent version, since older versions have not downloaded files properly.
 
@@ -80,7 +86,7 @@ For other operating systems or for more control, a manual installation may be pr
 
 4. Install the Python libraries that RobotReviewer needs. The most reliable way is through a conda environment. The following downloads the packages, and installs the required data.
     ```bash
-    conda env create -f robotreviewer_env_local.yml
+    conda env create -f robotreviewer_env.yml
     source activate robotreviewer
     python -m spacy download en
     python -m nltk.downloader punkt stopwords
