@@ -38,7 +38,7 @@ dependencies:
   - libstdcxx-ng=8.2.0=hdf63c60_1
   - mako=1.0.7=py36_0
   - markupsafe=1.0=py36h14c3975_1
-  - mkl=2019.0=118
+  - mkl=2018.0.3=1
   - mkl-service=1.1.2=py36h90e4bf4_5
   - mkl_fft=1.0.6=py36h7dd41cf_0
   - mkl_random=1.0.1=py36h4414c95_1
