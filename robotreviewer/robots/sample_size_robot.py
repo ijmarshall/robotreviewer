@@ -55,4 +55,3 @@ class SampleSizeBot:
                       "annotations": [],
                       "description":  "Sample size: {0}".format(data["sample_size"])}]
         return marginalia
-
