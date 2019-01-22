@@ -101,4 +101,5 @@ dependencies:
     - vine==1.1.4
     - wtforms==2.2.1
     - h5py==2.8.0
+    - git+https://www.github.com/keras-team/keras-contrib.git
 prefix: /home/iain/anaconda3/envs/rr_test2

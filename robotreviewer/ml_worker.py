@@ -45,6 +45,7 @@ from robotreviewer.textprocessing.tokenizer import nlp
 # from robotreviewer.robots.bias_robot import BiasRobot
 from robotreviewer.robots.rationale_robot import BiasRobot
 from robotreviewer.robots.pico_robot import PICORobot
+from robotreviewer.robots.pico_abstract_robot import PicoAbstractBot
 from robotreviewer.robots.rct_robot import RCTRobot
 from robotreviewer.robots.pubmed_robot import PubmedRobot
 # from robotreviewer.robots.mendeley_robot import MendeleyRobot
@@ -101,6 +102,7 @@ def on_worker_init(**_):
     log.info("Loading the robots...")
     bots = {"bias_bot": BiasRobot(top_k=3),
             "pico_bot": PICORobot(),
+            "pico_abstract_bot": PicoAbstractBot(),
             "pubmed_bot": PubmedRobot(),
             # "ictrp_bot": ICTRPRobot(),
             "rct_bot": RCTRobot(),
@@ -158,7 +160,7 @@ def annotate(report_uuid):
         current_task.update_state(state='PROGRESS',meta={'process_percentage': 76, 'task': 'processing PDF {}'.format(filename)})
 
 
-        data = annotate_study(data, bot_names=["rct_bot", "pubmed_bot", "bias_bot", "pico_bot", "sample_size_bot"])
+        data = annotate_study(data, bot_names=["rct_bot", "pubmed_bot", "bias_bot", "pico_bot", "sample_size_bot", "pico_abstract_bot"])
 
 
 

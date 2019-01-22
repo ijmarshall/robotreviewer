@@ -93,6 +93,15 @@
       {% for study in articles %}
       <h3>{{ short_citation(study) }}</h3>
 
+      <h4>Population abstract</h4>
+      <h5>{{ study.get('population', "???") }}</h5>
+
+      <h4>Intervention abstract</h4>
+      <h5>{{ study.get('intervention', "???") }}</h5>
+
+      <h4>Outcomes abstract</h4>
+      <h5>{{ study.get('outcome', "???") }}</h5>
+        
       <table class="char-pico-table">
         {% for domain in study.get('pico_text', []) %}
         <tr>

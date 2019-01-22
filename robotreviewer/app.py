@@ -49,6 +49,7 @@ from robotreviewer.robots.rationale_robot import BiasRobot
 from robotreviewer.robots.pico_robot import PICORobot
 from robotreviewer.robots.rct_robot import RCTRobot
 from robotreviewer.robots.pubmed_robot import PubmedRobot
+from robotreviewer.robots.pico_abstract_robot import PicoAbstractBot
 # from robotreviewer.robots.mendeley_robot import MendeleyRobot
 # from robotreviewer.robots.ictrp_robot import ICTRPRobot
 #from robotreviewer.robots import pico_viz_robot
@@ -94,7 +95,8 @@ bots = {"bias_bot": BiasRobot,
         # "ictrp_bot": ICTRPRobot(),
         "rct_bot": RCTRobot,
         #"pico_viz_bot": PICOVizRobot}#,
-        "sample_size_bot":SampleSizeBot}
+        "sample_size_bot":SampleSizeBot,
+        "pico_abstract_bot":PicoAbstractBot}
         # "mendeley_bot": MendeleyRobot()}
 
 log.info("Robots loaded successfully! Ready...")
