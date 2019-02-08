@@ -234,9 +234,19 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=False
                                             "{0}-PICO-embeddings".format(report_uuid))
         '''
 
+        population_summary = []
+        intervention_summary = []
+        outcome_summary = []
+        for article in articles:
+            population_summary += article.get('population', [])
+            intervention_summary += article.get('intervention', [])
+            outcome_summary += article.get('outcome', [])
+        pico_summary = {"population": population_summary, "intervention": intervention_summary, "outcome": outcome_summary}
+        print(pico_summary)
+
         return render_template('reportview.{}'.format(reportformat), headers=bots['bias_bot'].get_domains(), articles=articles,
                                 pico_plot=pico_plot_html, report_uuid=report_uuid, online=(not download),
-                                errors=error_messages, reportformat=reportformat)
+                                errors=error_messages, reportformat=reportformat, pico_summary = pico_summary)
     elif reportformat=='json':
         return json.dumps({"article_ids": article_ids,
                            "article_data": [a.visible_data() for a in articles],

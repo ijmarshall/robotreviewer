@@ -88,6 +88,6 @@ def spans_from_abstract(tokenized_abstract, labels):
     if current_span:
         all_spans.append(current_span)
 
-    return [" ".join(span) for span in all_spans]
+    return list(set([" ".join(span) for span in all_spans]))
 
     

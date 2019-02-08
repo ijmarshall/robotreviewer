@@ -19,13 +19,12 @@ class PicoAbstractBot:
 
     #TODO Redundantly almost the same as sample size one.
     def annotate(self, data):
-        log.debug("Annotated")
         abstract = None
         if data.get("abstract") is not None:
             abstract = data["abstract"]
         elif data.get("parsed_text") is not None:
             # then just use the start of the document
-            ABSTRACT_LEN = 420
+            ABSTRACT_LEN = 438
             abstract = data['parsed_text'][:ABSTRACT_LEN].text
 
         population_pred = "???"
