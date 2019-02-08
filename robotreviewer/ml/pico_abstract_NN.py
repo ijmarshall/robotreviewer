@@ -46,9 +46,9 @@ class PicoAbstractClassifier:
 
         pred = self.model.predict(data_for_predicting)
         
-        pop_pred = spans_from_abstract(tokenized_abstract, np.argmax(pred[0][0], axis=1).tolist())
-        intervention_pred = spans_from_abstract(tokenized_abstract, np.argmax(pred[1][0], axis=1).tolist())
-        outcome_pred = spans_from_abstract(tokenized_abstract, np.argmax(pred[2][0], axis=1).tolist())
+        pop_pred = keep_only_1s(tokenized_abstract, np.argmax(pred[0][0], axis=1).tolist())
+        intervention_pred = keep_only_1s(tokenized_abstract, np.argmax(pred[1][0], axis=1).tolist())
+        outcome_pred = keep_only_1s(tokenized_abstract, np.argmax(pred[2][0], axis=1).tolist())
 
         print(pop_pred)
         print(intervention_pred)
@@ -90,4 +90,10 @@ def spans_from_abstract(tokenized_abstract, labels):
 
     return list(set([" ".join(span) for span in all_spans]))
 
-    
+
+def keep_only_1s(elements, mask):
+  answer = []
+  for element, one_or_zero in zip(elements, mask):
+    if one_or_zero == 1:
+      answer.append(element)
+  return answer

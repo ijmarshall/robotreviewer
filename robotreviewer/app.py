@@ -10,7 +10,11 @@ import logging, os
 from datetime import datetime, timedelta
 
 import os
+import collections
+import string
 #os.environ["MKL_THREADING_LAYER"] = "GNU"
+from nltk.corpus import stopwords
+stop_words = set(stopwords.words('english'))
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -182,6 +186,26 @@ def get_study_name(article):
     else:
         return article['filename'][:20].lower().replace(".pdf", "") + " ..."
 
+def clean_pico_tokens(lists_of_tokens):
+    def flatten(l): return [item for sublist in l for item in sublist]
+    unique_tokens = [w for w in set(flatten(lists_of_tokens)) if (w not in string.punctuation) and (w not in stop_words)]
+
+    counts = []
+    for token in unique_tokens:
+        count = 0
+        for token_list in lists_of_tokens:
+            if token in token_list:
+                count += 1
+        counts.append(count)
+    
+    unique_tokens_with_counts = zip(counts, unique_tokens)
+
+    top_5_pairs = sorted(unique_tokens_with_counts, reverse=True)[0:5]
+
+    top_5_words = [x[1] for x in top_5_pairs]
+    print(top_5_pairs)
+
+    return ", ".join(top_5_words)
 
 def produce_report(report_uuid, reportformat, download=False, PICO_vectors=False):
     c = rr_sql_conn.cursor()
@@ -234,15 +258,20 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=False
                                             "{0}-PICO-embeddings".format(report_uuid))
         '''
 
-        population_summary = []
-        intervention_summary = []
-        outcome_summary = []
-        for article in articles:
-            population_summary += article.get('population', [])
-            intervention_summary += article.get('intervention', [])
-            outcome_summary += article.get('outcome', [])
-        pico_summary = {"population": population_summary, "intervention": intervention_summary, "outcome": outcome_summary}
-        print(pico_summary)
+        # population_summary = []
+        # intervention_summary = []
+        # outcome_summary = []
+        # for article in articles:
+        #     population_summary += article.get('population', [])
+        #     intervention_summary += article.get('intervention', [])
+        #     outcome_summary += article.get('outcome', [])
+
+        (population_lists, intervention_lists, outcome_lists) = zip(*[(a['population'], a['intervention'], a['outcome']) for a in articles])
+
+
+        pico_summary = {"population": clean_pico_tokens(population_lists), 
+                        "intervention": clean_pico_tokens(intervention_lists), 
+                        "outcome": clean_pico_tokens(outcome_lists)}
 
         return render_template('reportview.{}'.format(reportformat), headers=bots['bias_bot'].get_domains(), articles=articles,
                                 pico_plot=pico_plot_html, report_uuid=report_uuid, online=(not download),

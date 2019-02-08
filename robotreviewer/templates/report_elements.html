@@ -87,15 +87,22 @@
 
       <!-- <img src=" {{ pico_plot_path }} "></img> -->
       {{ pico_plot|safe }}
+      <table class="char-pico-table">
+        <tr>
+          <td>Population abstract</td>
+          <td>{{pico_summary.population}}</td>
+        </tr>
 
-      <h4>Population abstract</h4>
-      <h5>{{pico_summary.population}}</h5>
+        <tr>
+          <td>Intervention abstract</td>
+          <td>{{pico_summary.intervention}}</td>
+        </tr>
 
-      <h4>Intervention abstract</h4>
-      <h5>{{pico_summary.intervention}}</h5>
-
-      <h4>Outcomes abstract</h4>
-      <h5>{{pico_summary.outcome}}</h5>
+        <tr>
+          <td>Outcomes abstract</td>
+          <td>{{pico_summary.outcome}}</td>
+        </tr>
+      </table>
 
 
       {% for study in articles %}
