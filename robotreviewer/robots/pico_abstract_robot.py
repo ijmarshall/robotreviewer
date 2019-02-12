@@ -27,10 +27,11 @@ class PicoAbstractBot:
             ABSTRACT_LEN = 438
             abstract = data['parsed_text'][:ABSTRACT_LEN].text
 
-        population_pred = "???"
-        intervention_pred = "???"
-        outcome_pred = "???"
+        population_pred = []
+        intervention_pred = []
+        outcome_pred = []
         if abstract is not None:
+            log.info("ABS" + str(abstract))
             pico_pred = self.pico_model.predict_for_abstract(abstract)
             population_pred = pico_pred.population
             intervention_pred = pico_pred.intervention
@@ -38,8 +39,7 @@ class PicoAbstractBot:
 
             print(pico_pred)
 
-        print(population_pred)
-        print(intervention_pred)
+
         data.ml["population"] = population_pred
         data.ml["intervention"] = intervention_pred
         data.ml["outcome"] = outcome_pred

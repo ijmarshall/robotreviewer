@@ -50,10 +50,6 @@ class PicoAbstractClassifier:
         intervention_pred = keep_only_1s(tokenized_abstract, np.argmax(pred[1][0], axis=1).tolist())
         outcome_pred = keep_only_1s(tokenized_abstract, np.argmax(pred[2][0], axis=1).tolist())
 
-        print(pop_pred)
-        print(intervention_pred)
-        print(outcome_pred)
-
 
         return PicoData(pop_pred, intervention_pred, outcome_pred)
 

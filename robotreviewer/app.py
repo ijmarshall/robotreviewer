@@ -204,8 +204,10 @@ def clean_pico_tokens(lists_of_tokens):
 
     top_5_words = [x[1] for x in top_5_pairs]
     print(top_5_pairs)
-
-    return ", ".join(top_5_words)
+    if top_5_words:
+        return ", ".join(top_5_words)
+    else:
+        return "???"
 
 def produce_report(report_uuid, reportformat, download=False, PICO_vectors=False):
     c = rr_sql_conn.cursor()
@@ -258,15 +260,9 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=False
                                             "{0}-PICO-embeddings".format(report_uuid))
         '''
 
-        # population_summary = []
-        # intervention_summary = []
-        # outcome_summary = []
-        # for article in articles:
-        #     population_summary += article.get('population', [])
-        #     intervention_summary += article.get('intervention', [])
-        #     outcome_summary += article.get('outcome', [])
-
-        (population_lists, intervention_lists, outcome_lists) = zip(*[(a['population'], a['intervention'], a['outcome']) for a in articles])
+        (population_lists, intervention_lists, outcome_lists) = zip(*[(a.get('population', []), 
+                                                                       a.get('intervention', []), 
+                                                                       a.get("outcome", [])) for a in articles])
 
 
         pico_summary = {"population": clean_pico_tokens(population_lists), 
