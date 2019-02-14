@@ -38,7 +38,7 @@ class MLPSampleSizeClassifier:
 
     def __init__(self, preprocessor, architecture_path=None, weights_path=None):
         '''
-        Optionally allow a path to a (kera's formatted) JSON model architecture
+        Optionally allow a path to a (keras formatted) JSON model architecture
         specification and associated set of weights -- this allows easy loading
         and re-instantiation of trained models.
         '''
