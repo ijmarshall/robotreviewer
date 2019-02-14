@@ -171,6 +171,8 @@ class MLPSampleSizeClassifier:
 
         abstract_tokens = replace_n_equals(abstract_tokens)
 
+        if not any((_is_an_int(t) for t in abstract_tokens)):
+            return None
 
         abstract_features, numeric_token_indices = abstract2features(abstract_tokens, POS_tags)
 
