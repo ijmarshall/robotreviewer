@@ -25,8 +25,9 @@ import pickle
 import robotreviewer
 from robotreviewer.ml.classifier import MiniClassifier
 from sklearn.feature_extraction.text import HashingVectorizer
+from robotreviewer.parsers import ris
 
-
+from collections import Counter
 from scipy.sparse import lil_matrix, hstack
 
 import numpy as np
@@ -34,17 +35,6 @@ import re
 import glob
 from sklearn.feature_extraction.text import VectorizerMixin
 from sklearn.base import ClassifierMixin
-from keras.preprocessing import sequence
-from collections import Counter
-from keras.models import load_model
-from keras.models import Sequential
-from keras.preprocessing import sequence
-from keras.layers import Dense, Dropout, Activation, Lambda, Input, merge, Flatten
-from keras.layers import Embedding
-from keras.layers import Convolution1D, MaxPooling1D
-from keras import backend as K
-from keras.models import Model
-from keras.regularizers import l2
 
 
 
@@ -82,9 +72,22 @@ class KerasVectorizer(VectorizerMixin):
 
 
 
+
 class RCTRobot:
 
     def __init__(self):
+        from keras.preprocessing import sequence
+        from keras.models import load_model
+        from keras.models import Sequential
+        from keras.preprocessing import sequence
+        from keras.layers import Dense, Dropout, Activation, Lambda, Input, merge, Flatten
+        from keras.layers import Embedding
+        from keras.layers import Convolution1D, MaxPooling1D
+        from keras import backend as K
+        from keras.models import Model
+        from keras.regularizers import l2
+        global sequence, load_model, Sequential, Dense, Dropout, Activation, Lambda, Input, merge, Flatten
+        global Embedding, Convolution1D, MaxPooling1D, K, Model, l2
         self.svm_clf = MiniClassifier(os.path.join(robotreviewer.DATA_ROOT, 'rct/rct_svm_weights.npz'))
         cnn_weight_files = glob.glob(os.path.join(robotreviewer.DATA_ROOT, 'rct/*.h5'))
         self.cnn_clfs = [load_model(cnn_weight_file) for cnn_weight_file in cnn_weight_files]
@@ -109,6 +112,7 @@ class RCTRobot:
             return 1 if any((tag in data_row['ptyp'] for tag in ["Randomized Controlled Trial", "D016449"])) else 0
         else:
             raise Exception("unexpcted value for 'use_ptyp'")
+
 
     def annotate(self, data):
 
@@ -160,12 +164,14 @@ class RCTRobot:
             # don't add for any of them
             pt_mask = np.array([-1 for r in X])
 
+        preds_l = {}
         # calculate ptyp for all
         #ptyp = np.copy(pt_mask)
         # ptyp = np.array([(article.get('rct_ptyp')==True)*1. for article in X])
         ptyp_scale = (pt_mask - self.constants['scales']['ptyp']['mean']) / self.constants['scales']['ptyp']['std']
         # but set to 0 if not using
         ptyp_scale[pt_mask==-1] = 0
+        preds_l['ptyp'] = ptyp_scale
 
         # thresholds vary per article
         thresholds = []
@@ -183,41 +189,48 @@ class RCTRobot:
             X_ab = lil_matrix(self.svm_vectorizer.transform(X_ab_str))
             svm_preds = self.svm_clf.decision_function(hstack([X_ab, X_ti]))
             svm_scale =  (svm_preds - self.constants['scales']['svm']['mean']) / self.constants['scales']['svm']['std']
+            preds_l['svm'] = svm_scale
+            preds_l['svm_ptyp'] = preds_l['svm'] + preds_l['ptyp']
 
         if "cnn" in filter_class:
             X_cnn = self.cnn_vectorizer.transform(X_ab_str)
             cnn_preds = []
             for i, clf in enumerate(self.cnn_clfs):
-                print('\t{} of {}'.format(i+1, len(self.cnn_clfs)))
                 cnn_preds.append(clf.predict(X_cnn).T[0])
 
             cnn_preds = np.vstack(cnn_preds)
             cnn_scale =  (cnn_preds - self.constants['scales']['cnn']['mean']) / self.constants['scales']['cnn']['std']
+            preds_l['cnn'] = np.mean(cnn_scale, axis=0)
 
-        if filter_class == "svm":
-            y_preds = svm_scale
-        elif filter_class == "cnn":
-            y_preds = np.mean(cnn_scale, axis=0)
-        elif filter_class == "svm_cnn":
+            preds_l['cnn_ptyp'] = preds_l['cnn'] + preds_l['ptyp']
+
+        if filter_class == "svm_cnn":
             weights = [self.constants['scales']['svm']['weight']] + ([self.constants['scales']['cnn']['weight']] * len(self.cnn_clfs))
-            y_preds = np.average(np.vstack([svm_scale, cnn_scale]), axis=0, weights=weights)
+            preds_l['svm_cnn'] = np.average(np.vstack([svm_scale, cnn_scale]), axis=0, weights=weights)
 
-        y_preds += ptyp_scale
+
+            preds_l['svm_cnn_ptyp'] = preds_l['svm_cnn'] + preds_l['ptyp']
+
+
+        preds_d =[dict(zip(preds_l,i)) for i in zip(*preds_l.values())]
 
         out = []
-        for pred, threshold, used_ptyp in zip(y_preds, thresholds, pt_mask):
+        for pred, threshold, used_ptyp in zip(preds_d, thresholds, pt_mask):
             row = {}
-            row['score'] = float(pred)
             if used_ptyp != -1:
                 row['model'] = "{}_ptyp".format(filter_class)
             else:
                 row['model'] = filter_class
+            row['score'] = float(pred[row['model']])
             row['threshold_type'] = filter_type
             row['threshold_value'] = float(threshold)
-            row['is_rct'] = bool(pred >= threshold)
+            row['is_rct'] = bool(row['score'] >= threshold)
             row['ptyp_rct'] = int(used_ptyp)
+            row['preds'] = {k: float(v) for k, v in pred.items()}
             out.append(row)
         return out
+
+
 
     @staticmethod
     def get_marginalia(data):
@@ -231,8 +244,32 @@ class RCTRobot:
         return marginalia
 
 
+    def predict_ris(self, ris_data, filter_class="svm", filter_type='sensitive', auto_use_ptyp=False):
 
 
+        simplified = [ris.simplify(article) for article in ris_data]
+        preds = self.predict(simplified, filter_class=filter_class, filter_type=filter_type, auto_use_ptyp=auto_use_ptyp)
+        return preds
+
+
+    def filter_articles(self, ris_string, filter_class="svm", filter_type='sensitive', auto_use_ptyp=True, remove_non_rcts=True):
+
+        print('Parsing RIS data')
+        ris_data = ris.loads(ris_string)
+        import json
+        with open("debug.json", 'w') as f:
+            json.dumps(ris_data)
+        preds = self.predict_ris(ris_data, filter_class=filter_class, filter_type=filter_type, auto_use_ptyp=auto_use_ptyp)
+        out = []
+
+        pred_key_map = {"score": "ZS", "model": "ZM", "threshold_type": "ZT", "threshold_value": "ZC", "is_rct": "ZR", "ptyp_rct": "ZP"}
+
+        for ris_row, pred_row in zip(ris_data, preds):
+            if remove_non_rcts==False or pred_row['is_rct']:
+                ris_row.update({pred_key_map[k]: v for k, v in pred_row.items()})
+
+                out.append(ris_row)
+        return ris.dumps(out)
 
 
 def test_calibration():

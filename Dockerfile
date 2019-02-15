@@ -1,4 +1,6 @@
-FROM ubuntu:16.04
+ARG OSVER=ubuntu:16.04
+FROM $OSVER
+
 ENV DEBIAN_FRONTEND noninteractive
 
 # create deploy user
@@ -55,6 +57,10 @@ ENV PATH /var/lib/deploy/miniconda3/envs/robotreviewer/bin:$PATH
 RUN python -m nltk.downloader punkt stopwords
 #RUN python -m spacy.en.download all
 RUN python -m spacy download en
+
+ARG TFVER=tensorflow
+RUN pip install $TFVER==1.12.0
+
 
 #strange Theano problem
 #ENV MKL_THREADING_LAYER=GNU

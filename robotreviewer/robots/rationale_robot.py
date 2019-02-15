@@ -22,6 +22,7 @@ way used in this project is as a PDF binary.
 #           Byron Wallace <byron@ccs.neu.edu>
 
 
+
 import uuid
 import operator
 import pickle
@@ -29,17 +30,14 @@ import numpy as np
 from collections import OrderedDict, defaultdict
 
 import robotreviewer
-from robotreviewer.ml.classifier import MiniClassifier
-from robotreviewer.ml.vectorizer import ModularVectorizer
 
 import logging
 log = logging.getLogger(__name__)
 
 
 import sys
-sys.path.append('robotreviewer/ml') # need this for loading the rationale_CNN module
-from robotreviewer.ml.rationale_CNN import RationaleCNN, Document
 
+sys.path.append('robotreviewer/ml') # need this for loading the rationale_CNN module
 from celery.contrib import rdb
 
 __version__ = {"name": "Risk of bias (CNN/SVM ensemble)",
@@ -88,6 +86,11 @@ class BiasRobot:
 
         self.all_domains = ['RSG', 'AC', 'BPP', 'BOA']
 
+
+        from robotreviewer.ml.classifier import MiniClassifier
+        from robotreviewer.ml.vectorizer import ModularVectorizer
+        from robotreviewer.ml.rationale_CNN import RationaleCNN, Document
+        global RationaleCNN, Document, MiniClassifier, ModularVectorizer
         # CNN domains
         vectorizer_str = 'robotreviewer/data/keras/vectorizers/{}.pickle'
         arch_str = 'robotreviewer/data/keras/models/{}.json'

@@ -23,9 +23,9 @@ if __name__ == '__main__':
     nltk.download('punkt')
     nltk.download('stopwords')
 
-    print('Ensuring Keras backend is set to theano.')
+    print('Ensuring Keras backend is set to tensorflow.')
     # Ensure Keras backend is Theano
-    os.environ['KERAS_BACKEND'] = 'theano'
+    os.environ['KERAS_BACKEND'] = 'tensorflow'
     print('')
 
     # Create config file
