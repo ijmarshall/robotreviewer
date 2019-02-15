@@ -92,7 +92,7 @@ docker stop robotreviewer
     python -m nltk.downloader punkt stopwords
     ```
 
-5. Ensure `keras` is set to use `theano` as its default backend. Steps on how to do this can be found [here](https://keras.io/backend/).
+5. Ensure `keras` is set to use `tensorflow` as its default backend. Steps on how to do this can be found [here](https://keras.io/backend/).
 
 6. This version of RobotReviewer requires Grobid, which in turn uses Java. Follow the instructions [here](https://grobid.readthedocs.io/en/latest/Install-Grobid/) to download and build it. This version of RobotReviewer has been tested with Grobid 0.5.1, but no longer works with 0.4 versions.
 

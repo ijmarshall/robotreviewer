@@ -6,8 +6,7 @@ export ROBOTREVIEWER_GROBID_PATH="/var/lib/deploy/grobid-0.5.1"
 export ROBOTREVIEWER_GROBID_HOST="http://0.0.0.0:8070"
 export DEV false
 export DEBUG false
-export KERAS_BACKEND=theano
-
-cd /var/lib/deploy/ && nohup celery -A robotreviewer.ml_worker worker --loglevel=info &
+export KERAS_BACKEND=tensorflow
+cd /var/lib/deploy/ && nohup celery -A robotreviewer.ml_worker worker --loglevel=info --concurrency=1 --pool=solo &
 cd /var/lib/deploy/ && nohup python /var/lib/deploy/server.py &
 sleep infinity
