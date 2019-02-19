@@ -37,3 +37,4 @@ dependencies:
     - keras==2.1.5
     - amqp==2.2.1
     - celery==4.2.1
+    - git+https://www.github.com/keras-team/keras-contrib.git
