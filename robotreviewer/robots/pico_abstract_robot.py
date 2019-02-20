@@ -31,13 +31,10 @@ class PicoAbstractBot:
         intervention_pred = []
         outcome_pred = []
         if abstract is not None:
-            log.info("ABS" + str(abstract))
             pico_pred = self.pico_model.predict_for_abstract(abstract)
             population_pred = pico_pred.population
             intervention_pred = pico_pred.intervention
             outcome_pred = pico_pred.outcome
-
-            print(pico_pred)
 
 
         data.ml["population"] = population_pred

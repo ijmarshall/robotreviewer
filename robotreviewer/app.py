@@ -188,7 +188,7 @@ def get_study_name(article):
 
 def clean_pico_tokens(lists_of_tokens):
     def flatten(l): return [item for sublist in l for item in sublist]
-    unique_tokens = [w for w in set(flatten(lists_of_tokens)) if (w not in string.punctuation) and (w not in stop_words)]
+    unique_tokens = set([w.lower() for w in (flatten(lists_of_tokens)) if (w not in string.punctuation) and (w not in stop_words)])
 
     counts = []
     for token in unique_tokens:
