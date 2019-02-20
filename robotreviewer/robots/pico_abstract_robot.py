@@ -11,7 +11,6 @@ The PicoAbstractBot consumes abstracts and extracts PICO elements from them
 class PicoAbstractBot:
 
     def __init__(self):
-        self.magic_threshold = 0.1 #TODO: What does this mean?
         self.pico_model = PicoAbstractClassifier()
         self.pico_model.build_pico_model()
 
