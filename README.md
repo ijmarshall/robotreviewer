@@ -92,6 +92,12 @@ docker stop robotreviewer
     python -m nltk.downloader punkt stopwords
     ```
 
+  Install also either tensorflow V 1.12.0, with or without GPU support depending on your preference
+  ```bash
+  pip install tensorflow==1.12.0 # OR
+  pip install tensorflow-gpu==1.12.0
+  ```
+
 5. Ensure `keras` is set to use `tensorflow` as its default backend. Steps on how to do this can be found [here](https://keras.io/backend/).
 
 6. This version of RobotReviewer requires Grobid, which in turn uses Java. Follow the instructions [here](https://grobid.readthedocs.io/en/latest/Install-Grobid/) to download and build it. This version of RobotReviewer has been tested with Grobid 0.5.1, but no longer works with 0.4 versions.
