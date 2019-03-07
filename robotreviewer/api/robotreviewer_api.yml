@@ -1,0 +1,651 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Robot Reviewer API",
+    "version": "1.0",
+    "description": "REST API for asyncronous machine-learning annotation of clinical trial reports.",
+    "license": {
+      "name": "GPL-3.0"
+    },
+    "contact": {
+      "name": "Iain Marshall",
+      "url": "http://www.robotreviewer.net",
+      "email": "mail@ijmarshall.com"
+    }
+  },
+  "host": "api.robotreviewer.net",
+  "paths": {
+    "/queue-documents": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Returns a report id, which can be used to get the machine learning status (/report_status) and final report (/report).",
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "report_id": {
+                  "format": "uuid"
+                }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "report_id": "d9181607-8a44-7601-322c-d2aa84b5f0c2"
+              }
+            }
+          },
+          "400": {
+            "description": "Incorrect data format sent, or field missing from article which is required for the models selected.",
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "errorType": {
+                  "type": "string",
+                  "enum": [
+                    "Incorrectly formatted data",
+                    "More data needed for requested task"
+                  ]
+                },
+                "errorText": {
+                  "type": "string"
+                }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "errorType": "More data needed for requested task",
+                "errorText": "One or more articles is missing a full text document, which is required for the bias_bot."
+              }
+            }
+          }
+        },
+        "summary": "Upload and queue documents",
+        "description": "RobotReviewer uses a queue system to annotate documents (since the process is fast, but not instantaneous).\nThis end point uses the RobotReviewer article format.\n\nNote that this endpoint takes plain text documents only, not PDFs. To convert a PDF into plain text, you may use a tool such as Grobid (https://github.com/kermitt2/grobid), or pdftotext (https://www.xpdfreader.com/pdftotext-man.html).\n\nThe accepted data format is a JSON object with three keys: `\"articles\"`, `\"robots\"`, and `\"filter_rcts\"`.\n\n`\"articles\"` takes an array of one or more articles. Each article is a JSON object, with the following keys: `\"ti\"`: title, `\"ab\"`: abstract, `\"ptyp\"`: an optional array of MEDLINE Publication Types (see https://www.nlm.nih.gov/mesh/pubtypes.html) which aids classification performance, and `\"full_text\"`: a string of the full text of the article. See the example below:\n\n```{\"ti\": \"article title\", \"ab\": \"article abstract\", \"full_text\": \"article full text (e.g. extracted from PDF, and including the title and abstract)\", \"ptyp\": [\"Journal Article\", \"Randomized Controlled Trial\"}```\n\t\n`\"robots\"` defines the annotation pipeline. Currently it accepts `\"rct_bot\"` and `\"bias_bot\"`, with `\"pico_bot\"` to come.\n\n`\"filter_rcts\"` is optional, and refines RobotReviewers RCT filtering behvaiour. By default, where the `\"rct_bot\"` is being used, RobotReviewer will not continue any further annotation tasks for articles deemed to be non-RCTs (since most models are designed for RCTs only). This can be overridden by explicitly setting the values of `\"sensitive\"`, `\"balanced\"`, or `\"precise\"`, or `\"none\"`. By default, `filter_rcts` is set to `\"balanced\"` when RCT classification is requested, or `\"none\"` where RCT classification is not requested.\n\nThe \"balanced\" RCT threshold has a sensitivity of 97.4% and specificity of 96.8%.",
+        "operationId": "robotreviewer.cnxapp.queue_documents",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "uploads"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",            
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "articles": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/article"
+                  }
+                },
+                "robots": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "filter_rcts": {
+                  "type": "string",
+                  "enum": [
+                    "is_rct_precise",
+                    "is_rct_balanced",
+                    "is_rct_sensitive",
+                    "none"
+                  ]
+                }
+              }
+            },
+            "description": "List of documents for annotation",
+            "x-examples": {
+              "application/json": {
+                "articles": [
+                  {
+                    "ti": "article title",
+                    "ab": "article abstract",
+                    "full_text": "article full text (e.g. extracted from PDF, and including the title and abstract)",
+                    "ptyp": [
+                      "List Of",
+                      "PubMed/MeSH",
+                      "Article Types",
+                      "Journal Article"
+                    ]
+                  },
+                  {
+                    "ti": "article title (required)",
+                    "ab": "article abstract (required)",
+                    "ptyp": [
+                      "List Of",
+                      "PubMed/MeSH",
+                      "Article Types",
+                      "Journal Article"
+                    ]
+                  }
+                ],
+                "robots": [
+                  "rct_bot",
+                  "bias_bot",
+                  "pico_bot"
+                ],
+                "filter_rcts": "is_rct_sensitive"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/report-status/{report_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "JSON containing status information, which may be any of:\n{'status': 'in progress}\n{'status': 'complete'}\n{'status': 'error'}\n",
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "complete",
+                    "in progress",
+                    "error"
+                  ]
+                }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "status": "in progress"
+              }
+            }
+          },
+          "400": {
+            "description": "Incorrect request format"
+          },
+          "404": {
+            "description": "No report with the requested ID found."
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/report_id"
+          }
+        ],
+        "summary": "Get status of queued report",
+        "operationId": "robotreviewer.cnxapp.report_status",
+        "tags": [
+          "report"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "description": "Returns the status of a report with the id {report_id}.\n\nReturns one of: `{‘status’: 'in progress}`, `{‘status’: ‘complete’}`, or `{‘status’: ‘error’}`"
+      }
+    },
+    "/report/{report_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Returns array of completed annotations from the uploaded documents.\nCurrently, these are returned in the order they are sent, but otherwise do not have a unique ID.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/annotations"
+              }
+            },
+            "examples": {
+              "application/json": [
+                {
+                  "rct": {
+                    "is_rct": false,
+                    "is_rct_precise": true,
+                    "is_rct_balanced": true,
+                    "is_rct_sensitive": false,
+                    "model": "svm_ptyp",
+                    "score": -12.05223
+                  },
+                  "bias": {
+                    "random_sequence_generation": {
+                      "judgement": "high/unclear",
+                      "rationales": [
+                        "ipsum",
+                        "mollit"
+                      ]
+                    },
+                    "allocation_concealment": {
+                      "judgement": "low",
+                      "rationales": [
+                        "commodo",
+                        "est nulla et cupidatat sit"
+                      ]
+                    },
+                    "blinding_participants_personnel": {
+                      "judgement": "low",
+                      "rationales": [
+                        "minim consequat ad ut occaecat",
+                        "sit dolor et"
+                      ]
+                    },
+                    "blinding_outcome_assessment": {
+                      "judgement": "low",
+                      "rationales": [
+                        "commodo Ut",
+                        "Lorem"
+                      ]
+                    }
+                  },
+                  "pico": {
+                    "participants": [
+                      "id",
+                      "cupidatat amet"
+                    ],
+                    "interventions": [
+                      "ut magna veniam",
+                      "ullamco dolore ad elit cu",
+                      "sunt elit reprehenderit aute",
+                      "ut ad",
+                      "veniam officia labore"
+                    ],
+                    "outcomes": [
+                      "of",
+                      "quis cupidatat",
+                      "esse dolor",
+                      "dolor non ex ad est",
+                      "nisi"
+                    ]
+                  }
+                },
+                {
+                  "rct": {
+                    "is_rct": true,
+                    "is_rct_precise": false,
+                    "is_rct_balanced": false,
+                    "is_rct_sensitive": false,
+                    "model": "svm_cnn",
+                    "score": 51504759.93355498
+                  },
+                  "bias": {
+                    "random_sequence_generation": {
+                      "judgement": "low",
+                      "rationales": [
+                        "eu irure Lorem tempor",
+                        "labore incididunt eu do esse"
+                      ]
+                    },
+                    "allocation_concealment": {
+                      "judgement": "high/unclear",
+                      "rationales": [
+                        "deserunt dolor laborum",
+                        "velit aute"
+                      ]
+                    },
+                    "blinding_participants_personnel": {
+                      "judgement": "high/unclear",
+                      "rationales": [
+                        "sint pariatur",
+                        "Excepteur Du"
+                      ]
+                    },
+                    "blinding_outcome_assessment": {
+                      "judgement": "high/unclear",
+                      "rationales": [
+                        "ex consequat in ipsum",
+                        "nulla Lorem"
+                      ]
+                    }
+                  },
+                  "pico": {
+                    "participants": [
+                      "dolor laborum aliqua ad",
+                      "ea volu",
+                      "do",
+                      "la"
+                    ],
+                    "interventions": [
+                      "velit sed",
+                      "in",
+                      "id",
+                      "aliqua esse dolor dolore"
+                    ],
+                    "outcomes": [
+                      "et ea ut",
+                      "ut ipsum amet irure tempor",
+                      "consequat deserunt Ut",
+                      "d"
+                    ]
+                  }
+                },
+                {
+                  "rct": {
+                    "is_rct": true,
+                    "is_rct_precise": false,
+                    "is_rct_balanced": false,
+                    "is_rct_sensitive": true,
+                    "model": "cnn_ptyp",
+                    "score": 54497338.00128472
+                  },
+                  "bias": {
+                    "random_sequence_generation": {
+                      "judgement": "high/unclear",
+                      "rationales": [
+                        "exercitation nisi consequat enim aliqua",
+                        "laboris id anim adipisicing"
+                      ]
+                    },
+                    "allocation_concealment": {
+                      "judgement": "high/unclear",
+                      "rationales": [
+                        "anim",
+                        "consequat in qui"
+                      ]
+                    },
+                    "blinding_participants_personnel": {
+                      "judgement": "low",
+                      "rationales": [
+                        "id occaecat",
+                        "proident fugiat Ut"
+                      ]
+                    },
+                    "blinding_outcome_assessment": {
+                      "judgement": "high/unclear",
+                      "rationales": [
+                        "exercitation eu",
+                        "id la"
+                      ]
+                    }
+                  },
+                  "pico": {
+                    "participants": [
+                      "eiusmod ut "
+                    ],
+                    "interventions": [
+                      "sint deserunt qui",
+                      "ad Lorem officia dolore",
+                      "ullamco pariatur",
+                      "ad culpa exercitation dolor"
+                    ],
+                    "outcomes": [
+                      "ullamco fugiat enim"
+                    ]
+                  }
+                },
+                {
+                  "rct": {
+                    "is_rct": false,
+                    "is_rct_precise": true,
+                    "is_rct_balanced": true,
+                    "is_rct_sensitive": false,
+                    "model": "cnn_ptyp",
+                    "score": 67161888.74619743
+                  },
+                  "bias": {
+                    "random_sequence_generation": {
+                      "judgement": "high/unclear",
+                      "rationales": [
+                        "id",
+                        "enim eiusmod"
+                      ]
+                    },
+                    "allocation_concealment": {
+                      "judgement": "low",
+                      "rationales": [
+                        "Ut sunt",
+                        "ut nostrud labore adipisicing"
+                      ]
+                    },
+                    "blinding_participants_personnel": {
+                      "judgement": "high/unclear",
+                      "rationales": [
+                        "dolor",
+                        "in nisi esse"
+                      ]
+                    },
+                    "blinding_outcome_assessment": {
+                      "judgement": "low",
+                      "rationales": [
+                        "culpa",
+                        "commodo"
+                      ]
+                    }
+                  },
+                  "pico": {
+                    "participants": [
+                      "deserunt in dolor dolor veniam",
+                      "in et laboris"
+                    ],
+                    "interventions": [
+                      "ut id Ut sit aliquip"
+                    ],
+                    "outcomes": [
+                      "magna",
+                      "occaecat elit minim mollit",
+                      "ipsum est",
+                      "sed",
+                      "Excepteur"
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Incorrect request format"
+          },
+          "404": {
+            "description": "No report with the requested ID found."
+          }
+        },
+        "summary": "Get report",
+        "parameters": [
+          {
+            "$ref": "#/parameters/report_id"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "report"
+        ],
+        "operationId": "robotreviewer.cnxapp.report",
+        "description": "Retrieves a structured report of the extracted data and classifications of the uploaded articles.\n\nReturns an array of article annotations (one JSON object per uploaded article). Each object will have a key for every robot which has annotated the document.\n\n\n\n"
+      }
+    }
+  },
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "definitions": {
+    "article": {
+      "type": "object",
+      "title": "RobotReviewer article",
+      "description": "Data format accepted by RobotReviewer for clinical trial articles.",
+      "additionalProperties": false,
+      "properties": {
+        "ti": {
+          "type": "string"
+        },
+        "ab": {
+          "type": "string"
+        },
+        "ptyp": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fullText": {
+          "type": "string"
+        }
+      }
+    },
+    "annotations": {
+      "type": "object",
+      "title": "RobotReviewer annotations",
+      "description": "Object containing all annotations pertaining to a single document",
+      "additionalProperties": false,
+      "properties": {
+        "rct": {
+          "$ref": "#/definitions/rct-robot"
+        },
+        "bias": {
+          "$ref": "#/definitions/bias-robot"
+        },
+        "pico": {
+          "$ref": "#/definitions/pico-robot"
+        }
+      }
+    },
+    "rct-robot": {
+      "type": "object",
+      "title": "RCT classifier output",
+      "additionalProperties": false,
+      "properties": {
+        "is_rct": {
+          "type": "boolean"
+        },
+        "is_rct_precise": {
+          "type": "boolean"
+        },
+        "is_rct_balanced": {
+          "type": "boolean"
+        },
+        "is_rct_sensitive": {
+          "type": "boolean"
+        },
+        "model": {
+          "type": "string",
+          "enum": [
+            "svm",
+            "cnn",
+            "svm_cnn",
+            "svm_ptyp",
+            "cnn_ptyp",
+            "svm_cnn_ptyp"
+          ]
+        },
+        "score": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "is_rct"
+      ],
+      "description": "Results of the RobotReviewer RCT classification system"
+    },
+    "bias-robot": {
+      "type": "object",
+      "title": "Risk of bias classifier output",
+      "description": "Data structure for holding bias information.\n\nUsed with the first four domains of the Cochrane Risk of Bias tool: random sequence generation, allocation concealment, blinding of participants and personnel, and blinding of outcome assessment.\n\n(The domains of incomplete outcome data and selective outcome reporting have been withheld since, in theory, they should depend on some calculations based on numbers presented in the manuscript, and scrutiny of a protocol respectively: i.e. they should not be possible with the published article alone using out methods).\n\n\n",
+      "required": [
+        "random_sequence_generation",
+        "allocation_concealment",
+        "blinding_participants_personnel",
+        "blinding_outcome_assessment"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "random_sequence_generation": {
+          "$ref": "#/definitions/bias-rationale"
+        },
+        "allocation_concealment": {
+          "$ref": "#/definitions/bias-rationale"
+        },
+        "blinding_participants_personnel": {
+          "$ref": "#/definitions/bias-rationale"
+        },
+        "blinding_outcome_assessment": {
+          "$ref": "#/definitions/bias-rationale"
+        }
+      }
+    },
+    "bias-rationale": {
+      "type": "object",
+      "title": "Bias judgement with rationale",
+      "description": "For bias classification models using rationales, comprises a judgement (high/unclear, or low), plus one (or more) text snippets which justify the decision.",
+      "additionalProperties": false,
+      "properties": {
+        "judgement": {
+          "type": "string",
+          "enum": [
+            "low",
+            "high/unclear"
+          ]
+        },
+        "rationales": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pico-robot": {
+      "type": "object",
+      "title": "PICO snippet extraction",
+      "description": "Data format for extracted PICO snippets (typically from abstract).\n",
+      "required": [
+        "participants",
+        "interventions",
+        "outcomes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "participants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "interventions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "outcomes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "upload documents"
+    },
+    {
+      "name": "report"
+    }
+  ],
+  "securityDefinitions": {
+    
+  },
+  "parameters": {
+    "report_id": {
+      "name": "report_id",
+      "in": "path",
+      "type": "string",
+      "required": true,
+      "description": "Unique identifier of report, generated by RobotReviewer when documents uploaded, and used to access report status and final report. "
+    }
+  }
+}

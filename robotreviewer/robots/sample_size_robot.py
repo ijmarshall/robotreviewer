@@ -22,11 +22,36 @@ class SampleSizeBot:
             p = pickle.load(preprocessor_file)
 
         self.sample_size_model = MLPSampleSizeClassifier(p, model_arch_path, model_weights_path)
-        print("sample size bot instantiated!")
+        
+
+    def api_annotate(self, articles):
+
+        if not all(('ab' in article for article in articles)):
+            raise Exception('Sample size model requires abstract to be able to complete annotation')
+
+        annotations = []
+
+        for article in articles:
+            if article.get('skip_annotation'):
+                annotations.append({})
+            else:
+                sample_size_pred = self.sample_size_model.predict_for_abstract(article['ab'])
+                if sample_size_pred is not None:
+                    n, confidence = sample_size_pred
+                    if confidence >= self.magic_threshold:
+                        sample_size_str = n
+                    else:
+                        sample_size_str = 'not found'
+                    annotations.append({"num_randomized": sample_size_str})
+        return annotations
 
 
-    def annotate(self, data):
+    def pdf_annotate(self, data):
+
+
+
         abstract = None
+
         if data.get("abstract") is not None:
             abstract = data["abstract"]
         elif data.get("parsed_text") is not None:

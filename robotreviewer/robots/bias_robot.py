@@ -48,7 +48,7 @@ class BiasRobot:
 
         self.top_k = top_k
 
-    def annotate(self, data, top_k=None):
+    def pdf_annotate(self, data, top_k=None):
 
         """
         Annotate full text of clinical trial report

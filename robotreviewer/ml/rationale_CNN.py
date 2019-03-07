@@ -19,7 +19,7 @@ Ye Zhang and Byron Wallace. "A Sensitivity Analysis of (and Practitioners' Guide
 & c.f. http://www.wildml.com/2015/11/understanding-convolutional-neural-networks-for-nlp/
 '''
 
-from __future__ import print_function
+
 import pdb
 import sys
 try:
@@ -91,7 +91,7 @@ class RationaleCNN:
         if document_model_architecture_path is not None:
             assert(document_model_weights_path is not None)
 
-            print("loading model architecture from file: %s" % document_model_architecture_path)
+            
 
             with open(document_model_architecture_path) as doc_arch:
                 doc_arch_str = doc_arch.read()
@@ -100,7 +100,7 @@ class RationaleCNN:
             self.doc_model.load_weights(document_model_weights_path)
 
             self.set_final_sentence_model() # setup sentence model, too
-            print("ok!")
+            
 
 
     @staticmethod
@@ -278,8 +278,7 @@ class RationaleCNN:
                                         RationaleCNN.metric_func_maker(metric_name="recall"),
                                         RationaleCNN.metric_func_maker(metric_name="precision")],
                                         loss="binary_crossentropy", optimizer="adadelta")
-        print("doc-CNN model summary:")
-        print(self.doc_model.summary())
+        
 
 
     def build_RA_CNN_model(self):
@@ -345,7 +344,7 @@ class RationaleCNN:
 
         # note that if end_to_end_train is False, we 'freeze' the sentence
         # softmax weights after pretraining the sentence model
-        print("end-to-end training is: %s" % self.end_to_end_train)
+        
         sent_pred_model = Dense(3, activation="softmax", name="sentence_prediction", kernel_regularizer=l2(0.01))
         sent_preds = TimeDistributed(sent_pred_model, name="sentence_predictions")(sent_vectors)
 
@@ -356,7 +355,7 @@ class RationaleCNN:
         self.sentence_model.compile(loss='categorical_crossentropy',
                                     metrics=["accuracy"],
                                     optimizer="adagrad")
-        print (self.sentence_model.summary())
+        
 
         #####
 
@@ -407,8 +406,6 @@ class RationaleCNN:
 
         self.set_final_sentence_model()
 
-        print("rationale CNN model: ")
-        print(self.doc_model.summary())
 
 
     def set_final_sentence_model(self):
@@ -486,8 +483,6 @@ class RationaleCNN:
         # so if this is .1, for example, the sentences comprising the last
         # 10% of the documents will be used for validation
         validation_size = int(sent_val_split*len(train_documents))
-        print("using sentences from %s docs for sentence prediction validation!" %
-                    validation_size)
 
         #######
         # build the train and validation sets
@@ -520,7 +515,7 @@ class RationaleCNN:
 
 
         if downsample:
-            print("downsampling!")
+
 
             cur_acc, best_F, best_acc, best_loss = None, -np.inf, -np.inf, np.inf # - inf for F-score
 
@@ -528,7 +523,6 @@ class RationaleCNN:
             skip_count = 0
             for iter_ in range(nb_epoch):
 
-                print ("on epoch: %s" % iter_)
 
                 X_temp, y_sent_temp, sentences_temp = [], [], []
                 for i in range(X_doc.shape[0]):
@@ -562,7 +556,6 @@ class RationaleCNN:
                 cur_val_results = self.sentence_model.evaluate(X_doc_validation, y_sent_validation)
 
                 out_str = ["%s: %s" % (metric, val) for metric, val in zip(self.sentence_model.metrics_names, cur_val_results)]
-                print ("\n".join(out_str))
 
 
 
@@ -571,8 +564,6 @@ class RationaleCNN:
                     best_acc = cur_acc
                     best_loss = loss
                     self.sentence_model.save_weights(sentence_model_weights_path, overwrite=True)
-                    print("new best sentence accuracy: %s\n" % best_acc)
-                    print("new best sentence loss: %s\n" % best_loss)
 
 
         else:
@@ -596,7 +587,6 @@ class RationaleCNN:
 
         # 12/13/16 -- check if leaving sentence model trainable
         if not self.end_to_end_train:
-            print ("freezing sentence prediction layer weights!")
             sent_softmax_layer = self.doc_model.get_layer("sentence_predictions")
             sent_softmax_layer.trainable = False
 
@@ -614,7 +604,7 @@ class RationaleCNN:
                                 pos_class_weight=1):
 
         validation_size = int(doc_val_split*len(train_documents))
-        print("validating using %s out of %s train documents." % (validation_size, len(train_documents)))
+        
 
         ###
         # build the train set
@@ -645,14 +635,14 @@ class RationaleCNN:
 
 
         if downsample:
-            print("downsampling!")
+
 
             cur_f, best_f = None, -np.inf  # - inf for F-score
 
             # then draw nb_epoch balanced samples; take one pass on each
             for iter_ in range(nb_epoch):
 
-                print ("on epoch: %s" % iter_)
+
 
                 X_tmp, y_tmp = RationaleCNN.balanced_sample(X_doc, y_doc, binary=True)
 
@@ -661,13 +651,12 @@ class RationaleCNN:
 
                 cur_val_results = self.doc_model.evaluate(X_doc_validation, y_doc_validation)
                 out_str = ["%s: %s" % (metric, val) for metric, val in zip(self.doc_model.metrics_names, cur_val_results)]
-                print ("\n".join(out_str))
+
 
                 loss, cur_acc, cur_f, cur_recall, cur_precision = cur_val_results
                 if cur_f > best_f:
                     best_f = cur_f
                     self.doc_model.save_weights(document_model_weights_path, overwrite=True)
-                    print("new best F: %s\n" % best_f)
 
 
         else:

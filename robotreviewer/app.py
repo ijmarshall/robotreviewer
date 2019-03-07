@@ -8,9 +8,7 @@ RobotReviewer server
 
 import logging, os
 from datetime import datetime, timedelta
-
 import os
-#os.environ["MKL_THREADING_LAYER"] = "GNU"
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -74,7 +72,7 @@ csrf.init_app(app)
 #####
 
 celery_app = Celery('robotreviewer.ml_worker', backend='amqp://', broker='amqp://')
-celery_tasks = {"annotate": celery_app.signature('robotreviewer.ml_worker.annotate')}
+celery_tasks = {"pdf_annotate": celery_app.signature('robotreviewer.ml_worker.pdf_annotate')}
 
 #####
 ## connect to database
@@ -104,8 +102,8 @@ def main():
     return resp
 
 @csrf.exempt # TODO: add csrf back in
-@app.route('/upload_and_annotate', methods=['POST'])
-def upload_and_annotate():
+@app.route('/upload_and_annotate_pdfs', methods=['POST'])
+def upload_and_annotate_pdfs():
     # uploads a bunch of PDFs to the database,
     # then sends a Celery task for the
     # worker to do the RobotReviewer annotation
@@ -128,7 +126,7 @@ def upload_and_annotate():
     c.close()
 
     # send async request to Celery
-    celery_tasks['annotate'].apply_async((report_uuid, ), task_id=report_uuid)
+    celery_tasks['pdf_annotate'].apply_async((report_uuid, ), task_id=report_uuid)
 
     return json.dumps({"report_uuid": report_uuid})
 
@@ -287,7 +285,6 @@ def annotate(data, bot_names=["bias_bot"]):
     # change the line below if you wish to customise or
     # add a new annotator
     #
-    import pdb; pdb.set_trace()
     annotations = annotation_pipeline(bot_names, data)
     return annotations
 

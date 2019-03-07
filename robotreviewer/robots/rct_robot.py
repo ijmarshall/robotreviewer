@@ -111,13 +111,44 @@ class RCTRobot:
         elif data_row['use_ptyp'] == True:
             return 1 if any((tag in data_row['ptyp'] for tag in ["Randomized Controlled Trial", "D016449"])) else 0
         else:
-            raise Exception("unexpcted value for 'use_ptyp'")
+            raise Exception("unexpected value for 'use_ptyp'")
 
-
-    def annotate(self, data):
+    def api_annotate(self, articles):
 
         # use the best performing models from the validation paper (in draft...)
-        filter_class = "svm_cnn"
+        ensemble_type = "svm_cnn"
+        threshold_class = "balanced"
+        auto_use_ptyp=True
+
+        # require a title and abstract. ptyp optional
+
+        if not(all(("ti" in article and "ab" in article for article in articles))):
+            raise Exception("RCT robot requires a full title and abstract")
+
+        prepared_data = [{"title": r['ti'], "abstract": r['ab'], "ptyp": r.get('ptyp'), "use_ptyp": "ptyp" in r} for r in articles]
+
+        preds = self.predict(prepared_data, ensemble_type=ensemble_type, threshold_type=threshold_class)
+
+        out = []
+
+        for p in preds:
+            out.append({"is_rct": p['is_rct'],
+                         "score": float(p['score']),
+                         "model": p['model'],
+                         "is_rct": p['is_rct'],
+                         "is_rct_precise": p['is_rct_precise'],
+                         "is_rct_balanced": p['is_rct_balanced'],
+                         "is_rct_sensitive": p['is_rct_sensitive']
+                         })
+
+
+        return out
+        
+
+    def pdf_annotate(self, data):
+
+        # use the best performing models from the validation paper (in draft...)
+        ensemble_type = "svm_cnn"
         threshold_class = "balanced"
         auto_use_ptyp=True
 
@@ -135,11 +166,7 @@ class RCTRobot:
             # else can't proceed
             return data
 
-        # ignore PubMed data for now
-        # if "pubmed" in data.data:
-        #     ptyp = 1.0
-        # else:
-        #     ptyp = 0.0
+
 
         preds = self.predict({"title": ti, "abstract": ab}, auto_use_ptyp=False)[0]
 
@@ -147,13 +174,16 @@ class RCTRobot:
         structured_data = {"is_rct": preds['is_rct'],
                            "decision_score": preds['threshold_value'],
                            "model_class": preds['model'],
-                           "filter_type": preds['threshold_type']}
+                           "threshold_type": preds['threshold_type']}
 
         data.ml["rct"] = structured_data
         return data
 
-    def predict(self, X, filter_class="svm", filter_type="sensitive", auto_use_ptyp=True):
 
+
+
+
+    def predict(self, X, ensemble_type="svm_cnn", threshold_type="sensitive", auto_use_ptyp=True):
 
         if isinstance(X, dict):
             X = [X]
@@ -166,25 +196,27 @@ class RCTRobot:
 
         preds_l = {}
         # calculate ptyp for all
-        #ptyp = np.copy(pt_mask)
-        # ptyp = np.array([(article.get('rct_ptyp')==True)*1. for article in X])
         ptyp_scale = (pt_mask - self.constants['scales']['ptyp']['mean']) / self.constants['scales']['ptyp']['std']
         # but set to 0 if not using
         ptyp_scale[pt_mask==-1] = 0
         preds_l['ptyp'] = ptyp_scale
 
         # thresholds vary per article
-        thresholds = []
-        for r in pt_mask:
-            if r != -1:
-                thresholds.append(self.constants['thresholds']["{}_ptyp".format(filter_class)][filter_type])
-            else:
-                thresholds.append(self.constants['thresholds'][filter_class][filter_type])
+        thresholds_all = {k: [] for k in ['precise', 'balanced', 'sensitive']}
+
+        for t in ['precise', 'balanced', 'sensitive']:
+            for r in pt_mask:
+                if r != -1:
+                    thresholds_all[t].append(self.constants['thresholds']["{}_ptyp".format(ensemble_type)][t])
+                else:
+                    thresholds_all[t].append(self.constants['thresholds'][ensemble_type][t])
+
+        
 
         X_ti_str = [article.get('title', '') for article in X]
         X_ab_str = ['{}\n\n{}'.format(article.get('title', ''), article.get('abstract', '')) for article in X]
 
-        if "svm" in filter_class:
+        if "svm" in ensemble_type:
             X_ti = lil_matrix(self.svm_vectorizer.transform(X_ti_str))
             X_ab = lil_matrix(self.svm_vectorizer.transform(X_ab_str))
             svm_preds = self.svm_clf.decision_function(hstack([X_ab, X_ti]))
@@ -192,7 +224,7 @@ class RCTRobot:
             preds_l['svm'] = svm_scale
             preds_l['svm_ptyp'] = preds_l['svm'] + preds_l['ptyp']
 
-        if "cnn" in filter_class:
+        if "cnn" in ensemble_type:
             X_cnn = self.cnn_vectorizer.transform(X_ab_str)
             cnn_preds = []
             for i, clf in enumerate(self.cnn_clfs):
@@ -204,7 +236,7 @@ class RCTRobot:
 
             preds_l['cnn_ptyp'] = preds_l['cnn'] + preds_l['ptyp']
 
-        if filter_class == "svm_cnn":
+        if ensemble_type == "svm_cnn":
             weights = [self.constants['scales']['svm']['weight']] + ([self.constants['scales']['cnn']['weight']] * len(self.cnn_clfs))
             preds_l['svm_cnn'] = np.average(np.vstack([svm_scale, cnn_scale]), axis=0, weights=weights)
 
@@ -215,22 +247,27 @@ class RCTRobot:
         preds_d =[dict(zip(preds_l,i)) for i in zip(*preds_l.values())]
 
         out = []
-        for pred, threshold, used_ptyp in zip(preds_d, thresholds, pt_mask):
+
+        thresholds_T = [dict(zip(thresholds_all,t)) for t in zip(*thresholds_all.values())]
+        # i.e. https://stackoverflow.com/questions/5558418/list-of-dicts-to-from-dict-of-lists
+
+        for pred, threshold, used_ptyp in zip(preds_d, thresholds_T, pt_mask):
             row = {}
             if used_ptyp != -1:
-                row['model'] = "{}_ptyp".format(filter_class)
+                row['model'] = "{}_ptyp".format(ensemble_type)
             else:
-                row['model'] = filter_class
+                row['model'] = ensemble_type
             row['score'] = float(pred[row['model']])
-            row['threshold_type'] = filter_type
-            row['threshold_value'] = float(threshold)
-            row['is_rct'] = bool(row['score'] >= threshold)
+            row['threshold_type'] = threshold_type
+            row['threshold_value'] = float(threshold[threshold_type])
+            row['is_rct'] = bool(row['score'] >= threshold[threshold_type])
+            row['is_rct_precise'] = bool(row['score'] >= threshold['precise'])
+            row['is_rct_balanced'] = bool(row['score'] >= threshold['balanced'])
+            row['is_rct_sensitive'] = bool(row['score'] >= threshold['sensitive'])
             row['ptyp_rct'] = int(used_ptyp)
             row['preds'] = {k: float(v) for k, v in pred.items()}
             out.append(row)
         return out
-
-
 
     @staticmethod
     def get_marginalia(data):
@@ -244,22 +281,22 @@ class RCTRobot:
         return marginalia
 
 
-    def predict_ris(self, ris_data, filter_class="svm", filter_type='sensitive', auto_use_ptyp=False):
+    def predict_ris(self, ris_data, ensemble_type="svm_cnn", threshold_type='sensitive', auto_use_ptyp=False):
 
 
         simplified = [ris.simplify(article) for article in ris_data]
-        preds = self.predict(simplified, filter_class=filter_class, filter_type=filter_type, auto_use_ptyp=auto_use_ptyp)
+        preds = self.predict(simplified, ensemble_type=ensemble_type, threshold_type=threshold_type, auto_use_ptyp=auto_use_ptyp)
         return preds
 
 
-    def filter_articles(self, ris_string, filter_class="svm", filter_type='sensitive', auto_use_ptyp=True, remove_non_rcts=True):
+    def filter_articles(self, ris_string, ensemble_type="svm_cnn", threshold_type='sensitive', auto_use_ptyp=True, remove_non_rcts=True):
 
         print('Parsing RIS data')
         ris_data = ris.loads(ris_string)
         import json
         with open("debug.json", 'w') as f:
             json.dumps(ris_data)
-        preds = self.predict_ris(ris_data, filter_class=filter_class, filter_type=filter_type, auto_use_ptyp=auto_use_ptyp)
+        preds = self.predict_ris(ris_data, ensemble_type=ensemble_type, threshold_type=threshold_type, auto_use_ptyp=auto_use_ptyp)
         out = []
 
         pred_key_map = {"score": "ZS", "model": "ZM", "threshold_type": "ZT", "threshold_value": "ZC", "is_rct": "ZR", "ptyp_rct": "ZP"}
@@ -300,7 +337,7 @@ def test_calibration():
                 expected_model_class = "{}_ptyp".format(target_class) if use_ptyp else target_class
 
                 print("Testing {} model; use_ptyp={}; mode={}".format(target_class, use_ptyp, target_mode))
-                data = rct_bot.predict_ris(ris_data, filter_class=target_class, filter_type=target_mode, auto_use_ptyp=use_ptyp)
+                data = rct_bot.predict_ris(ris_data, ensemble_type=target_class, threshold_type=target_mode, auto_use_ptyp=use_ptyp)
 
                 exp_pmids = [str(r['PMID'][0]) for r in ris_data]
                 obs_pmids = [str(r['pmid']) for r in expected_results[expected_model_class][target_mode]]

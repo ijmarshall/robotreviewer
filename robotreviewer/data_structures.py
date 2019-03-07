@@ -112,6 +112,12 @@ class MultiDict():
         """
         return {k: v for k, v in self.data.items() if not k.startswith('_')}
 
+    @classmethod
+    def from_dict(this_class, dct):
+        out = this_class()
+        for k, v in dct.items():
+            out[k] = v
+        return out
 
     # doesn't really iterate, but for compatibility
     iteritems = items

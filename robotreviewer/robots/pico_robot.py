@@ -95,7 +95,54 @@ class PICORobot:
         self.min_k = min_k
 
 
-    def annotate(self, data, top_k=3, min_k=1, alpha=.7):
+    def api_annotate(self, articles):
+
+        if not all(('parsed_fullText' in article for article in articles)):
+            raise Exception('PICO model requires full text to be able to complete annotation')
+
+        
+        annotations = []
+        for article in articles:
+            if article.get('skip_annotation'):
+                annotations.append([])
+            else:
+                annotations.append(self.annotate(article['parsed_fullText']))
+
+        
+        # reformat annotations to API formatting
+        api_domain_titles = {
+            'Population': 'participants',
+            'Intervention': 'interventions',
+            'Outcomes': 'outcomes'}
+
+        out = []
+        for r in annotations:
+            row = {}
+            for b in r:
+                row[api_domain_titles[b['domain']]] = {
+                    "annotations": [{"text": an['content'], "start_index":an['position'] } for an in b['annotations']]
+                }
+            out.append(row)
+    
+        return out
+
+
+    def pdf_annotate(self, data):
+
+        doc_text = data.get("parsed_text")
+        if not doc_text:
+            # we've got to know the text at least..
+            return data
+
+        structured_data = self.annotate(doc_text)
+        data.ml["pico_text"] = structured_data
+        return data
+
+
+
+
+
+    def annotate(self, doc_text, top_k=3, min_k=1, alpha=.7):
 
         """
         Annotate full text of clinical trial report
@@ -105,21 +152,13 @@ class PICORobot:
         """
 
 
-        doc_text = data.get("parsed_text")
-
-        if not doc_text:
-            # we've got to know the text at least..
-            return data
-
-        doc_len = len(data['text'])
-
+        doc_len = len(doc_text.text)
 
         if top_k is None:
             top_k = self.top_k
 
         if min_k is None:
             min_k = self.min_k
-
 
         marginalia = []
         structured_data = []
@@ -175,8 +214,8 @@ class PICORobot:
                                     "text": high_prob_sents,
                                     "annotations": annotations})
 
-        data.ml["pico_text"] = structured_data
-        return data
+        
+        return structured_data
 
     @staticmethod
     def _get_positional_features(sentences):
