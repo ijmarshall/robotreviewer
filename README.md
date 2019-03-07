@@ -134,7 +134,7 @@ python -m robotreviewer
 **NEW!** To start the server for the Swagger API, run:
 
 ```bash
-python -m robotreviewer --rest
+REST_API=true python -m robotreviewer --rest
 ```
 
 

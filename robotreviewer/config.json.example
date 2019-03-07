@@ -5,6 +5,7 @@
         "grobid_host": "http://localhost:8070",
         "grobid_threads": 8,
         "spacy_threads": 8,
-        "dont_delete": 0
+        "dont_delete": 0,
+        "rest_api": false
 	}
 }
