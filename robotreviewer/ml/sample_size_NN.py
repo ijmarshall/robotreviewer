@@ -64,7 +64,7 @@ class MLPSampleSizeClassifier:
         if architecture_path is not None:
             assert(weights_path is not None)
 
-            print("loading model architecture from file: %s" % architecture_path)
+            
             with open(architecture_path) as model_arch:
                 model_arch_str = model_arch.read()
                 self.model = model_from_json(model_arch_str)
@@ -76,8 +76,7 @@ class MLPSampleSizeClassifier:
         if tag in self.PoS_tags_to_indices:
             one_hot[self.PoS_tags_to_indices[tag]] = 1.0
         else:
-            print('Tag {} not in list'.format(tag))
-        print(one_hot)
+            pass
         return one_hot
 
     def featurize_for_input(self, X):
@@ -515,9 +514,9 @@ def main(max_features=10000, test_split=.1, epochs=10, batch_size=32,
 
         try:
             ROC_plot(fpr, tpr)
-            print("ok, plotted!")
+            
         except:
-            print ("something went wrong")
+            
             pass
 
         return nn, fpr, tpr, thresholds
@@ -536,9 +535,9 @@ def main(max_features=10000, test_split=.1, epochs=10, batch_size=32,
 
         try:
             ROC_plot(fpr, tpr)
-            print("ok, plotted!")
+            
         except:
-            print ("something went wrong")
+            
             pass
 
 

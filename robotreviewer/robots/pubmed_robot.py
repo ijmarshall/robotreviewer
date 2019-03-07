@@ -24,7 +24,7 @@ class PubmedRobot:
         self.c = self.connection.cursor()
 
 
-    def annotate(self, data):
+    def pdf_annotate(self, data):
 
         title_text = data.get('title')
         if not title_text:

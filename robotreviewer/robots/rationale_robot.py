@@ -148,7 +148,7 @@ class BiasRobot:
         return [index[0] for index in sorted_indices]
 
 
-    def annotate(self, data, top_k=None, threshold=0.5):
+    def annotate(self, doc_text, top_k=None, threshold=0.5):
         """
         Annotate full text of clinical trial report
         `top_k` can be overridden here, else defaults to the class
@@ -158,15 +158,8 @@ class BiasRobot:
         log.info('getting top k')
         top_k = self.top_k if not top_k else top_k
 
-        log.info('retrieving text')
-        doc_text = data.get('parsed_text')
-        if not doc_text:
-            return data # we've got to know the text at least..
-
-        doc_len = len(data['text'])
+        doc_len = len(doc_text.text)
         doc_sents = [sent.text for sent in doc_text.sents]
-
-
 
         doc_sent_start_i = [sent.start_char for sent in doc_text.sents]
         doc_sent_end_i = [sent.end_char for sent in doc_text.sents]
@@ -199,7 +192,7 @@ class BiasRobot:
 
                 model = self.CNN_models[domain]
                 log.info('model selected for  {}'.format(domain))
-                
+
                 doc = Document(doc_id=None, sentences=doc_sents) # make consumable for RA-CNN
                 log.info('Doc done {}'.format(domain))
 
@@ -273,10 +266,54 @@ class BiasRobot:
                                     "judgement": bias_class,
                                     "annotations": annotation_metadata})
 
+        return structured_data
 
+    def pdf_annotate(self, data):
+
+        log.info('retrieving text')
+        doc_text = data.get('parsed_text')
+        if not doc_text:
+            return data # we've got to know the text at least..
+
+        structured_data = self.annotate(doc_text)
         data.ml["bias"] = structured_data
         log.info('done predictions, ready to return answers')
         return data
+
+    def api_annotate(self, articles):
+
+        if not all(('parsed_fullText' in article for article in articles)):
+            raise Exception('Bias model requires full text to be able to complete annotation')
+
+        annotations = []
+        for article in articles:
+            if article.get('skip_annotation'):
+                annotations.append([])
+            else:
+                annotations.append(self.annotate(article['parsed_fullText']))
+
+        
+
+        # reformat annotations to API formatting
+        api_domain_titles = {
+            'Random sequence generation': 'random_sequence_generation',
+            'Allocation concealment': 'allocation_concealment',
+            'Blinding of participants and personnel': 'blinding_participants_personnel',
+            'Blinding of outcome assessment': 'blinding_outcome_assessment'}
+
+        out = []
+
+        for r in annotations:
+            row = {}
+            for b in r:
+                row[api_domain_titles[b['domain']]] = {
+                    "judgement": b['judgement'],
+                    "annotations": [{"text": an['content'], "start_index":an['position'] } for an in b['annotations']]
+                }
+            out.append(row)
+    
+
+        return out
 
     @staticmethod
     def get_marginalia(data):
@@ -293,6 +330,8 @@ class BiasRobot:
                         "description": "**Overall risk of bias prediction**: {}".format(row['judgement'])
                         })
         return marginalia
+
+
 
     @staticmethod
     def get_domains():
