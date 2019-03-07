@@ -125,6 +125,13 @@ Finally, to start the webserver (on `localhost:5000`):
 python -m robotreviewer
 ```
 
+**NEW!** To start the server for the Swagger API, run:
+
+```bash
+python -m robotreviewer --rest
+```
+
+
 ## Demonstration reports
 
 We have included example reports, with open access RCT PDFs to demonstrate RobotReviewer. These are saved in the default database, and can be accessed via the following links.
