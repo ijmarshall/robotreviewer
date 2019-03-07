@@ -1,22 +1,20 @@
 import sys
+from robotreviewer import config
 
 
 
 if __name__ == '__main__':
-
-    if len(sys.argv)==1 or "--rest" not in sys.argv[1:]:
+    if config.REST_API == False:
+        print("RUNNING WEB VERSION")
         from robotreviewer import app
         if app.DEBUG_MODE:
             app.app.run(debug=True, use_reloader=False)
         else:
             app.app.run()
     else:
+        print("RUNNING REST API")
         from robotreviewer import cnxapp
-
-        import connexion
-        app = connexion.App(__name__, specification_dir='api/')
-        app.add_api('robotreviewer_api.yml') 
-        app.run(port=5000)
+        cnxapp.app.run()
 
 
 

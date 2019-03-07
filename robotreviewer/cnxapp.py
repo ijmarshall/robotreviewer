@@ -6,6 +6,8 @@ import robotreviewer
 import sqlite3
 import json
 
+import connexion
+
 celery_app = Celery('robotreviewer.ml_worker', backend='amqp://', broker='amqp://')
 celery_tasks = {"api_annotate": celery_app.signature('robotreviewer.ml_worker.api_annotate')}
 
@@ -36,3 +38,7 @@ def report(report_id):
     result = c.fetchone()    
     c.close()
     return result[0]
+
+import connexion
+app = connexion.FlaskApp(__name__, specification_dir='api/', port=5000, server='gevent')
+app.add_api('robotreviewer_api.yml') 
