@@ -129,20 +129,9 @@ class RCTRobot:
 
         preds = self.predict(prepared_data, ensemble_type=ensemble_type, threshold_type=threshold_class)
 
-        out = []
+        
 
-        for p in preds:
-            out.append({"is_rct": p['is_rct'],
-                         "score": float(p['score']),
-                         "model": p['model'],
-                         "is_rct": p['is_rct'],
-                         "is_rct_precise": p['is_rct_precise'],
-                         "is_rct_balanced": p['is_rct_balanced'],
-                         "is_rct_sensitive": p['is_rct_sensitive']
-                         })
-
-
-        return out
+        return preds
         
 
     def pdf_annotate(self, data):

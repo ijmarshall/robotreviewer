@@ -179,12 +179,20 @@ def pdf_annotate(report_uuid):
 
 
 
+
+
 @app.task
 def api_annotate(report_uuid):
     """
     Handles annotation tasks sent from the API
     Strict in datatype handling
     """
+
+    current_task.update_state(state='PROGRESS', meta={
+        'status': "in process",
+        'position': "received request, fetching data"}
+    )
+    
 
     c = rr_sql_conn.cursor()
 
@@ -193,24 +201,23 @@ def api_annotate(report_uuid):
     uploaded_data_s, timestamp = result
     uploaded_data = json.loads(uploaded_data_s)
 
+
+
     articles = uploaded_data["articles"]
     target_robots = uploaded_data["robots"]
     filter_rcts = uploaded_data.get("filter_rcts", "is_rct_balanced")
 
+   
 
 
-
-    current_task.update_state(state='PROGRESS', meta={'status': "in process"})
-
-    # tokenize ti, ab, and fulltexts
-
-    for article in articles:
-        for k in ["ti", "ab", "fullText"]:
-            if k in article:
-                article['parsed_{}'.format(k)] = nlp(article[k])
-
+    
     # now do the ML
     if filter_rcts is not 'none':
+
+        current_task.update_state(state='PROGRESS', meta={
+            'status': "in process",
+            'position': "rct_robot classification"}
+        )
         
         # do rct_bot first
         results = bots['rct_bot'].api_annotate(articles)
@@ -224,8 +231,34 @@ def api_annotate(report_uuid):
         # and remove from the task list if present so don't duplicate
         target_robots = [tr for tr in target_robots if tr != "rct_bot"]
 
+    current_task.update_state(state='PROGRESS', meta={
+        'status': "in process",
+        'position': "tokenizing data"}
+    )
+
+
+    for k in ["ti", "ab", "fullText"]:
+
+        parsed = nlp.pipe((a.get(k, "") for a in articles if a.get('skip_annotation', False)==False))
+        articles_gen = (a for a in articles)
+
+        while True:    
+            try:
+                current_doc = articles_gen.__next__()
+            except StopIteration:
+                break
+            if current_doc.get("skip_annotation"):
+                continue
+            else:
+                current_doc['parsed_{}'.format(k)] = parsed.__next__()
+
+    
 
     for bot_name in target_robots:
+        current_task.update_state(state='PROGRESS', meta={
+           'status': "in process",
+            'position': "{} classification".format(bot_name)}
+        )
         results = bots[bot_name].api_annotate(articles)
         for a, r in zip(articles, results):
             if not a.get('skip_annotations', False):
@@ -234,10 +267,13 @@ def api_annotate(report_uuid):
     # delete the parsed text
     for article in articles:
         for k in ["ti", "ab", "fullText"]:
-            article.pop('parsed_{}'.format(k))
+            article.pop('parsed_{}'.format(k), None)
     c = rr_sql_conn.cursor()
 
-
+    current_task.update_state(state='PROGRESS', meta={
+           'status': "in process",
+            'position': "writing the predictions to database"}
+    )
 
     c.execute("INSERT INTO api_done (report_uuid, annotations, timestamp) VALUES(?, ?, ?)", (report_uuid, json.dumps(articles), timestamp))
     rr_sql_conn.commit()
