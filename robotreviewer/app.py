@@ -44,6 +44,7 @@ import sqlite3
 ''' robots! '''
 # from robotreviewer.robots.bias_robot import BiasRobot
 from robotreviewer.robots.rationale_robot import BiasRobot
+from robotreviewer.robots.pico_span_robot import PICOSpanRobot
 from robotreviewer.robots.pico_robot import PICORobot
 from robotreviewer.robots.rct_robot import RCTRobot
 from robotreviewer.robots.pubmed_robot import PubmedRobot
@@ -86,7 +87,8 @@ rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdf
 ## note we are using static methods, so not instantiating the classes
 ######
 log.info("Loading the robots...")
-bots = {"bias_bot": BiasRobot,
+bots = {"pico_span_bot": PICOSpanRobot,
+        "bias_bot": BiasRobot,
         "pico_bot": PICORobot,
         "pubmed_bot": PubmedRobot,
         # "ictrp_bot": ICTRPRobot(),

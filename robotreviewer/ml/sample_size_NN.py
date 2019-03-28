@@ -22,6 +22,7 @@ from keras.layers import merge
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.models import Model, model_from_json
 from keras.preprocessing.text import text_to_word_sequence, Tokenizer
+from robotreviewer.textprocessing import tokenizer
 
 import index_numbers
 
@@ -43,7 +44,7 @@ class MLPSampleSizeClassifier:
         and re-instantiation of trained models.
         '''
         self.preprocessor = preprocessor
-        self.nlp = spacy.load('en') # to avoid instantiating multiple times.
+        self.nlp = tokenizer.nlp
         # this is for POS tags
         self.PoS_tags_to_indices = {}
         self.tag_names = [u'""', u'#', u'$', u"''", u',', u'-LRB-', u'-RRB-', u'.', u':', u'ADD', u'AFX', u'BES', u'CC', u'CD', u'DT', u'EX', u'FW', u'GW', u'HVS', u'HYPH', u'IN', u'JJ', u'JJR', u'JJS', u'LS', u'MD', u'NFP', u'NIL', u'NN', u'NNP', u'NNPS', u'NNS', u'PDT', u'POS', u'PRP', u'PRP$', u'RB', u'RBR', u'RBS', u'RP', u'SP', u'SYM', u'TO', u'UH', u'VB', u'VBD', u'VBG', u'VBN', u'VBP', u'VBZ', u'WDT', u'WP', u'WP$', u'WRB', u'XX', u'``']

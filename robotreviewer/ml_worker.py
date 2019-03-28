@@ -48,6 +48,7 @@ from robotreviewer.robots.rationale_robot import BiasRobot
 from robotreviewer.robots.pico_robot import PICORobot
 from robotreviewer.robots.rct_robot import RCTRobot
 from robotreviewer.robots.pubmed_robot import PubmedRobot
+from robotreviewer.robots.pico_span_robot import PICOSpanRobot
 # from robotreviewer.robots.mendeley_robot import MendeleyRobot
 # from robotreviewer.robots.ictrp_robot import ICTRPRobot
 # from robotreviewer.robots import pico_viz_robot
@@ -100,14 +101,26 @@ rr_sql_conn.commit()
 @worker_init.connect
 def on_worker_init(**_):
     global bots
+    global friendly_bots
     log.info("Loading the robots...")
-    bots = {"bias_bot": BiasRobot(top_k=3),
+
+    # pico span bot must be loaded first i have *no* idea why...
+
+    bots = {"pico_span_bot": PICOSpanRobot(),            
+            "bias_bot": BiasRobot(top_k=3),
             "pico_bot": PICORobot(),
             "pubmed_bot": PubmedRobot(),
             # "ictrp_bot": ICTRPRobot(),
             "rct_bot": RCTRobot(),
             #"pico_viz_bot": PICOVizRobot(),
             "sample_size_bot":SampleSizeBot()}
+
+    friendly_bots = {"pico_span_bot": "Extracting PICO text from title/abstract",
+                     "bias_bot": "Assessing risks of bias",
+                     "pico_bot": "Extracting PICO information from full text",
+                     "rct_bot": "Assessing study design (is it an RCT?)",
+                     "sample_size_bot": "Extracting sample size",
+                     "pubmed_bot": "Looking up meta-data in PubMed"}
 
     log.info("Robots loaded successfully! Ready...")
 
@@ -143,6 +156,8 @@ def pdf_annotate(report_uuid):
     for doc in nlp.pipe((d.get('text', u'') for d in articles), batch_size=1, n_threads=config.SPACY_THREADS):
         parsed_articles.append(doc)
 
+
+
     # adjust the tag, parse, and entity values if these are needed later
     for article, parsed_text in zip(articles, parsed_articles):
         article._spacy['parsed_text'] = parsed_text
@@ -157,8 +172,7 @@ def pdf_annotate(report_uuid):
         current_task.update_state(state='PROGRESS',meta={'process_percentage': 76, 'task': 'processing PDF {}'.format(filename)})
 
 
-        data = pdf_annotate_study(data, bot_names=["rct_bot", "pubmed_bot", "bias_bot", "pico_bot", "sample_size_bot"])
-
+        data = pdf_annotate_study(data, bot_names=["rct_bot", "pubmed_bot", "bias_bot", "pico_bot", "pico_span_bot", "sample_size_bot"])
 
 
         
@@ -206,8 +220,7 @@ def api_annotate(report_uuid):
     articles = uploaded_data["articles"]
     target_robots = uploaded_data["robots"]
     filter_rcts = uploaded_data.get("filter_rcts", "is_rct_balanced")
-
-   
+  
 
 
     
@@ -304,6 +317,8 @@ def pdf_annotation_pipeline(bot_names, data):
     # rdb.set_trace()
     log.info("STARTING PIPELINE (made it to annotation_pipeline)")
 
+
+
     # DEBUG
     current_task.update_state(state='PROGRESS',meta={'process_percentage': 78, 'task': 'starting annotation pipeline'})
 
@@ -311,10 +326,10 @@ def pdf_annotation_pipeline(bot_names, data):
     for bot_name in bot_names:
         log.info("STARTING {} BOT (annotation_pipeline)".format(bot_name))
         log.debug("Sending doc to {} for annotation...".format(bots[bot_name].__class__.__name__))
-        current_task.update_state(state='PROGRESS',meta={'process_percentage': 79, 'task': 'Running {}'.format(bot_name)})
+        current_task.update_state(state='PROGRESS',meta={'process_percentage': 79, 'task': friendly_bots[bot_name]})
 
         data = bots[bot_name].pdf_annotate(data)
         log.debug("{} done!".format(bots[bot_name].__class__.__name__))
         log.info("COMPLETED {} BOT (annotation_pipeline)".format(bot_name))
-        current_task.update_state(state='PROGRESS',meta={'process_percentage': 79, 'task': 'Bot {} complete!'.format(bot_name)})
+        # current_task.update_state(state='PROGRESS',meta={'process_percentage': 79, 'task': 'Bot {} complete!'.format(bot_name)})
     return data

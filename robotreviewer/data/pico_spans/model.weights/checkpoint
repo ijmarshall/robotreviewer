@@ -1,0 +1,2 @@
+model_checkpoint_path: "/mnt/md0/Code/robotlabs/pico_lstm/EBM-NLP/models/lstm-crf/results/test/model.weights/"
+all_model_checkpoint_paths: "/mnt/md0/Code/robotlabs/pico_lstm/EBM-NLP/models/lstm-crf/results/test/model.weights/"
