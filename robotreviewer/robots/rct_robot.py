@@ -126,13 +126,10 @@ class RCTRobot:
             raise Exception("RCT robot requires a full title and abstract")
 
         prepared_data = [{"title": r['ti'], "abstract": r['ab'], "ptyp": r.get('ptyp'), "use_ptyp": "ptyp" in r} for r in articles]
-
-        preds = self.predict(prepared_data, ensemble_type=ensemble_type, threshold_type=threshold_class)
-
-        
+        preds = self.predict(prepared_data, ensemble_type=ensemble_type, threshold_type=threshold_class, auto_use_ptyp=auto_use_ptyp)
 
         return preds
-        
+
 
     def pdf_annotate(self, data):
 
@@ -200,7 +197,7 @@ class RCTRobot:
                 else:
                     thresholds_all[t].append(self.constants['thresholds'][ensemble_type][t])
 
-        
+
 
         X_ti_str = [article.get('title', '') for article in X]
         X_ab_str = ['{}\n\n{}'.format(article.get('title', ''), article.get('abstract', '')) for article in X]
