@@ -225,7 +225,7 @@ def api_annotate(report_uuid):
 
     
     # now do the ML
-    if filter_rcts is not 'none':
+    if filter_rcts != 'none':
 
         current_task.update_state(state='PROGRESS', meta={
             'status': "in process",
