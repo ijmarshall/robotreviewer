@@ -185,7 +185,7 @@ def load_vocab(filename):
     """
     try:
         d = dict()
-        with open(filename) as f:
+        with open(filename, 'r', encoding="utf-8") as f:
             for idx, word in enumerate(f):
                 word = word.strip()
                 d[word] = idx
