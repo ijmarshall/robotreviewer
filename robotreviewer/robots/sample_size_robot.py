@@ -36,13 +36,15 @@ class SampleSizeBot:
                 annotations.append({})
             else:
                 sample_size_pred = self.sample_size_model.predict_for_abstract(article['ab'])
-                if sample_size_pred is not None:
+                if sample_size_pred is None:
+                    sample_size_str = 'not found'
+                else:
                     n, confidence = sample_size_pred
                     if confidence >= self.magic_threshold:
                         sample_size_str = n
                     else:
                         sample_size_str = 'not found'
-                    annotations.append({"num_randomized": sample_size_str})
+                annotations.append({"num_randomized": sample_size_str})
         return annotations
 
 
