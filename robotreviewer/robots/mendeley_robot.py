@@ -12,7 +12,7 @@ class MendeleyRobot:
         self.mendeley_session = self.mendeley.start_client_credentials_flow().authenticate()
 
 
-    def annotate(self, data):
+    def pdf_annotate(self, data):
         filehash = data.get('filehash')
         try:
             log.info('looking up PDF in Mendeley')

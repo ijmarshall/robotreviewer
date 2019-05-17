@@ -7,7 +7,7 @@ define(function (require) {
   var _ = require("underscore");
   var $ = require("jquery");
 
-  var uploadUri = "/upload_and_annotate";
+  var uploadUri = "/upload_and_annotate_pdfs";
 
   var UploadView = React.createClass({
     getInitialState: function() {

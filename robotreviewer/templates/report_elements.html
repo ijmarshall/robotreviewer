@@ -94,6 +94,23 @@
       <h3>{{ short_citation(study) }}</h3>
 
       <table class="char-pico-table">
+        <tr>
+          <td>Participants</td>
+          <td>{{study.get('pico_span', {}).get('population', [])|join(', ')}}</td>
+        </tr>
+
+              <tr>
+          <td>Interventions</td>
+          <td>{{study.get('pico_span', {}).get('interventions', [])|join(', ')}}</td>
+        </tr>
+
+        <tr>
+          <td>Outcomes</td>
+          <td>{{study.get('pico_span', {}).get('outcomes', [])|join(', ')}}</td>
+        </tr>
+      </table>
+
+      <table class="char-pico-table">
         {% for domain in study.get('pico_text', []) %}
         <tr>
           <td>{{ domain['domain'] }}</td>

@@ -225,7 +225,7 @@ class PICOVizRobot:
         words = list(ngrams)[:num_words]
         return words
 
-    def annotate(self, data):
+    def pdf_annotate(self, data):
         abstract, tokenized_abstract = "", ""
 
 
