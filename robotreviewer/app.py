@@ -53,6 +53,7 @@ from robotreviewer.robots.pubmed_robot import PubmedRobot
 #from robotreviewer.robots import pico_viz_robot
 #from robotreviewer.robots.pico_viz_robot import PICOVizRobot
 from robotreviewer.robots.sample_size_robot import SampleSizeBot
+from robotreviewer.robots.punchlines_robot import PunchlinesBot
 
 import hashlib
 
@@ -93,6 +94,7 @@ bots = {"pico_span_bot": PICOSpanRobot,
         "pubmed_bot": PubmedRobot,
         # "ictrp_bot": ICTRPRobot(),
         "rct_bot": RCTRobot,
+        "punchline_bot": PunchlinesBot,
         #"pico_viz_bot": PICOVizRobot}#,
         "sample_size_bot":SampleSizeBot}
         # "mendeley_bot": MendeleyRobot()}
