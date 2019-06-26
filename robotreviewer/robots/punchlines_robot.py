@@ -5,22 +5,29 @@ import numpy as np
 model_arch_path    = 'robotreviewer/data/punchlines/punchline_model.json'
 model_weights_path = 'robotreviewer/data/punchlines/punchline.weights.best.hdf5'
 
+
+inf_model_arch_path    = 'robotreviewer/data/punchlines/inference_model.json'
+inf_model_weights_path = 'robotreviewer/data/punchlines/inference.weights.best.hdf5'
+
+from celery.contrib import rdb
+
 class PunchlinesBot:
 
     def __init__(self):
-        from robotreviewer.ml.punchline_extractor import PunchlineExtractor
+
+        from robotreviewer.ml.punchline_extractor import PunchlineExtractor, SimpleInferenceNet
 
         global PunchlineExtractor
+        global SimpleInferenceNet
 
         self.punchlines_model = PunchlineExtractor(architecture_path=model_arch_path, weights_path=model_weights_path)
+        self.inference_model = SimpleInferenceNet(architecture_path=inf_model_arch_path, weights_path=inf_model_weights_path)
        
+
     def get_top_sentences(self, sentences, k=1):
         
         sentences_text = [s.text for s in sentences]
 
-        #import pdb; pdb.set_trace()
-
-        #sentence_scores = np.array([self.punchlines_model.score_sentence(s) for s in sentences_text])
         sentence_scores = self.punchlines_model.score_sentences(sentences_text).squeeze()
         sorted_indices = np.argsort(sentence_scores)[::-1]
 
@@ -28,6 +35,9 @@ class PunchlinesBot:
 
         return top_sentences
 
+    def infer_result(self, sentence):
+        direction_idx = np.argmax(self.inference_model.infer_result([sentence]))
+        return ["sig decrease", "no diff", "sig increase"][direction_idx]
 
     def annotate(self, data):
         pass 
@@ -44,6 +54,9 @@ class PunchlinesBot:
 
         top_sentences = self.get_top_sentences(doc_text.sents)
         data.ml["punchlines"] = " ".join(top_sentences)
+
+        finding_direction = self.infer_result(top_sentences[0])
+        data.ml["finding_direction"] = finding_direction
 
         #return 
         #structured_data.append({"domain":domain,

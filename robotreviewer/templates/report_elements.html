@@ -85,7 +85,11 @@
           <table class="char-pico-table">
             <tr>
               <th class='trial-id-header'>n</th>
+              <th>Participants</th>
+              <th>Interventions</th>
+              <th>Outcomes</th>
               <th class='trial-id-header'>punchline</th>
+              <th>finding</th>
             </tr>
 
             {% for study in articles %}
@@ -93,7 +97,12 @@
               <td>
               {{ study.get('sample_size', []) }}
               </td>
-              <td>{{ study.get('punchlines', []) }}</td>
+     
+               <td>{{study.get('pico_span', {}).get('population', [])|join(', ')}}</td>
+               <td>{{study.get('pico_span', {}).get('interventions', [])|join(', ')}}</td>
+               <td>{{study.get('pico_span', {}).get('outcomes', [])|join(', ')}}</td>
+               <td>{{study.get('punchlines', []) }}</td>
+               <td>{{study.get('finding_direction', []) }}</td>
             </tr>
             {% endfor %}
           </table>
@@ -108,6 +117,7 @@
       {% for study in articles %}
       <h3>{{ short_citation(study) }}</h3>
 
+      <!--
       <table class="char-pico-table">
         <tr>
           <td>Participants</td>
@@ -124,6 +134,7 @@
           <td>{{study.get('pico_span', {}).get('outcomes', [])|join(', ')}}</td>
         </tr>
       </table>
+      -->
 
       <table class="char-pico-table">
         {% for domain in study.get('pico_text', []) %}
