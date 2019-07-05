@@ -41,7 +41,7 @@ def cleanup(spans):
     def clean_span(s):
         s_clean = s.strip()
         # remove punctuation
-        s.strip(string.punctuation)
+        s_clean = s_clean.strip(string.punctuation)
 
         # remove 'Background:' when we pick it up
         s_clean = s_clean.replace("Background", "")
