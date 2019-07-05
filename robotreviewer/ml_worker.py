@@ -49,6 +49,7 @@ from robotreviewer.robots.pico_robot import PICORobot
 from robotreviewer.robots.rct_robot import RCTRobot
 from robotreviewer.robots.pubmed_robot import PubmedRobot
 from robotreviewer.robots.pico_span_robot import PICOSpanRobot
+from robotreviewer.robots.bias_ab_robot import BiasAbRobot
 # from robotreviewer.robots.mendeley_robot import MendeleyRobot
 # from robotreviewer.robots.ictrp_robot import ICTRPRobot
 # from robotreviewer.robots import pico_viz_robot
@@ -115,7 +116,8 @@ def on_worker_init(**_):
             "rct_bot": RCTRobot(),
             #"pico_viz_bot": PICOVizRobot(),
             "punchline_bot":PunchlinesBot(),
-            "sample_size_bot":SampleSizeBot()}
+            "sample_size_bot":SampleSizeBot(),
+            "bias_ab_bot": BiasAbRobot()}
 
     friendly_bots = {"pico_span_bot": "Extracting PICO text from title/abstract",
                      "bias_bot": "Assessing risks of bias",
@@ -123,7 +125,8 @@ def on_worker_init(**_):
                      "rct_bot": "Assessing study design (is it an RCT?)",
                      "sample_size_bot": "Extracting sample size",
                      "punchline_bot": "Extracting main conclusions",
-                     "pubmed_bot": "Looking up meta-data in PubMed"}
+                     "pubmed_bot": "Looking up meta-data in PubMed",
+                     "bias_ab_bot": "Assessing bias from abstract"}
 
     print("ROBOTS ALL LOADED")
     log.info("Robots loaded successfully! Ready...")
