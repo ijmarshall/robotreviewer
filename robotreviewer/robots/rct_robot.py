@@ -169,7 +169,7 @@ class RCTRobot:
 
 
 
-    def predict(self, X, ensemble_type="svm_cnn", threshold_type="sensitive", auto_use_ptyp=True):
+    def predict(self, X, get_raw=False, ensemble_type="svm_cnn", threshold_type="sensitive", auto_use_ptyp=True):
 
         if isinstance(X, dict):
             X = [X]
@@ -209,6 +209,7 @@ class RCTRobot:
             svm_scale =  (svm_preds - self.constants['scales']['svm']['mean']) / self.constants['scales']['svm']['std']
             preds_l['svm'] = svm_scale
             preds_l['svm_ptyp'] = preds_l['svm'] + preds_l['ptyp']
+            preds_l['svm_raw'] = svm_preds.tolist()
 
         if "cnn" in ensemble_type:
             X_cnn = self.cnn_vectorizer.transform(X_ab_str)
@@ -219,7 +220,7 @@ class RCTRobot:
             cnn_preds = np.vstack(cnn_preds)
             cnn_scale =  (cnn_preds - self.constants['scales']['cnn']['mean']) / self.constants['scales']['cnn']['std']
             preds_l['cnn'] = np.mean(cnn_scale, axis=0)
-
+            preds_l['cnn_raw'] = cnn_preds.T.tolist()
             preds_l['cnn_ptyp'] = preds_l['cnn'] + preds_l['ptyp']
 
         if ensemble_type == "svm_cnn":
@@ -229,6 +230,8 @@ class RCTRobot:
 
             preds_l['svm_cnn_ptyp'] = preds_l['svm_cnn'] + preds_l['ptyp']
 
+        if get_raw:
+            return {"svm": svm_preds, "cnn": cnn_preds, "ptyp": pt_mask}
 
         preds_d =[dict(zip(preds_l,i)) for i in zip(*preds_l.values())]
 
@@ -236,6 +239,7 @@ class RCTRobot:
 
         thresholds_T = [dict(zip(thresholds_all,t)) for t in zip(*thresholds_all.values())]
         # i.e. https://stackoverflow.com/questions/5558418/list-of-dicts-to-from-dict-of-lists
+
 
         for pred, threshold, used_ptyp in zip(preds_d, thresholds_T, pt_mask):
             row = {}
@@ -251,7 +255,6 @@ class RCTRobot:
             row['is_rct_balanced'] = bool(row['score'] >= threshold['balanced'])
             row['is_rct_sensitive'] = bool(row['score'] >= threshold['sensitive'])
             row['ptyp_rct'] = int(used_ptyp)
-            row['preds'] = {k: float(v) for k, v in pred.items()}
             out.append(row)
         return out
 
