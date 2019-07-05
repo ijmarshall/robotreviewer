@@ -9,7 +9,6 @@ model_weights_path = 'robotreviewer/data/punchlines/punchline.weights.best.hdf5'
 inf_model_arch_path    = 'robotreviewer/data/punchlines/inference_model.json'
 inf_model_weights_path = 'robotreviewer/data/punchlines/inference.weights.best.hdf5'
 
-from celery.contrib import rdb
 
 class PunchlinesBot:
 
@@ -22,10 +21,10 @@ class PunchlinesBot:
 
         self.punchlines_model = PunchlineExtractor(architecture_path=model_arch_path, weights_path=model_weights_path)
         self.inference_model = SimpleInferenceNet(architecture_path=inf_model_arch_path, weights_path=inf_model_weights_path)
-       
+
 
     def get_top_sentences(self, sentences, k=1):
-        
+
         sentences_text = [s.text for s in sentences]
 
         sentence_scores = self.punchlines_model.score_sentences(sentences_text).squeeze()
@@ -40,11 +39,26 @@ class PunchlinesBot:
         return ["↓ sig decrease", "― no diff", "↑ sig increase"][direction_idx]
 
     def annotate(self, data):
-        pass 
+        pass
 
-    #def api_annotate(self, data):
-    #    print("API annotate!")
-        
+    def api_annotate(self, articles):
+
+        if not all(('ab' in article for article in articles)):
+            raise Exception('Punchline extraction model requires abstract to be able to complete annotation')
+
+
+        out = []
+
+        for article in articles:
+
+            top_sentences = self.get_top_sentences(article['parsed_ab'].sents)
+            finding_direction = self.infer_result(top_sentences[0])
+            row = {"punchline_text": " ".join(top_sentences),
+                   "effect": finding_direction}
+            out.append(row)
+        return out
+
+
 
     def pdf_annotate(self, data):
         log.info('retrieving text')
@@ -58,12 +72,12 @@ class PunchlinesBot:
         finding_direction = self.infer_result(top_sentences[0])
         data.ml["finding_direction"] = finding_direction
 
-        #return 
+        #return
         #structured_data.append({"domain":domain,
         #                        "text": high_prob_sents,
 
         log.info('extracted study punchlines; returning')
-        #return {"domain":"Punchlines", 
+        #return {"domain":"Punchlines",
         #        "text": "; ".join(top_sentences),
         #        "annotations": []}
 
@@ -71,7 +85,7 @@ class PunchlinesBot:
 
 
 
-  
+
     @staticmethod
     def get_marginalia(data):
 
