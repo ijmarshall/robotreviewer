@@ -53,6 +53,7 @@ from robotreviewer.robots.pico_span_robot import PICOSpanRobot
 # from robotreviewer.robots.ictrp_robot import ICTRPRobot
 # from robotreviewer.robots import pico_viz_robot
 # from robotreviewer.robots.pico_viz_robot import PICOVizRobot
+from robotreviewer.robots.punchlines_robot import PunchlinesBot
 from robotreviewer.robots.sample_size_robot import SampleSizeBot
 
 from robotreviewer.data_structures import MultiDict
@@ -113,6 +114,7 @@ def on_worker_init(**_):
             # "ictrp_bot": ICTRPRobot(),
             "rct_bot": RCTRobot(),
             #"pico_viz_bot": PICOVizRobot(),
+            "punchline_bot":PunchlinesBot(),
             "sample_size_bot":SampleSizeBot()}
 
     friendly_bots = {"pico_span_bot": "Extracting PICO text from title/abstract",
@@ -120,10 +122,10 @@ def on_worker_init(**_):
                      "pico_bot": "Extracting PICO information from full text",
                      "rct_bot": "Assessing study design (is it an RCT?)",
                      "sample_size_bot": "Extracting sample size",
+                     "punchline_bot": "Extracting main conclusions",
                      "pubmed_bot": "Looking up meta-data in PubMed"}
 
     log.info("Robots loaded successfully! Ready...")
-
 
 @app.task
 def pdf_annotate(report_uuid):
@@ -172,7 +174,8 @@ def pdf_annotate(report_uuid):
         current_task.update_state(state='PROGRESS',meta={'process_percentage': 76, 'task': 'processing PDF {}'.format(filename)})
 
 
-        data = pdf_annotate_study(data, bot_names=["rct_bot", "pubmed_bot", "bias_bot", "pico_bot", "pico_span_bot", "sample_size_bot"])
+        #  "punchline_bot",
+        data = pdf_annotate_study(data, bot_names=["rct_bot", "pubmed_bot", "bias_bot", "pico_bot", "pico_span_bot", "punchline_bot", "sample_size_bot"])
 
 
         
