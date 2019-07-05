@@ -96,6 +96,13 @@ class RCTRobot:
         with open(os.path.join(robotreviewer.DATA_ROOT, 'rct/rct_model_calibration.json'), 'r') as f:
             self.constants = json.load(f)
 
+        self.calibration_lr = {}
+        with open(os.path.join(robotreviewer.DATA_ROOT, 'rct/svm_cnn_ptyp_calibration.pck'), 'rb') as f:
+            self.calibration_lr['svm_cnn_ptyp'] = pickle.load(f)
+
+        with open(os.path.join(robotreviewer.DATA_ROOT, 'rct/svm_cnn_calibration.pck'), 'rb') as f:
+            self.calibration_lr['svm_cnn'] = pickle.load(f)
+
     def _process_ptyp(self, data_row, strict=True):
         """
         Takes in a data row which might include rct_ptyp
@@ -225,9 +232,21 @@ class RCTRobot:
         if ensemble_type == "svm_cnn":
             weights = [self.constants['scales']['svm']['weight']] + ([self.constants['scales']['cnn']['weight']] * len(self.cnn_clfs))
             preds_l['svm_cnn'] = np.average(np.vstack([svm_scale, cnn_scale]), axis=0, weights=weights)
-
-
             preds_l['svm_cnn_ptyp'] = preds_l['svm_cnn'] + preds_l['ptyp']
+
+            # if svm_cnn then we can have probabilities
+
+            X_calib = np.hstack([svm_preds.reshape(-1, 1), cnn_preds.T, pt_mask.reshape(-1, 1)])
+            probs = []
+
+            for r in X_calib:
+
+                if r[11] != -1:
+                    probs.append(self.calibration_lr['svm_cnn'].predict_proba([r[:11]])[0][1])
+                else:
+                    probs.append(self.calibration_lr['svm_cnn_ptyp'].predict_proba([r])[0][1])
+
+            preds_l['probability'] = probs
 
 
         preds_d =[dict(zip(preds_l,i)) for i in zip(*preds_l.values())]
