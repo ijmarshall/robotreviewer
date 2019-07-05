@@ -53,8 +53,8 @@ class PICOSpanRobot:
 
     def __init__(self):
         """
-        This bot 
-
+        This bot tags sequences of words from abstracts as describing
+        P,I, or O elements. 
         """
         logging.debug("Loading PICO LSTM-CRF")
         config = Config()
@@ -63,7 +63,6 @@ class PICOSpanRobot:
         self.model.build()
 
         self.model.restore_session(os.path.join(robotreviewer.DATA_ROOT, "pico_spans/model.weights/"))
-        # self.model.restore_session("/home/iain/Code/robotlabs/pico_lstm/EBM-NLP/models/lstm-crf/results/test/model.weights/")
         logging.debug("PICO classifiers loaded")
 
 
