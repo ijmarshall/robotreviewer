@@ -3,18 +3,21 @@ the PICORobot class takes the title and abstract of a clinical trial as
 input, and returns Population, Comparator/Intervention Outcome
 information in the same format, which can easily be converted to JSON.
 
-The model was derived using the "Supervised Distant Supervision" strategy
-introduced in our paper "Extracting PICO Sentences from Clinical Trial Reports
-using Supervised Distant Supervision".
+The model was described using the corpus and methods reported in our
+ACL 2018 paper "A corpus with multi-level annotations of patients,
+interventions and outcomes to support language processing for medical
+literature": https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6174533/.
 """
 
 
+import string
 
 import uuid
 import logging
 
 import numpy as np
 import os
+import spacy
 
 import robotreviewer
 
@@ -24,46 +27,67 @@ from robotreviewer.ml.ner_config import Config
 import robotreviewer
 from itertools import chain
 from robotreviewer.textprocessing import tokenizer
+from bert_serving.client import BertClient
 
 log = logging.getLogger(__name__)
+
+from celery.contrib import rdb
+
+
+def cleanup(spans):
+    '''
+    A helper (static) function for prettifying / deduplicating
+    the PICO snippets extracted by the model.
+    '''
+    def clean_span(s):
+        s_clean = s.strip()
+        # remove punctuation
+        s_clean = s_clean.strip(string.punctuation)
+
+        # remove 'Background:' when we pick it up
+        s_clean = s_clean.replace("Background", "")
+        return s_clean
+
+
+    cleaned_spans = [clean_span(s) for s in spans]
+    # remove empty
+    cleaned_spans = [s for s in cleaned_spans if s]
+    # dedupe
+    return list(set(cleaned_spans))
 
 
 class PICOSpanRobot:
 
     def __init__(self):
         """
-
-
+        This bot tags sequences of words from abstracts as describing
+        P,I, or O elements.
         """
         logging.debug("Loading PICO LSTM-CRF")
         config = Config()
         # build model
         self.model = NERModel(config)
         self.model.build()
+
         self.model.restore_session(os.path.join(robotreviewer.DATA_ROOT, "pico_spans/model.weights/"))
-        # self.model.restore_session("/home/iain/Code/robotlabs/pico_lstm/EBM-NLP/models/lstm-crf/results/test/model.weights/")
         logging.debug("PICO classifiers loaded")
+        self.bert = BertClient()
 
 
-    def api_annotate(self, articles):
+    def api_annotate(self, articles, get_berts=True):
 
         if not (all(('parsed_ab' in article for article in articles)) and all(('parsed_ti' in article for article in articles))):
             raise Exception('PICO span model requires a title and abstract to be able to complete annotation')
-
-        
         annotations = []
         for article in articles:
             if article.get('skip_annotation'):
                 annotations.append([])
             else:
-                annotations.append(self.annotate({"title": article['parsed_ti'], "abstract": article['parsed_ab']}))
-               
+                annotations.append(self.annotate({"title": article['parsed_ti'], "abstract": article['parsed_ab']}, get_berts=get_berts))
         return annotations
 
 
     def pdf_annotate(self, data):
-
-
         if data.get("abstract") is not None and data.get("title") is not None:
             ti = tokenizer.nlp(data["title"])
             ab = tokenizer.nlp(data["abstract"])
@@ -72,38 +96,47 @@ class PICOSpanRobot:
             TI_LEN = 30
             AB_LEN = 500
             # best guesses based on sample of RCT abstracts + aiming for 95% centile
-            ti = data['parsed_text'][:TI_LEN]
-            ab = data['parsed_text'][:AB_LEN]
+            ti = tokenizer.nlp(data['parsed_text'][:TI_LEN].string)
+            ab = tokenizer.nlp(data['parsed_text'][:AB_LEN].string)
         else:
             # else can't proceed
             return data
+
 
         data.ml["pico_span"] = self.annotate({"title": ti, "abstract": ab})
 
         return data
 
 
-    def annotate(self, article):
+    def annotate(self, article, get_berts=True):
 
         """
         Annotate abstract of clinical trial report
         """
 
         label_dict = {"1_p": "population", "1_i": "interventions", "1_o": "outcomes"}
-    
+
         out = {"population": [],
                "interventions": [],
                "outcomes": []}
-        
+
+        '''
+        rdb.set_trace()
+        if type(article['abstract']) == spacy.tokens.span.Span:
+
+            article_sentences = [article['abstract']]
+        else:
+            article_sentences = article['abstract'].sents
+        '''
         for sent in chain(article['title'].sents, article['abstract'].sents):
             words = [w.text for w in sent]
             preds = self.model.predict(words)
-           
+
             last_label = "N"
             start_idx = 0
-            
+
             for i, p in enumerate(preds):
-                
+
                 if p != last_label and last_label != "N":
                     out[label_dict[last_label]].append(sent[start_idx: i].text.strip())
                     start_idx = i
@@ -116,7 +149,17 @@ class PICOSpanRobot:
             if last_label != "N":
                 out[label_dict[last_label]].append(sent[start_idx:].text.strip())
 
+
+        for e in out:
+            out[e] = cleanup(out[e])
+
+        if get_berts:
+            for k in ['population', 'interventions', 'outcomes']:
+                out["{}_bert".format(k)] = [r.tolist() for r in self.bert.encode(out[k])]
+
+
         return out
+
 
     @staticmethod
     def get_marginalia(data):
@@ -128,7 +171,7 @@ class PICOSpanRobot:
                       "annotations": [],
                       "description":  data["ml"]["pico_span"]}]
         return marginalia
-        
+
 
 def main():
     pass

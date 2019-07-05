@@ -49,6 +49,19 @@ A BibTeX entry for LaTeX users is:
   year     =  2017,
 }
 
+## SciBert
+
+RobotReviewer requires a model from the SciBERT team (found [here](https://github.com/allenai/scibert))
+
+To do this, get the file:
+```bash
+wget https://s3-us-west-2.amazonaws.com/ai2-s2-research/scibert/tensorflow_models/scibert_scivocab_uncased.tar.gz
+```
+And (from the RobotReviewer base directory) decompress to the robotreviewer data folder:
+```bash
+tar -zxf scibert_scivocab_uncased.tar.gz --directory robotreviewer/data
+```
+
 ## Docker
 
 We maintain a working Dockerfile in the repo, which is usually the easiest way to install locally.
@@ -106,6 +119,8 @@ docker stop robotreviewer
 
 8. Also install `rabbitmq`. This can be [done via homebrew on OS X](https://www.rabbitmq.com/install-homebrew.html), or by alternative means documented [here](https://www.rabbitmq.com/download.html). Finally, install make sure [celery](http://www.celeryproject.org/install/) is installed and on your path. Note that this ships with Anaconda by default and will be found in the `$(anaconda-home)/bin/celery` dir by default.
 
+9. We now also make use of [BERT embeddings](https://arxiv.org/pdf/1810.04805.pdf), specifically [SciBERT](https://github.com/allenai/scibert). For this we use the [bert-as-service](https://github.com/hanxiao/bert-as-service). This needs to be running locally. 
+
 ## Running
 
 RobotReviewer requires a 'worker' process (which does the Machine Learning), and a webserver to be started. Ensure that you are within the conda environment (default name: robotreviewer) when running the following processes.
@@ -124,6 +139,10 @@ Alternatively, to start RobotReviewer using CPU only, use the following command:
 ```bash
 env CUDA_VISIBLE_DEVICES=-1 celery -A robotreviewer.ml_worker worker --loglevel=info --concurrency=1 --pool=solo
 ```
+
+Next, be sure that bert-as-a-service is running, and using the SciBERT weights:
+
+```bert-serving-start -model_dir=/Path/to/SciBERT-weights/```
 
 Finally, to start the webserver (on `localhost:5000`):
 

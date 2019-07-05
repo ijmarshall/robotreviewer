@@ -49,10 +49,12 @@ from robotreviewer.robots.pico_robot import PICORobot
 from robotreviewer.robots.rct_robot import RCTRobot
 from robotreviewer.robots.pubmed_robot import PubmedRobot
 from robotreviewer.robots.pico_span_robot import PICOSpanRobot
+from robotreviewer.robots.bias_ab_robot import BiasAbRobot
 # from robotreviewer.robots.mendeley_robot import MendeleyRobot
 # from robotreviewer.robots.ictrp_robot import ICTRPRobot
 # from robotreviewer.robots import pico_viz_robot
 # from robotreviewer.robots.pico_viz_robot import PICOVizRobot
+from robotreviewer.robots.punchlines_robot import PunchlinesBot
 from robotreviewer.robots.sample_size_robot import SampleSizeBot
 
 from robotreviewer.data_structures import MultiDict
@@ -105,25 +107,29 @@ def on_worker_init(**_):
     log.info("Loading the robots...")
 
     # pico span bot must be loaded first i have *no* idea why...
-
-    bots = {"pico_span_bot": PICOSpanRobot(),            
+    print("LOADING ROBOTS")
+    bots = {"pico_span_bot": PICOSpanRobot(),
             "bias_bot": BiasRobot(top_k=3),
             "pico_bot": PICORobot(),
             "pubmed_bot": PubmedRobot(),
             # "ictrp_bot": ICTRPRobot(),
             "rct_bot": RCTRobot(),
             #"pico_viz_bot": PICOVizRobot(),
-            "sample_size_bot":SampleSizeBot()}
+            "punchline_bot":PunchlinesBot(),
+            "sample_size_bot":SampleSizeBot(),
+            "bias_ab_bot": BiasAbRobot()}
 
     friendly_bots = {"pico_span_bot": "Extracting PICO text from title/abstract",
                      "bias_bot": "Assessing risks of bias",
                      "pico_bot": "Extracting PICO information from full text",
                      "rct_bot": "Assessing study design (is it an RCT?)",
                      "sample_size_bot": "Extracting sample size",
-                     "pubmed_bot": "Looking up meta-data in PubMed"}
+                     "punchline_bot": "Extracting main conclusions",
+                     "pubmed_bot": "Looking up meta-data in PubMed",
+                     "bias_ab_bot": "Assessing bias from abstract"}
 
+    print("ROBOTS ALL LOADED")
     log.info("Robots loaded successfully! Ready...")
-
 
 @app.task
 def pdf_annotate(report_uuid):
@@ -172,10 +178,11 @@ def pdf_annotate(report_uuid):
         current_task.update_state(state='PROGRESS',meta={'process_percentage': 76, 'task': 'processing PDF {}'.format(filename)})
 
 
-        data = pdf_annotate_study(data, bot_names=["rct_bot", "pubmed_bot", "bias_bot", "pico_bot", "pico_span_bot", "sample_size_bot"])
+        #  "punchline_bot",
+        data = pdf_annotate_study(data, bot_names=["rct_bot", "pubmed_bot", "bias_bot", "pico_bot", "pico_span_bot", "punchline_bot", "sample_size_bot"])
 
 
-        
+
         data.gold['pdf_uuid'] = pdf_uuid
         data.gold['filename'] = filename
         c = rr_sql_conn.cursor()
@@ -206,7 +213,7 @@ def api_annotate(report_uuid):
         'status': "in process",
         'position': "received request, fetching data"}
     )
-    
+
 
     c = rr_sql_conn.cursor()
 
@@ -220,10 +227,10 @@ def api_annotate(report_uuid):
     articles = uploaded_data["articles"]
     target_robots = uploaded_data["robots"]
     filter_rcts = uploaded_data.get("filter_rcts", "is_rct_balanced")
-  
 
 
-    
+
+
     # now do the ML
     if filter_rcts != 'none':
 
@@ -231,7 +238,7 @@ def api_annotate(report_uuid):
             'status': "in process",
             'position': "rct_robot classification"}
         )
-        
+
         # do rct_bot first
         results = bots['rct_bot'].api_annotate(articles)
         for a, r in zip(articles, results):
@@ -255,7 +262,7 @@ def api_annotate(report_uuid):
         parsed = nlp.pipe((a.get(k, "") for a in articles if a.get('skip_annotation', False)==False))
         articles_gen = (a for a in articles)
 
-        while True:    
+        while True:
             try:
                 current_doc = articles_gen.__next__()
             except StopIteration:
@@ -265,7 +272,7 @@ def api_annotate(report_uuid):
             else:
                 current_doc['parsed_{}'.format(k)] = parsed.__next__()
 
-    
+
 
     for bot_name in target_robots:
         current_task.update_state(state='PROGRESS', meta={
@@ -314,7 +321,6 @@ def pdf_annotate_study(data, bot_names=["bias_bot"]):
 
 def pdf_annotation_pipeline(bot_names, data):
     # makes it here!
-    # rdb.set_trace()
     log.info("STARTING PIPELINE (made it to annotation_pipeline)")
 
 

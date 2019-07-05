@@ -71,13 +71,13 @@ class PICORobot:
 
         logging.debug("Loading IDF weights")
         with open(robotreviewer.get_data("pico/P_idf.npz"), 'rb') as f:
-            self.P_idf = diags(np.load(f, encoding='latin1').item().todense().A1, 0)
+            self.P_idf = diags(np.load(f, allow_pickle=True, encoding='latin1').item().todense().A1, 0)
 
         with open(robotreviewer.get_data("pico/I_idf.npz"), 'rb') as f:
-            self.I_idf = diags(np.load(f, encoding='latin1').item().todense().A1, 0)
+            self.I_idf = diags(np.load(f,  allow_pickle=True, encoding='latin1').item().todense().A1, 0)
 
         with open(robotreviewer.get_data("pico/O_idf.npz"), 'rb') as f:
-            self.O_idf = diags(np.load(f, encoding='latin1').item().todense().A1, 0)
+            self.O_idf = diags(np.load(f, allow_pickle=True, encoding='latin1').item().todense().A1, 0)
 
         logging.debug("IDF weights loaded")
 

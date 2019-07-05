@@ -45,7 +45,7 @@ class MiniClassifier:
         hashing vectorizers, and hence make the issue go away.
         '''
         log.debug("Loading model {}...".format(filename))
-        with np.load(filename, encoding='latin1') as raw_data:
+        with np.load(filename, allow_pickle=True, encoding='latin1') as raw_data:
             self.coef = raw_data["coef"].item().todense().A1
             self.intercept = raw_data["intercept"].item()
     

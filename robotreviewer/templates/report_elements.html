@@ -39,14 +39,12 @@
         <tr class='bias-header-row'>
           <th class='trial-id-header'>trial</th>
           <th class='trial-id-header'>design</th>
-          <th class='trial-id-header'>n</th>
           {% for header in headers %}
           <th class="rotate"><div><span>{{ header }}</span></div></th>
           {% endfor %}
         </tr>
 
         <!-- <p>Len articles = {{ articles|length }}</p> -->
-
 
 
         {% for study in articles %}
@@ -68,9 +66,6 @@
             not RCT
           {% endif %}
           </td>
-          <td class="risk-studyid">
-          {{ study.get('sample_size', []) }}
-          </td>
           {% if study_is_rct %}
             {% for domain in study.get('bias', []) %}
               <td class="{% if domain['judgement'] == 'low' %}risk-low{% elif domain['judgement'] == 'high/unclear' %}risk-high{% endif %}">{{ '+' if domain['judgement'] == 'low' else '?' }}</td>
@@ -83,6 +78,35 @@
       </table>
 
 
+      <!-- An overview of studies: sample sizes/punchlines. -->
+      <h2>Trial summaries</h2>
+          
+
+          <table class="char-pico-table">
+            <tr>
+              <th class='trial-id-header'>n</th>
+              <th>Participants</th>
+              <th>Interventions</th>
+              <th>Outcomes</th>
+              <th class='trial-id-header'>punchline</th>
+              <th>finding</th>
+            </tr>
+
+            {% for study in articles %}
+            <tr>
+              <td>
+              {{ study.get('sample_size', []) }}
+              </td>
+     
+               <td>{{study.get('pico_span', {}).get('population', [])|join(', ')}}</td>
+               <td>{{study.get('pico_span', {}).get('interventions', [])|join(', ')}}</td>
+               <td>{{study.get('pico_span', {}).get('outcomes', [])|join(', ')}}</td>
+               <td>{{study.get('punchlines', []) }}</td>
+               <td>{{study.get('finding_direction', []) }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+
       <h2>Characteristics of studies</h2>
 
       <!-- <img src=" {{ pico_plot_path }} "></img> -->
@@ -93,6 +117,7 @@
       {% for study in articles %}
       <h3>{{ short_citation(study) }}</h3>
 
+      <!--
       <table class="char-pico-table">
         <tr>
           <td>Participants</td>
@@ -109,6 +134,7 @@
           <td>{{study.get('pico_span', {}).get('outcomes', [])|join(', ')}}</td>
         </tr>
       </table>
+      -->
 
       <table class="char-pico-table">
         {% for domain in study.get('pico_text', []) %}
