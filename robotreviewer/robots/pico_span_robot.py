@@ -9,6 +9,7 @@ using Supervised Distant Supervision".
 """
 
 
+import string 
 
 import uuid
 import logging
@@ -27,12 +28,32 @@ from robotreviewer.textprocessing import tokenizer
 
 log = logging.getLogger(__name__)
 
+from celery.contrib import rdb
+
+
+def cleanup(spans):
+    '''
+    A helper (static) function for prettifying / deduplicating
+    the PICO snippets extracted by the model.
+    '''
+    def clean_span(s):
+        s_clean = s.strip()
+        # remove punctuation
+        s_clean = s_clean.translate(str.maketrans('','',string.punctuation))
+        # remove 'Background:' when we pick it up
+        s_clean = s_clean.replace("Background", "")
+        return s_clean
+
+    cleaned_spans = [clean_span(s) for s in spans]
+    # dedupe
+    return list(set(cleaned_spans))
+
 
 class PICOSpanRobot:
 
     def __init__(self):
         """
-
+        This bot 
 
         """
         logging.debug("Loading PICO LSTM-CRF")
@@ -40,6 +61,7 @@ class PICOSpanRobot:
         # build model
         self.model = NERModel(config)
         self.model.build()
+
         self.model.restore_session(os.path.join(robotreviewer.DATA_ROOT, "pico_spans/model.weights/"))
         # self.model.restore_session("/home/iain/Code/robotlabs/pico_lstm/EBM-NLP/models/lstm-crf/results/test/model.weights/")
         logging.debug("PICO classifiers loaded")
@@ -116,7 +138,12 @@ class PICOSpanRobot:
             if last_label != "N":
                 out[label_dict[last_label]].append(sent[start_idx:].text.strip())
 
+
+        for e in out: 
+            out[e] = cleanup(out[e])
+
         return out
+
 
     @staticmethod
     def get_marginalia(data):
