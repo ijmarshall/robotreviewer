@@ -49,6 +49,19 @@ A BibTeX entry for LaTeX users is:
   year     =  2017,
 }
 
+## SciBert
+
+RobotReviewer requires a model from the SciBERT team (found [here](https://github.com/allenai/scibert))
+
+To do this, get the file:
+```bash
+wget https://s3-us-west-2.amazonaws.com/ai2-s2-research/scibert/tensorflow_models/scibert_scivocab_uncased.tar.gz
+```
+And (from the RobotReviewer base directory) decompress to the robotreviewer data folder:
+```bash
+tar -zxf scibert_scivocab_uncased.tar.gz --directory robotreviewer/data
+```
+
 ## Docker
 
 We maintain a working Dockerfile in the repo, which is usually the easiest way to install locally.

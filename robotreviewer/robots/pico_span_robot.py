@@ -4,20 +4,20 @@ input, and returns Population, Comparator/Intervention Outcome
 information in the same format, which can easily be converted to JSON.
 
 The model was described using the corpus and methods reported in our
-ACL 2018 paper "A corpus with multi-level annotations of patients, 
-interventions and outcomes to support language processing for medical 
+ACL 2018 paper "A corpus with multi-level annotations of patients,
+interventions and outcomes to support language processing for medical
 literature": https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6174533/.
 """
 
 
-import string 
+import string
 
 import uuid
 import logging
 
 import numpy as np
 import os
-import spacy 
+import spacy
 
 import robotreviewer
 
@@ -27,6 +27,7 @@ from robotreviewer.ml.ner_config import Config
 import robotreviewer
 from itertools import chain
 from robotreviewer.textprocessing import tokenizer
+from bert_serving.client import BertClient
 
 log = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ class PICOSpanRobot:
     def __init__(self):
         """
         This bot tags sequences of words from abstracts as describing
-        P,I, or O elements. 
+        P,I, or O elements.
         """
         logging.debug("Loading PICO LSTM-CRF")
         config = Config()
@@ -67,21 +68,19 @@ class PICOSpanRobot:
 
         self.model.restore_session(os.path.join(robotreviewer.DATA_ROOT, "pico_spans/model.weights/"))
         logging.debug("PICO classifiers loaded")
+        self.bert = BertClient()
 
 
-    def api_annotate(self, articles):
+    def api_annotate(self, articles, get_berts=True):
 
         if not (all(('parsed_ab' in article for article in articles)) and all(('parsed_ti' in article for article in articles))):
             raise Exception('PICO span model requires a title and abstract to be able to complete annotation')
-
-        
         annotations = []
         for article in articles:
             if article.get('skip_annotation'):
                 annotations.append([])
             else:
-                annotations.append(self.annotate({"title": article['parsed_ti'], "abstract": article['parsed_ab']}))
-               
+                annotations.append(self.annotate({"title": article['parsed_ti'], "abstract": article['parsed_ab']}, get_berts=get_berts))
         return annotations
 
 
@@ -106,35 +105,35 @@ class PICOSpanRobot:
         return data
 
 
-    def annotate(self, article):
+    def annotate(self, article, get_berts=True):
 
         """
         Annotate abstract of clinical trial report
         """
 
         label_dict = {"1_p": "population", "1_i": "interventions", "1_o": "outcomes"}
-    
+
         out = {"population": [],
                "interventions": [],
                "outcomes": []}
-        
+
         '''
         rdb.set_trace()
         if type(article['abstract']) == spacy.tokens.span.Span:
 
             article_sentences = [article['abstract']]
-        else: 
+        else:
             article_sentences = article['abstract'].sents
         '''
         for sent in chain(article['title'].sents, article['abstract'].sents):
             words = [w.text for w in sent]
             preds = self.model.predict(words)
-           
+
             last_label = "N"
             start_idx = 0
-            
+
             for i, p in enumerate(preds):
-                
+
                 if p != last_label and last_label != "N":
                     out[label_dict[last_label]].append(sent[start_idx: i].text.strip())
                     start_idx = i
@@ -148,8 +147,13 @@ class PICOSpanRobot:
                 out[label_dict[last_label]].append(sent[start_idx:].text.strip())
 
 
-        for e in out: 
+        for e in out:
             out[e] = cleanup(out[e])
+
+        if get_berts:
+            for k in ['population', 'interventions', 'outcomes']:
+                out["{}_bert".format(k)] = [r.tolist() for r in self.bert.encode(out[k])]
+
 
         return out
 
@@ -164,7 +168,7 @@ class PICOSpanRobot:
                       "annotations": [],
                       "description":  data["ml"]["pico_span"]}]
         return marginalia
-        
+
 
 def main():
     pass
