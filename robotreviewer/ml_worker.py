@@ -106,8 +106,8 @@ def on_worker_init(**_):
     log.info("Loading the robots...")
 
     # pico span bot must be loaded first i have *no* idea why...
-
-    bots = {"pico_span_bot": PICOSpanRobot(),            
+    print("LOADING ROBOTS")
+    bots = {"pico_span_bot": PICOSpanRobot(),
             "bias_bot": BiasRobot(top_k=3),
             "pico_bot": PICORobot(),
             "pubmed_bot": PubmedRobot(),
@@ -125,6 +125,7 @@ def on_worker_init(**_):
                      "punchline_bot": "Extracting main conclusions",
                      "pubmed_bot": "Looking up meta-data in PubMed"}
 
+    print("ROBOTS ALL LOADED")
     log.info("Robots loaded successfully! Ready...")
 
 @app.task
@@ -178,7 +179,7 @@ def pdf_annotate(report_uuid):
         data = pdf_annotate_study(data, bot_names=["rct_bot", "pubmed_bot", "bias_bot", "pico_bot", "pico_span_bot", "punchline_bot", "sample_size_bot"])
 
 
-        
+
         data.gold['pdf_uuid'] = pdf_uuid
         data.gold['filename'] = filename
         c = rr_sql_conn.cursor()
@@ -209,7 +210,7 @@ def api_annotate(report_uuid):
         'status': "in process",
         'position': "received request, fetching data"}
     )
-    
+
 
     c = rr_sql_conn.cursor()
 
@@ -223,10 +224,10 @@ def api_annotate(report_uuid):
     articles = uploaded_data["articles"]
     target_robots = uploaded_data["robots"]
     filter_rcts = uploaded_data.get("filter_rcts", "is_rct_balanced")
-  
 
 
-    
+
+
     # now do the ML
     if filter_rcts != 'none':
 
@@ -234,7 +235,7 @@ def api_annotate(report_uuid):
             'status': "in process",
             'position': "rct_robot classification"}
         )
-        
+
         # do rct_bot first
         results = bots['rct_bot'].api_annotate(articles)
         for a, r in zip(articles, results):
@@ -258,7 +259,7 @@ def api_annotate(report_uuid):
         parsed = nlp.pipe((a.get(k, "") for a in articles if a.get('skip_annotation', False)==False))
         articles_gen = (a for a in articles)
 
-        while True:    
+        while True:
             try:
                 current_doc = articles_gen.__next__()
             except StopIteration:
@@ -268,7 +269,7 @@ def api_annotate(report_uuid):
             else:
                 current_doc['parsed_{}'.format(k)] = parsed.__next__()
 
-    
+
 
     for bot_name in target_robots:
         current_task.update_state(state='PROGRESS', meta={
