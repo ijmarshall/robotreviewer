@@ -37,7 +37,7 @@ class PunchlinesBot:
 
     def infer_result(self, sentence):
         direction_idx = np.argmax(self.inference_model.infer_result([sentence]))
-        return ["sig decrease", "no diff", "sig increase"][direction_idx]
+        return ["↓ sig decrease", "― no diff", "↑ sig increase"][direction_idx]
 
     def annotate(self, data):
         pass 

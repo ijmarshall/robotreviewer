@@ -3,9 +3,10 @@ the PICORobot class takes the title and abstract of a clinical trial as
 input, and returns Population, Comparator/Intervention Outcome
 information in the same format, which can easily be converted to JSON.
 
-The model was derived using the "Supervised Distant Supervision" strategy
-introduced in our paper "Extracting PICO Sentences from Clinical Trial Reports
-using Supervised Distant Supervision".
+The model was described using the corpus and methods reported in our
+ACL 2018 paper "A corpus with multi-level annotations of patients, 
+interventions and outcomes to support language processing for medical 
+literature": https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6174533/.
 """
 
 
@@ -16,6 +17,7 @@ import logging
 
 import numpy as np
 import os
+import spacy 
 
 import robotreviewer
 
@@ -83,8 +85,6 @@ class PICOSpanRobot:
 
 
     def pdf_annotate(self, data):
-
-
         if data.get("abstract") is not None and data.get("title") is not None:
             ti = tokenizer.nlp(data["title"])
             ab = tokenizer.nlp(data["abstract"])
@@ -93,11 +93,12 @@ class PICOSpanRobot:
             TI_LEN = 30
             AB_LEN = 500
             # best guesses based on sample of RCT abstracts + aiming for 95% centile
-            ti = data['parsed_text'][:TI_LEN]
-            ab = data['parsed_text'][:AB_LEN]
+            ti = tokenizer.nlp(data['parsed_text'][:TI_LEN].string)
+            ab = tokenizer.nlp(data['parsed_text'][:AB_LEN].string)
         else:
             # else can't proceed
             return data
+
 
         data.ml["pico_span"] = self.annotate({"title": ti, "abstract": ab})
 
@@ -116,6 +117,14 @@ class PICOSpanRobot:
                "interventions": [],
                "outcomes": []}
         
+        '''
+        rdb.set_trace()
+        if type(article['abstract']) == spacy.tokens.span.Span:
+
+            article_sentences = [article['abstract']]
+        else: 
+            article_sentences = article['abstract'].sents
+        '''
         for sent in chain(article['title'].sents, article['abstract'].sents):
             words = [w.text for w in sent]
             preds = self.model.predict(words)

@@ -317,7 +317,6 @@ def pdf_annotate_study(data, bot_names=["bias_bot"]):
 
 def pdf_annotation_pipeline(bot_names, data):
     # makes it here!
-    # rdb.set_trace()
     log.info("STARTING PIPELINE (made it to annotation_pipeline)")
 
 
