@@ -48,7 +48,10 @@ def cleanup(spans):
         s_clean = s_clean.replace("Background", "")
         return s_clean
 
+
     cleaned_spans = [clean_span(s) for s in spans]
+    # remove empty
+    cleaned_spans = [s for s in cleaned_spans if s]
     # dedupe
     return list(set(cleaned_spans))
 
