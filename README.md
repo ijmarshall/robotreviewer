@@ -49,18 +49,6 @@ A BibTeX entry for LaTeX users is:
   year     =  2017,
 }
 
-## SciBert
-
-RobotReviewer requires a model from the SciBERT team (found [here](https://github.com/allenai/scibert))
-
-To do this, get the file:
-```bash
-wget https://s3-us-west-2.amazonaws.com/ai2-s2-research/scibert/tensorflow_models/scibert_scivocab_uncased.tar.gz
-```
-And (from the RobotReviewer base directory) decompress to the robotreviewer data folder:
-```bash
-tar -zxf scibert_scivocab_uncased.tar.gz --directory robotreviewer/data
-```
 
 ## Docker
 
@@ -105,8 +93,9 @@ docker stop robotreviewer
     python -m nltk.downloader punkt stopwords
     ```
 
-  Install also either tensorflow V 1.12.0, with or without GPU support depending on your preference
+  You then should install tensorflow V 1.12.0, with or without GPU support depending on your preference:
   ```bash
+  conda activate robotreviewer
   pip install tensorflow==1.12.0 # OR
   pip install tensorflow-gpu==1.12.0
   ```
@@ -120,6 +109,16 @@ docker stop robotreviewer
 8. Also install `rabbitmq`. This can be [done via homebrew on OS X](https://www.rabbitmq.com/install-homebrew.html), or by alternative means documented [here](https://www.rabbitmq.com/download.html). Finally, install make sure [celery](http://www.celeryproject.org/install/) is installed and on your path. Note that this ships with Anaconda by default and will be found in the `$(anaconda-home)/bin/celery` dir by default.
 
 9. We now also make use of [BERT embeddings](https://arxiv.org/pdf/1810.04805.pdf), specifically [SciBERT](https://github.com/allenai/scibert). For this we use the [bert-as-service](https://github.com/hanxiao/bert-as-service). This needs to be running locally. 
+
+To do this, get the SciBERT model file:
+```bash
+wget https://s3-us-west-2.amazonaws.com/ai2-s2-research/scibert/tensorflow_models/scibert_scivocab_uncased.tar.gz
+```
+And (from the RobotReviewer base directory) decompress to the robotreviewer data folder:
+```bash
+tar -zxf scibert_scivocab_uncased.tar.gz --directory robotreviewer/data
+```
+
 
 ## Running
 
