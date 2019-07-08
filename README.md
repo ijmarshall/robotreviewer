@@ -95,7 +95,7 @@ docker stop robotreviewer
 4. Install the Python libraries that RobotReviewer needs. The most reliable way is through a conda environment. The following downloads the packages, and installs the required data.
     ```bash
     conda env create -f robotreviewer_env.yml
-    source activate robotreviewer
+    conda activate robotreviewer
     python -m spacy download en
     python -m nltk.downloader punkt stopwords
     ```
