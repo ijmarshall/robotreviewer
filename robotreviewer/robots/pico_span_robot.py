@@ -120,14 +120,7 @@ class PICOSpanRobot:
                "interventions": [],
                "outcomes": []}
 
-        '''
-        rdb.set_trace()
-        if type(article['abstract']) == spacy.tokens.span.Span:
 
-            article_sentences = [article['abstract']]
-        else:
-            article_sentences = article['abstract'].sents
-        '''
         for sent in chain(article['title'].sents, article['abstract'].sents):
             words = [w.text for w in sent]
             preds = self.model.predict(words)
@@ -155,7 +148,12 @@ class PICOSpanRobot:
 
         if get_berts:
             for k in ['population', 'interventions', 'outcomes']:
-                out["{}_bert".format(k)] = [r.tolist() for r in self.bert.encode(out[k])]
+                # check if out[k] is empty; if it is, skip it. 
+                bert_out_key = "{}_bert".format(k)
+                if len(out[k]) == 0: 
+                    out[bert_out_key] = []
+                else:
+                    out[bert_out_key] = [r.tolist() for r in self.bert.encode(out[k])]
 
 
         return out
