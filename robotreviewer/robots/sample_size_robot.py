@@ -12,7 +12,7 @@ preprocessor_path  = 'robotreviewer/data/sample_size/preprocessor.pickle'
 class SampleSizeBot:
 
     def __init__(self):
-        
+
         from robotreviewer.ml.sample_size_NN import MLPSampleSizeClassifier
         global MLPSampleSizeClassifier
         # as always, this was set in a totally and
@@ -55,6 +55,11 @@ class SampleSizeBot:
 
         abstract = None
 
+        ####
+        # TODO this seems to fail fairly often, e.g., on https://www.ncbi.nlm.nih.gov/pmc/articles/PMC28530/pdf/1337.pdf
+        # where it pulls off like the first bit of the abstract but not all. We should be smarter
+        # about this -- perhaps defaulting to the ABSTRACT_LEN option more frequently.
+        # ###
         if data.get("abstract") is not None:
             abstract = data["abstract"]
         elif data.get("parsed_text") is not None:
