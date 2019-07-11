@@ -6,7 +6,8 @@ import collections
 import re
 import timeit #for testing
 
-# TODO 
+
+# TODO
 # improve handling of the word 'a'
 # ideally will operate as number 1 in front of hundred, thousand etc.
 # but not flag as a number otherwise
@@ -88,13 +89,14 @@ class NumberTagger(WordTagger):
         """
         returns string with number words replaced with digits
         """
+        text = re.sub(r"(?<=[0-9])[\s\,](?=[0-9])", "", text)
         tags = self.tag(text)
         # tags.sort(key=lambda (number, start, end): start) # get tags and sort by start index
         tags.sort(key=lambda indices: indices[1])
 
         output_list = []
         progress_index = 0
-        
+
         for (number, start_index, end_index) in tags:
             output_list.append(text[progress_index:start_index]) # add the unedited string from the last marker up to the number
             output_list.append(str(number)) # add the string digits of the number
@@ -118,11 +120,11 @@ class NumberTagger(WordTagger):
         last_word_was_a_number = False
 
         # first get groups of consecutive numbers from the reversed word list
-        
-        
+
+
 
         for word, start, end in words:
-            
+
             word_num = self.numberwords.get(word.lower())
 
             if word_num is None:
@@ -130,16 +132,16 @@ class NumberTagger(WordTagger):
             else:
                 if last_word_was_a_number == False:
                     number_parts.append([])
-                    number_parts_index += 1 
+                    number_parts_index += 1
                 last_word_was_a_number = True
 
-                number_parts[number_parts_index].append((word_num, start, end))             
+                number_parts[number_parts_index].append((word_num, start, end))
 
         output = []
 
-        
+
         # then calculate the number for each part
-        
+
         for number_part in number_parts:
             number = self.recursive_nums([word_num for word_num, start, end in number_part])
             start = min([start for word_num, start, end in number_part])
@@ -154,7 +156,7 @@ class NumberTagger(WordTagger):
 
         tens_index = 0
         tens = [100, 1000, 1000000, 1000000000, 1000000000000]
-        
+
         current_multiplier = 1
 
         split_list = collections.defaultdict(list)
@@ -165,9 +167,9 @@ class NumberTagger(WordTagger):
                 current_multiplier = num
             else:
                 split_list[current_multiplier].append(num)
-        
+
         counter = 0
-        
+
         # then sum up the component parts
 
         for multiplier, numbers in split_list.items():
@@ -185,7 +187,7 @@ class NumberTagger(WordTagger):
 
 
     # counter = 0
-    
+
     # for i, num in enumerate(numlist):
     #   if num % 10 == 0:
     #       counter += (num * recursive_nums(numlist[i+1:]))
@@ -202,20 +204,20 @@ def swap_num(text):
 
 def test(t):
     b = t.tag("""Specific immunotherapy is still widely used in grass-pollen allergy,
- but its side effects may limit its use. We tested the safety and efficacy of a 
- formalinized high-molecular-weight allergoid prepared from a mixed grass-pollen 
+ but its side effects may limit its use. We tested the safety and efficacy of a
+ formalinized high-molecular-weight allergoid prepared from a mixed grass-pollen
 extract with two injection schedules in a double-blind, placebo-controlled study.
- Eighteen patients received placebo, 19 received the low-dose schedule (maximal 
+ Eighteen patients received placebo, 19 received the low-dose schedule (maximal
 dose: 2000 PNU) and 20 received the high-dose schedule (maximal dose: 10,000 PNU).
  Only one patient presented a systemic reaction of moderate severity for a dose
  of 1200 PNU. Before the onset of the pollen season, patients had a nasal challenge
- with orchard grass-pollen grains, a skin test titration, and the titration 
-of serum-specific IgG. Both groups of patients presented a significant reduction in nasal 
-and skin sensitivities and a significant increase in IgG compared to placebo. Symptoms and 
-medications for rhinitis and asthma were studied during the season, and both groups receiving 
-allergoids had a significant reduction of symptom-medication scores for nasal and bronchial 
-symptoms. There was a highly significant correlation between nasal symptom-medication 
-scores during the season and the results of nasal challenges. High-molecular-weight 
+ with orchard grass-pollen grains, a skin test titration, and the titration
+of serum-specific IgG. Both groups of patients presented a significant reduction in nasal
+and skin sensitivities and a significant increase in IgG compared to placebo. Symptoms and
+medications for rhinitis and asthma were studied during the season, and both groups receiving
+allergoids had a significant reduction of symptom-medication scores for nasal and bronchial
+symptoms. There was a highly significant correlation between nasal symptom-medication
+scores during the season and the results of nasal challenges. High-molecular-weight
 allergoids are safe and effective.""")
 
 
@@ -230,7 +232,7 @@ def main():
     print (b)
 
 
-        
+
     # three million, two hundred and fourteen thousand, one hundred and twelve
     # testnums = [12, 100, 1, 1000, 14, 100, 2, 1000000, 3]
     # testnums = [100, 2, 1000000, 40]
