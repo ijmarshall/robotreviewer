@@ -3,7 +3,7 @@ The SampleSizeBot consumes abstracts and extracts study sample sizes from these.
 '''
 import pickle
 
-
+from celery.contrib import rdb
 
 model_arch_path    = 'robotreviewer/data/sample_size/sample_size_model_architecture.json'
 model_weights_path = 'robotreviewer/data/sample_size/sample_size_weights.hdf5'
@@ -12,6 +12,7 @@ preprocessor_path  = 'robotreviewer/data/sample_size/preprocessor.pickle'
 class SampleSizeBot:
 
     def __init__(self):
+        
         from robotreviewer.ml.sample_size_NN import MLPSampleSizeClassifier
         global MLPSampleSizeClassifier
         # as always, this was set in a totally and

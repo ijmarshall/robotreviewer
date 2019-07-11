@@ -13,6 +13,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 import gensim
 #from gensim.models import Word2Vec
 
+from celery.contrib import rdb
+
 import keras
 from keras.layers import Input
 from keras.layers.core import Dense, Dropout, Activation, Flatten
@@ -81,25 +83,25 @@ class MLPSampleSizeClassifier:
         return one_hot
 
     def featurize_for_input(self, X):
-        left_token_inputs, left_PoS, target_token_inputs, \
-            right_token_inputs, right_PoS, other_inputs = [], [], [], [], [], []
+        left_token_inputs, left_PoS, right_token_inputs, right_PoS, other_inputs = [], [], [], [], []#, []
+            #target_token_inputs, \
+            
 
         # helper func for looking up word indices
         def get_w_index(w):
             unk_idx = self.preprocessor.tokenizer.word_index[self.preprocessor.unk_symbol]
-            try:
+            try: 
                 word_idx = self.preprocessor.tokenizer.word_index[w]
                 if word_idx < self.preprocessor.max_features:
-                    return word_idx
-                else:
+                    return word_idx 
+                else: 
                     return unk_idx
             except:
-                pass
+                pass 
 
             return unk_idx
 
 
-        #import pdb; pdb.set_trace()
 
         for x in X:
             l_word_idx = get_w_index(x["left_word"])
@@ -107,7 +109,7 @@ class MLPSampleSizeClassifier:
 
             left_PoS.append(self.PoS_tags_to_one_hot(x["left_PoS"]))
 
-            target_token_inputs.append(np.array(x["target"]))
+            #target_token_inputs.append(np.array(x["target"]))
 
             r_word_idx = get_w_index(x["right_word"])
             right_token_inputs.append(np.array(r_word_idx))
@@ -119,7 +121,7 @@ class MLPSampleSizeClassifier:
 
         X_inputs_dict = {"left_token_input":np.vstack(left_token_inputs),
                         "left_PoS_input":np.vstack(left_PoS),
-                        "target_token_input":np.vstack(target_token_inputs),
+                        #"target_token_input":np.vstack(target_token_inputs),
                         "right_token_input":np.vstack(right_token_inputs),
                         "right_PoS_input":np.vstack(right_PoS),
                         "other_feature_inputs":np.vstack(other_inputs)}
@@ -128,18 +130,17 @@ class MLPSampleSizeClassifier:
 
 
     def build_MLP_model(self):
-
         left_token_input = Input(name='left_token_input', shape=(1,))
-        left_token_embedding = Embedding(output_dim=self.preprocessor.embedding_dims, input_dim=self.preprocessor.max_features,
+        left_token_embedding = Embedding(output_dim=self.preprocessor.embedding_dims, input_dim=self.preprocessor.max_features, 
                                         input_length=1)(left_token_input)
         left_token_embedding = Flatten(name="left_token_embedding")(left_token_embedding)
-
+        
         n_PoS_tags = len(self.tag_names)
         left_PoS_input = Input(name='left_PoS_input', shape=(n_PoS_tags,))
-        target_token_input = Input(name='target_token_input', shape=(1,))
+        #target_token_input = Input(name='target_token_input', shape=(1,))
 
         right_token_input = Input(name='right_token_input', shape=(1,))
-        right_token_embedding = Embedding(output_dim=self.preprocessor.embedding_dims, input_dim=self.preprocessor.max_features,
+        right_token_embedding = Embedding(output_dim=self.preprocessor.embedding_dims, input_dim=self.preprocessor.max_features, 
                                           input_length=1)(right_token_input)
         right_PoS_input = Input(name='right_PoS_input', shape=(n_PoS_tags,))
 
@@ -147,16 +148,18 @@ class MLPSampleSizeClassifier:
 
         other_features_input = Input(name='other_feature_inputs', shape=(4,))
 
-        x = merge([left_token_embedding, target_token_input, right_token_embedding,
-                    left_PoS_input, right_PoS_input, other_features_input],
+        x = merge([left_token_embedding, #target_token_input, 
+                    right_token_embedding, 
+                    left_PoS_input, right_PoS_input, other_features_input],  
                     mode='concat', concat_axis=1)
         x = Dense(128, name="hidden1", activation='relu')(x)
-        x = Dense(64, name="hidden2", activation='relu')(x)
+        #x = Dropout(.2)(x)
+        x = Dense(64, name="hidden2", activation='relu')(x) 
 
         output = Dense(1, name="prediction", activation='sigmoid')(x)
 
-        self.model = Model([left_token_input, left_PoS_input, target_token_input,
-                            right_token_input, right_PoS_input, other_features_input],
+        self.model = Model([left_token_input, left_PoS_input, #target_token_input, 
+                            right_token_input, right_PoS_input, other_features_input], 
                            output=[output])
 
         self.model.compile(optimizer="adam", loss="binary_crossentropy")
@@ -425,7 +428,8 @@ def word2features(abstract_tokens, POS_tags, i, all_nums_in_abstract,
     if lower_year <= target_num <= upper_year:
         target_looks_like_a_year = 1.0
 
-    return {"left_word":l_word, "target": target_num, "right_word":r_word,
+    return {"left_word":l_word, #"target": target_num, 
+            "right_word":r_word,
             "left_PoS":l_POS, "right_PoS":r_POS,
             "other_features":[biggest_num_in_abstract, years_mention_within_window,
                                 target_looks_like_a_year,
