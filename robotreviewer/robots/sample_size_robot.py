@@ -15,9 +15,6 @@ class SampleSizeBot:
 
         from robotreviewer.ml.sample_size_NN import MLPSampleSizeClassifier
         global MLPSampleSizeClassifier
-        # as always, this was set in a totally and
-        # completely scientific way.
-        self.magic_threshold = 0.1
 
         with open(preprocessor_path, 'rb') as preprocessor_file:
             p = pickle.load(preprocessor_file)
@@ -41,17 +38,13 @@ class SampleSizeBot:
                     sample_size_str = 'not found'
                 else:
                     n, confidence = sample_size_pred
-                    if confidence >= self.magic_threshold:
-                        sample_size_str = n
-                    else:
-                        sample_size_str = 'not found'
+                    sample_size_str = n 
+
                 annotations.append({"num_randomized": sample_size_str})
         return annotations
 
 
     def pdf_annotate(self, data):
-
-
 
         abstract = None
 
@@ -69,11 +62,12 @@ class SampleSizeBot:
 
         sample_size_str = "???"
         if abstract is not None:
+            # note that the pred will be None here if the model is not
+            # sufficiently confident
             sample_size_pred = self.sample_size_model.predict_for_abstract(abstract)
             if sample_size_pred is not None:
                 n, confidence = sample_size_pred
-                if confidence >= self.magic_threshold:
-                    sample_size_str = n
+                sample_size_str = n
 
         data.ml["sample_size"] = sample_size_str
 

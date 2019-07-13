@@ -104,14 +104,13 @@ class MLPSampleSizeClassifier:
 
 
         for x in X:
-            l_word_idx = get_w_index(x["left_word"])
+            l_word_idx = np.array([get_w_index(w_i) for w_i in x["left_word"]])
             left_token_inputs.append(np.array([l_word_idx]))
 
             left_PoS.append(self.PoS_tags_to_one_hot(x["left_PoS"]))
 
             #target_token_inputs.append(np.array(x["target"]))
-
-            r_word_idx = get_w_index(x["right_word"])
+            r_word_idx = np.array([get_w_index(w_i) for w_i in x["right_word"]])
             right_token_inputs.append(np.array(r_word_idx))
 
             right_PoS.append(self.PoS_tags_to_one_hot(x["right_PoS"]))
@@ -130,18 +129,19 @@ class MLPSampleSizeClassifier:
 
 
     def build_MLP_model(self):
-        left_token_input = Input(name='left_token_input', shape=(1,))
+        NUM_WINDOW_FEATURES = 2
+        left_token_input = Input(name='left_token_input', shape=(NUM_WINDOW_FEATURES,))
         left_token_embedding = Embedding(output_dim=self.preprocessor.embedding_dims, input_dim=self.preprocessor.max_features, 
-                                        input_length=1)(left_token_input)
+                                        input_length=NUM_WINDOW_FEATURES)(left_token_input)
         left_token_embedding = Flatten(name="left_token_embedding")(left_token_embedding)
         
         n_PoS_tags = len(self.tag_names)
         left_PoS_input = Input(name='left_PoS_input', shape=(n_PoS_tags,))
         #target_token_input = Input(name='target_token_input', shape=(1,))
 
-        right_token_input = Input(name='right_token_input', shape=(1,))
+        right_token_input = Input(name='right_token_input', shape=(NUM_WINDOW_FEATURES,))
         right_token_embedding = Embedding(output_dim=self.preprocessor.embedding_dims, input_dim=self.preprocessor.max_features, 
-                                          input_length=1)(right_token_input)
+                                          input_length=NUM_WINDOW_FEATURES)(right_token_input)
         right_PoS_input = Input(name='right_PoS_input', shape=(n_PoS_tags,))
 
         right_token_embedding = Flatten(name="right_token_embedding")(right_token_embedding)
@@ -153,7 +153,7 @@ class MLPSampleSizeClassifier:
                     left_PoS_input, right_PoS_input, other_features_input],  
                     mode='concat', concat_axis=1)
         x = Dense(128, name="hidden1", activation='relu')(x)
-        #x = Dropout(.2)(x)
+        x = Dropout(.2)(x)
         x = Dense(64, name="hidden2", activation='relu')(x) 
 
         output = Dense(1, name="prediction", activation='sigmoid')(x)
@@ -163,6 +163,7 @@ class MLPSampleSizeClassifier:
                            output=[output])
 
         self.model.compile(optimizer="adam", loss="binary_crossentropy")
+
 
     def predict_for_abstract(self, abstract_text):
         '''
@@ -181,7 +182,6 @@ class MLPSampleSizeClassifier:
 
 
         X = self.featurize_for_input(abstract_features)
-
         preds = self.model.predict(X)
         most_likely_idx = np.argmax(preds)
 
@@ -343,7 +343,7 @@ def abstract2features(abstract_tokens, POS_tags):
     # the latter because years are a potential source of
     # confusion!
     years_tokens = ["years", "year"]
-    patients_tokens = ["patients", "subjects"]
+    patients_tokens = ["patients", "subjects", "participants"]
     all_nums_in_abstract, years_indices, patient_indices = [], [], []
     for idx, t in enumerate(abstract_tokens):
         t_lower = t.lower()
@@ -382,9 +382,16 @@ def word2features(abstract_tokens, POS_tags, i, all_nums_in_abstract,
                     years_indices, patient_indices,
                     window_size_for_years=5,
                     window_size_patient_mention=4):
-    l_word, r_word = "", ""
+    # TODO clean this up -- it is embarrassing
+    ll_word, l_word, r_word, rr_word = "", "", "", ""
+
     l_POS, r_POS   = "", ""
     t_word = abstract_tokens[i]
+
+    if i > 1:
+        ll_word = abstract_tokens[i-2].lower()
+    else: 
+        ll_word = "BoS"
 
     if i > 0:
         l_word = abstract_tokens[i-1].lower()
@@ -393,10 +400,15 @@ def word2features(abstract_tokens, POS_tags, i, all_nums_in_abstract,
         l_word = "BoS"
         l_POS  = "XX" # i.e., unknown
 
+    if i < len(abstract_tokens)-2:
+        rr_word = abstract_tokens[i+2].lower()
+    else:
+        r_word = "LoS"
+
     if i < len(abstract_tokens)-1:
         r_word = abstract_tokens[i+1].lower()
         r_POS  = POS_tags[i+1]
-    else:
+    else: 
         r_word = "LoS"
         r_POS  = "XX"
 
@@ -413,7 +425,7 @@ def word2features(abstract_tokens, POS_tags, i, all_nums_in_abstract,
     for year_idx in years_indices:
         if lower_idx < year_idx <= upper_idx:
             years_mention_within_window = 1.0
-            break
+            break 
 
     # ditto the above, but for "patients"
     patients_mention_follows_within_window = 0.0
@@ -428,11 +440,11 @@ def word2features(abstract_tokens, POS_tags, i, all_nums_in_abstract,
     if lower_year <= target_num <= upper_year:
         target_looks_like_a_year = 1.0
 
-    return {"left_word":l_word, #"target": target_num, 
-            "right_word":r_word,
-            "left_PoS":l_POS, "right_PoS":r_POS,
-            "other_features":[biggest_num_in_abstract, years_mention_within_window,
-                                target_looks_like_a_year,
+    return {"left_word":[ll_word, l_word], # "target": target_num, 
+            "right_word":[rr_word, r_word],  
+            "left_PoS":l_POS, "right_PoS":r_POS, 
+            "other_features":[biggest_num_in_abstract, years_mention_within_window, 
+                                target_looks_like_a_year, 
                                 patients_mention_follows_within_window]}
 
 def load_data(csv_path="df_redux_w_nums.csv"):
