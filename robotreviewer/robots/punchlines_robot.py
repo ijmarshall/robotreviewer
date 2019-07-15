@@ -25,8 +25,10 @@ class PunchlinesBot:
 
     def get_top_sentences(self, sentences, k=1):
 
-        sentences_text = [s.text for s in sentences]
+        sentences_text = [s.text for s in sentences if s.text]
 
+        if sentences_text == []:
+            return []
         sentence_scores = self.punchlines_model.score_sentences(sentences_text).squeeze()
         sorted_indices = np.argsort(sentence_scores)[::-1]
 
@@ -52,7 +54,10 @@ class PunchlinesBot:
         for article in articles:
 
             top_sentences = self.get_top_sentences(article['parsed_ab'].sents)
-            finding_direction = self.infer_result(top_sentences[0])
+            if top_sentences:
+                finding_direction = self.infer_result(top_sentences[0])
+            else:
+                finding_direction = "unable to determine"
             row = {"punchline_text": " ".join(top_sentences),
                    "effect": finding_direction}
             out.append(row)

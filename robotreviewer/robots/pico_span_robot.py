@@ -149,7 +149,7 @@ class PICOSpanRobot:
         if get_berts:
             for k in ['population', 'interventions', 'outcomes']:
                 # check if out[k] is empty; if it is, skip it. 
-                bert_out_key = "{}_bert".format(k)
+                bert_out_key = "{}_berts".format(k)
                 if len(out[k]) == 0: 
                     out[bert_out_key] = []
                 else:

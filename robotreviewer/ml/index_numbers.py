@@ -89,7 +89,7 @@ class NumberTagger(WordTagger):
         """
         returns string with number words replaced with digits
         """
-        text = re.sub(r"(?<=[0-9])[\s\,](?=[0-9])", "", text)
+        text = re.sub(r"(\D[0-9]{1,3})[\s\,]([0-9]{3}\D)", r"\1\2", text)
         tags = self.tag(text)
         # tags.sort(key=lambda (number, start, end): start) # get tags and sort by start index
         tags.sort(key=lambda indices: indices[1])
