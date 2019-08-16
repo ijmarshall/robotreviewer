@@ -148,12 +148,17 @@ class PICOSpanRobot:
 
         if get_berts:
             for k in ['population', 'interventions', 'outcomes']:
-                # check if out[k] is empty; if it is, skip it. 
                 bert_out_key = "{}_berts".format(k)
-                if len(out[k]) == 0: 
+
+                bert_q = []
+                for r in out[k]:
+                    if r.strip() and len(r) > 5:
+                        bert_q.append(r.strip())
+
+                if len(bert_q) == 0:
                     out[bert_out_key] = []
                 else:
-                    out[bert_out_key] = [r.tolist() for r in self.bert.encode(out[k])]
+                    out[bert_out_key] = [r.tolist() for r in self.bert.encode(bert_q)]
 
 
         return out
