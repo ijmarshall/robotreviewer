@@ -26,7 +26,7 @@ from keras.models import Model, model_from_json
 from keras.preprocessing.text import text_to_word_sequence, Tokenizer
 from robotreviewer.textprocessing import tokenizer
 
-import index_numbers
+from robotreviewer.ml import index_numbers
 
 def replace_n_equals(abstract_tokens):
     for j, t in enumerate(abstract_tokens):
@@ -39,7 +39,7 @@ def replace_n_equals(abstract_tokens):
 class MLPSampleSizeClassifier:
 
 
-    def __init__(self, preprocessor, architecture_path=None, weights_path=None):
+    def __init__(self, preprocessor, architecture_path=None, weights_path=None, magic_threshold=None):
         '''
         Optionally allow a path to a (keras formatted) JSON model architecture
         specification and associated set of weights -- this allows easy loading
@@ -59,7 +59,12 @@ class MLPSampleSizeClassifier:
         # this as a sample size altogether (for highest scoring
         # integer). As always, this was definitely set in a totally
         # scientifically sound way ;).
-        self.magic_threshold = 0.0205
+        if magic_threshold is None:
+
+            self.magic_threshold = 0.25
+
+        else:
+            self.magic_threshold = magic_threshold
 
         self.number_tagger = index_numbers.NumberTagger()
 
@@ -67,7 +72,7 @@ class MLPSampleSizeClassifier:
         if architecture_path is not None:
             assert(weights_path is not None)
 
-            
+
             with open(architecture_path) as model_arch:
                 model_arch_str = model_arch.read()
                 self.model = model_from_json(model_arch_str)
@@ -85,19 +90,19 @@ class MLPSampleSizeClassifier:
     def featurize_for_input(self, X):
         left_token_inputs, left_PoS, right_token_inputs, right_PoS, other_inputs = [], [], [], [], []#, []
             #target_token_inputs, \
-            
+
 
         # helper func for looking up word indices
         def get_w_index(w):
             unk_idx = self.preprocessor.tokenizer.word_index[self.preprocessor.unk_symbol]
-            try: 
+            try:
                 word_idx = self.preprocessor.tokenizer.word_index[w]
                 if word_idx < self.preprocessor.max_features:
-                    return word_idx 
-                else: 
+                    return word_idx
+                else:
                     return unk_idx
             except:
-                pass 
+                pass
 
             return unk_idx
 
@@ -131,16 +136,16 @@ class MLPSampleSizeClassifier:
     def build_MLP_model(self):
         NUM_WINDOW_FEATURES = 2
         left_token_input = Input(name='left_token_input', shape=(NUM_WINDOW_FEATURES,))
-        left_token_embedding = Embedding(output_dim=self.preprocessor.embedding_dims, input_dim=self.preprocessor.max_features, 
+        left_token_embedding = Embedding(output_dim=self.preprocessor.embedding_dims, input_dim=self.preprocessor.max_features,
                                         input_length=NUM_WINDOW_FEATURES)(left_token_input)
         left_token_embedding = Flatten(name="left_token_embedding")(left_token_embedding)
-        
+
         n_PoS_tags = len(self.tag_names)
         left_PoS_input = Input(name='left_PoS_input', shape=(n_PoS_tags,))
         #target_token_input = Input(name='target_token_input', shape=(1,))
 
         right_token_input = Input(name='right_token_input', shape=(NUM_WINDOW_FEATURES,))
-        right_token_embedding = Embedding(output_dim=self.preprocessor.embedding_dims, input_dim=self.preprocessor.max_features, 
+        right_token_embedding = Embedding(output_dim=self.preprocessor.embedding_dims, input_dim=self.preprocessor.max_features,
                                           input_length=NUM_WINDOW_FEATURES)(right_token_input)
         right_PoS_input = Input(name='right_PoS_input', shape=(n_PoS_tags,))
 
@@ -148,18 +153,18 @@ class MLPSampleSizeClassifier:
 
         other_features_input = Input(name='other_feature_inputs', shape=(4,))
 
-        x = merge([left_token_embedding, #target_token_input, 
-                    right_token_embedding, 
-                    left_PoS_input, right_PoS_input, other_features_input],  
+        x = merge([left_token_embedding, #target_token_input,
+                    right_token_embedding,
+                    left_PoS_input, right_PoS_input, other_features_input],
                     mode='concat', concat_axis=1)
         x = Dense(128, name="hidden1", activation='relu')(x)
         x = Dropout(.2)(x)
-        x = Dense(64, name="hidden2", activation='relu')(x) 
+        x = Dense(64, name="hidden2", activation='relu')(x)
 
         output = Dense(1, name="prediction", activation='sigmoid')(x)
 
-        self.model = Model([left_token_input, left_PoS_input, #target_token_input, 
-                            right_token_input, right_PoS_input, other_features_input], 
+        self.model = Model([left_token_input, left_PoS_input, #target_token_input,
+                            right_token_input, right_PoS_input, other_features_input],
                            output=[output])
 
         self.model.compile(optimizer="adam", loss="binary_crossentropy")
@@ -390,7 +395,7 @@ def word2features(abstract_tokens, POS_tags, i, all_nums_in_abstract,
 
     if i > 1:
         ll_word = abstract_tokens[i-2].lower()
-    else: 
+    else:
         ll_word = "BoS"
 
     if i > 0:
@@ -408,7 +413,7 @@ def word2features(abstract_tokens, POS_tags, i, all_nums_in_abstract,
     if i < len(abstract_tokens)-1:
         r_word = abstract_tokens[i+1].lower()
         r_POS  = POS_tags[i+1]
-    else: 
+    else:
         r_word = "LoS"
         r_POS  = "XX"
 
@@ -425,7 +430,7 @@ def word2features(abstract_tokens, POS_tags, i, all_nums_in_abstract,
     for year_idx in years_indices:
         if lower_idx < year_idx <= upper_idx:
             years_mention_within_window = 1.0
-            break 
+            break
 
     # ditto the above, but for "patients"
     patients_mention_follows_within_window = 0.0
@@ -440,11 +445,11 @@ def word2features(abstract_tokens, POS_tags, i, all_nums_in_abstract,
     if lower_year <= target_num <= upper_year:
         target_looks_like_a_year = 1.0
 
-    return {"left_word":[ll_word, l_word], # "target": target_num, 
-            "right_word":[rr_word, r_word],  
-            "left_PoS":l_POS, "right_PoS":r_POS, 
-            "other_features":[biggest_num_in_abstract, years_mention_within_window, 
-                                target_looks_like_a_year, 
+    return {"left_word":[ll_word, l_word], # "target": target_num,
+            "right_word":[rr_word, r_word],
+            "left_PoS":l_POS, "right_PoS":r_POS,
+            "other_features":[biggest_num_in_abstract, years_mention_within_window,
+                                target_looks_like_a_year,
                                 patients_mention_follows_within_window]}
 
 def load_data(csv_path="df_redux_w_nums.csv"):
@@ -531,9 +536,9 @@ def main(max_features=10000, test_split=.1, epochs=10, batch_size=32,
 
         try:
             ROC_plot(fpr, tpr)
-            
+
         except:
-            
+
             pass
 
         return nn, fpr, tpr, thresholds
@@ -552,9 +557,9 @@ def main(max_features=10000, test_split=.1, epochs=10, batch_size=32,
 
         try:
             ROC_plot(fpr, tpr)
-            
+
         except:
-            
+
             pass
 
 

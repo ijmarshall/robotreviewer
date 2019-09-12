@@ -2,25 +2,32 @@
 The SampleSizeBot consumes abstracts and extracts study sample sizes from these.
 '''
 import pickle
+import os
+import robotreviewer
+from robotreviewer.ml import sample_size_NN
+import sys
 
-from celery.contrib import rdb
+sys.modules['sample_size_NN'] = sample_size_NN
 
-model_arch_path    = 'robotreviewer/data/sample_size/sample_size_model_architecture.json'
-model_weights_path = 'robotreviewer/data/sample_size/sample_size_weights.hdf5'
-preprocessor_path  = 'robotreviewer/data/sample_size/preprocessor.pickle'
+model_arch_path    = os.path.join(robotreviewer.DATA_ROOT, 'sample_size/sample_size_model_architecture.json')
+model_weights_path = os.path.join(robotreviewer.DATA_ROOT, 'sample_size/sample_size_weights.hdf5')
+preprocessor_path  = os.path.join(robotreviewer.DATA_ROOT, 'sample_size/preprocessor.pickle')
 
 class SampleSizeBot:
 
-    def __init__(self):
+    def __init__(self, magic_threshold=None):
 
         from robotreviewer.ml.sample_size_NN import MLPSampleSizeClassifier
         global MLPSampleSizeClassifier
 
+
+
+
         with open(preprocessor_path, 'rb') as preprocessor_file:
             p = pickle.load(preprocessor_file)
 
-        self.sample_size_model = MLPSampleSizeClassifier(p, model_arch_path, model_weights_path)
-        
+        self.sample_size_model = MLPSampleSizeClassifier(p, model_arch_path, model_weights_path, magic_threshold=magic_threshold)
+
 
     def api_annotate(self, articles):
 
@@ -38,7 +45,7 @@ class SampleSizeBot:
                     sample_size_str = 'not found'
                 else:
                     n, confidence = sample_size_pred
-                    sample_size_str = n 
+                    sample_size_str = n
 
                 annotations.append({"num_randomized": sample_size_str})
         return annotations
