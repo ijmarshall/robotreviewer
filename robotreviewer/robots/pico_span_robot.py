@@ -29,6 +29,8 @@ from itertools import chain
 from robotreviewer.textprocessing import tokenizer
 from bert_serving.client import BertClient
 
+from robotreviewer.textprocessing import minimap
+from robotreviewer.textprocessing import schwartz_hearst
 log = logging.getLogger(__name__)
 
 from celery.contrib import rdb
@@ -74,7 +76,7 @@ class PICOSpanRobot:
         self.bert = BertClient()
 
 
-    def api_annotate(self, articles, get_berts=True):
+    def api_annotate(self, articles, get_berts=True, get_meshes=True):
 
         if not (all(('parsed_ab' in article for article in articles)) and all(('parsed_ti' in article for article in articles))):
             raise Exception('PICO span model requires a title and abstract to be able to complete annotation')
@@ -83,7 +85,7 @@ class PICOSpanRobot:
             if article.get('skip_annotation'):
                 annotations.append([])
             else:
-                annotations.append(self.annotate({"title": article['parsed_ti'], "abstract": article['parsed_ab']}, get_berts=get_berts))
+                annotations.append(self.annotate({"title": article['parsed_ti'], "abstract": article['parsed_ab']}, get_berts=get_berts, get_meshes=True))
         return annotations
 
 
@@ -108,7 +110,7 @@ class PICOSpanRobot:
         return data
 
 
-    def annotate(self, article, get_berts=True):
+    def annotate(self, article, get_berts=True, get_meshes=True):
 
         """
         Annotate abstract of clinical trial report
@@ -160,6 +162,10 @@ class PICOSpanRobot:
                 else:
                     out[bert_out_key] = [r.tolist() for r in self.bert.encode(bert_q)]
 
+        if get_meshes:
+            abbrev_dict = schwartz_hearst.extract_abbreviation_definition_pairs(doc_text=article['abstract'].text)
+            for k in ['population', 'interventions', 'outcomes']:
+                out[f"{k}_mesh"] = minimap.get_unique_terms(out[k], abbrevs=abbrev_dict)
 
         return out
 
