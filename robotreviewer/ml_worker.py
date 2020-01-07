@@ -50,6 +50,7 @@ from robotreviewer.robots.rct_robot import RCTRobot
 from robotreviewer.robots.pubmed_robot import PubmedRobot
 from robotreviewer.robots.pico_span_robot import PICOSpanRobot
 from robotreviewer.robots.bias_ab_robot import BiasAbRobot
+from robotreviewer.robots.human_robot import HumanRobot
 # from robotreviewer.robots.mendeley_robot import MendeleyRobot
 # from robotreviewer.robots.ictrp_robot import ICTRPRobot
 # from robotreviewer.robots import pico_viz_robot
@@ -117,7 +118,8 @@ def on_worker_init(**_):
             #"pico_viz_bot": PICOVizRobot(),
             "punchline_bot":PunchlinesBot(),
             "sample_size_bot":SampleSizeBot(),
-            "bias_ab_bot": BiasAbRobot()}
+            "bias_ab_bot": BiasAbRobot(),
+            "human_bot": HumanRobot()}
 
     friendly_bots = {"pico_span_bot": "Extracting PICO text from title/abstract",
                      "bias_bot": "Assessing risks of bias",
