@@ -217,6 +217,13 @@ Often found on OS X. If you installed `rabbitmq` using Homebrew, running the com
 
 Copyright (c) 2018 Iain Marshall, Joël Kuiper, and Byron Wallace
 
+## Acknowledgements
+
+We are enormously grateful to our many collaborators, whose work is incorporated in RobotReviewer. These include Ani Nenkova and Zachary Ives at UPenn, Benjamin Nye at Northeastern, James Thomas at the EPPI Centre, UCL, and Anna Noel-Storr at the University of Oxford and Cochrane Dementia group. 
+!e would like to express our gratitude to the Cochrane Collaboration, and especially to David Tovey and Chris Mavergames among many others who facilitated getting access to data, and made many useful introductions. We are hugely appreciative to the volunteers of the Cochrane Crowd, and to Anna Noel-Storr and Gordon Dooley, whose efforts and data we depend on to build our machine learning systems for identifying RCTs.
+
+We include an [implimentation](https://github.com/philgooch/abbreviation-extraction) of the [Schwartz-Hearst algorithm](https://psb.stanford.edu/psb-online/proceedings/psb03/schwartz.pdf) in Python by Vincent Van Asch and Phil Gooch, which is released under the MIT licence.
+
 ## Support
 
 This work is supported by: National Institutes of Health (NIH) under the National Library of Medicine, grant R01-LM012086-01A1, "Semi-Automating Data Extraction for Systematic Reviews", and by NIH grant 5UH2CA203711-02, "Crowdsourcing Mark-up of the Medical Literature to Support Evidence-Based Medicine and Develop Automated Annotation Capabilities", and the UK Medical Research Council (MRC), through its Skills Development Fellowship program, grant MR/N015185/1
