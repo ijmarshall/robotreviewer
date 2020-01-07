@@ -55,5 +55,5 @@ class HumanRobot:
             human_preds.append(self.human_models["clfs"][field].predict(X))
 
         human_preds = np.array(human_preds).T
-        human_ens_preds = list(map(lambda x: {"is_human": x}, self.human_models["ensembler"].predict(human_preds)))
+        human_ens_preds = list(map(lambda x: {"is_human": bool(x)}, self.human_models["ensembler"].predict(human_preds)))
         return human_ens_preds
