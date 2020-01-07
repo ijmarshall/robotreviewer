@@ -26,7 +26,8 @@ dependencies:
     - celery==4.2.1
     - flask-wtf==0.14.2
     - fuzzywuzzy==0.17.0
-    - keras==2.1.5
+    # - keras==2.1.5
+    - keras==2.3.0
     - pyyaml==3.13
     - wtforms==2.2.1
     - h5py==2.8.0
