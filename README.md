@@ -82,6 +82,8 @@ docker stop robotreviewer
 
 ## Installation
 
+We have tested the installation on Ubuntu, and Mac OS which both work successfully with the following instructions. Windows does work in the end but with a lot of installation headaches!
+
 1. Ensure you have a working version of Python 3.6. We strongly recommend using Python from the [Anaconda Python distribution](https://www.anaconda.com/distribution/) for a quicker and more reliable experience.
 
 2. [Install git-lfs](https://git-lfs.github.com/) for managing the model file versions (on Mac: `brew install git-lfs`). NB! If you already have git lfs installed, make sure it's the most recent version, since older versions have not downloaded files properly.
