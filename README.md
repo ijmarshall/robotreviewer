@@ -56,7 +56,7 @@ We maintain a working Dockerfile in the repo, which is usually the easiest way t
 
 First you should clone this repository, and download/decompress the SciBERT model file.
 ```
-git clone https://github.com/ijmarshall/robotreviewer3.git
+git clone https://github.com/ijmarshall/robotreviewer.git
 wget https://s3-us-west-2.amazonaws.com/ai2-s2-research/scibert/tensorflow_models/scibert_scivocab_uncased.tar.gz
 tar -zxf scibert_scivocab_uncased.tar.gz --directory robotreviewer/robotreviewer/data
 ```
@@ -88,8 +88,8 @@ docker stop robotreviewer
 
 3. Get a copy of the RobotReviewer repo, and go into that directory
     ```bash
-    git clone https://github.com/ijmarshall/robotreviewer3.git
-    cd robotreviewer3
+    git clone https://github.com/ijmarshall/robotreviewer.git
+    cd robotreviewer
     ```
 
 4. Install the Python libraries that RobotReviewer needs. The most reliable way is through a conda environment. The following downloads the packages, and installs the required data.
