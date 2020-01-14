@@ -252,7 +252,7 @@ class RCTRobot:
         if get_raw:
             return {"svm": svm_preds, "cnn": cnn_preds, "ptyp": pt_mask}
 
-        preds_d =[dict(zip(preds_l,i)) for i in zip(*preds_l.values())]
+        preds_d =[dict(zip(preds_l, i)) for i in zip(*preds_l.values())]
 
         out = []
 
@@ -274,6 +274,7 @@ class RCTRobot:
             row['is_rct_balanced'] = bool(row['score'] >= threshold['balanced'])
             row['is_rct_sensitive'] = bool(row['score'] >= threshold['sensitive'])
             row['ptyp_rct'] = int(used_ptyp)
+            row['preds'] = {k: float(pred[k]) for k in ["svm", "cnn", "svm_cnn", "svm_ptyp", "cnn_ptyp", "svm_cnn_ptyp", "probability"] if k in pred}
             out.append(row)
         return out
 
@@ -312,7 +313,6 @@ class RCTRobot:
         for ris_row, pred_row in zip(ris_data, preds):
             if remove_non_rcts==False or pred_row['is_rct']:
                 ris_row.update({pred_key_map[k]: v for k, v in pred_row.items()})
-
                 out.append(ris_row)
         return ris.dumps(out)
 
