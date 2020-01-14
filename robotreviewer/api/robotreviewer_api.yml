@@ -1,930 +1,951 @@
 {
-  "swagger": "2.0",
-  "info": {
-    "title": "Robot Reviewer API",
-    "version": "1.2",
-    "description": "REST API for asyncronous machine-learning annotation of clinical trial reports.",
-    "license": {
-      "name": "GPL-3.0"
-    },
-    "contact": {
-      "name": "Iain Marshall",
-      "url": "http://www.robotreviewer.net",
-      "email": "mail@ijmarshall.com"
-    }
-  },
-  "host": "api.robotreviewer.net",
-  "paths": {
-    "/queue-documents": {
-      "post": {
-        "responses": {
-          "200": {
-            "description": "Returns a report id, which can be used to get the machine learning status (/report_status) and final report (/report).",
-            "schema": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "report_id": {
-                  "format": "uuid"
-                }
-              }
-            },
-            "examples": {
-              "application/json": {
-                "report_id": "d9181607-8a44-7601-322c-d2aa84b5f0c2"
-              }
-            }
-          },
-          "400": {
-            "description": "Incorrect data format sent, or field missing from article which is required for the models selected.",
-            "schema": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "errorType": {
-                  "type": "string",
-                  "enum": [
-                    "Incorrectly formatted data",
-                    "More data needed for requested task"
-                  ]
-                },
-                "errorText": {
-                  "type": "string"
-                }
-              }
-            },
-            "examples": {
-              "application/json": {
-                "errorType": "More data needed for requested task",
-                "errorText": "One or more articles is missing a full text document, which is required for the bias_bot."
-              }
-            }
-          }
+    "swagger": "2.0",
+    "info": {
+        "title": "Robot Reviewer API",
+        "version": "1.2",
+        "description": "REST API for asyncronous machine-learning annotation of clinical trial reports.",
+        "license": {
+            "name": "GPL-3.0"
         },
-        "summary": "Upload and queue documents",
-        "description": "RobotReviewer uses a queue system to annotate documents (since the process is fast, but not instantaneous).\nThis end point uses the RobotReviewer article format.\n\nNote that this endpoint takes plain text documents only, not PDFs. To convert a PDF into plain text, you may use a tool such as Grobid (https://github.com/kermitt2/grobid), or pdftotext (https://www.xpdfreader.com/pdftotext-man.html).\n\nThe accepted data format is a JSON object with three keys: `\"articles\"`, `\"robots\"`, and `\"filter_rcts\"`.\n\n`\"articles\"` takes an array of one or more articles. Each article is a JSON object, with the following keys: `\"ti\"`: title, `\"ab\"`: abstract, `\"ptyp\"`: an optional array of MEDLINE Publication Types (see https://www.nlm.nih.gov/mesh/pubtypes.html) which aids classification performance, and `\"full_text\"`: a string of the full text of the article. See the example below:\n\n```{\"ti\": \"article title\", \"ab\": \"article abstract\", \"full_text\": \"article full text (e.g. extracted from PDF, and including the title and abstract)\", \"ptyp\": [\"Journal Article\", \"Randomized Controlled Trial\"}```\n\t\n`\"robots\"` defines the annotation pipeline. Currently it accepts `\"rct_bot\"` and `\"bias_bot\"`, or `\"pico_bot\"` to come.\n\n`\"filter_rcts\"` is optional, and refines RobotReviewers RCT filtering behvaiour. By default, where the `\"rct_bot\"` is being used, RobotReviewer will not continue any further annotation tasks for articles deemed to be non-RCTs (since most models are designed for RCTs only). This can be overridden by explicitly setting the values of `\"sensitive\"`, `\"balanced\"`, or `\"precise\"`, or `\"none\"`. By default, `filter_rcts` is set to `\"balanced\"` when RCT classification is requested, or `\"none\"` where RCT classification is not requested.\n\nThe \"balanced\" RCT threshold has a sensitivity of 97.4% and specificity of 96.8%.",
-        "operationId": "robotreviewer.cnxapp.queue_documents",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "uploads"
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "schema": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "articles": {
-                  "type": "array",
-                  "minItems": 1,
-                  "items": {
-                    "$ref": "#/definitions/article"
-                  }
+        "contact": {
+            "name": "Iain Marshall",
+            "url": "http://www.robotreviewer.net",
+            "email": "mail@ijmarshall.com"
+        }
+    },
+    "host": "api.robotreviewer.net",
+    "paths": {
+        "/queue-documents": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Returns a report id, which can be used to get the machine learning status (/report_status) and final report (/report).",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "report_id": {
+                                    "format": "uuid"
+                                }
+                            }
+                        },
+                        "examples": {
+                            "application/json": {
+                                "report_id": "d9181607-8a44-7601-322c-d2aa84b5f0c2"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Incorrect data format sent, or field missing from article which is required for the models selected.",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "errorType": {
+                                    "type": "string",
+                                    "enum": [
+                                        "Incorrectly formatted data",
+                                        "More data needed for requested task"
+                                    ]
+                                },
+                                "errorText": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "examples": {
+                            "application/json": {
+                                "errorType": "More data needed for requested task",
+                                "errorText": "One or more articles is missing a full text document, which is required for the bias_bot."
+                            }
+                        }
+                    }
                 },
-                "robots": {
-                  "type": "array",
-                  "items": {
+                "summary": "Upload and queue documents",
+                "description": "RobotReviewer uses a queue system to annotate documents (since the process is fast, but not instantaneous).\nThis end point uses the RobotReviewer article format.\n\nNote that this endpoint takes plain text documents only, not PDFs. To convert a PDF into plain text, you may use a tool such as Grobid (https://github.com/kermitt2/grobid), or pdftotext (https://www.xpdfreader.com/pdftotext-man.html).\n\nThe accepted data format is a JSON object with three keys: `\"articles\"`, `\"robots\"`, and `\"filter_rcts\"`.\n\n`\"articles\"` takes an array of one or more articles. Each article is a JSON object, with the following keys: `\"ti\"`: title, `\"ab\"`: abstract, `\"ptyp\"`: an optional array of MEDLINE Publication Types (see https://www.nlm.nih.gov/mesh/pubtypes.html) which aids classification performance, and `\"full_text\"`: a string of the full text of the article. See the example below:\n\n```{\"ti\": \"article title\", \"ab\": \"article abstract\", \"full_text\": \"article full text (e.g. extracted from PDF, and including the title and abstract)\", \"ptyp\": [\"Journal Article\", \"Randomized Controlled Trial\"}```\n\t\n`\"robots\"` defines the annotation pipeline. Currently it accepts `\"rct_bot\"` and `\"bias_bot\"`, or `\"pico_bot\"` to come.\n\n`\"filter_rcts\"` is optional, and refines RobotReviewers RCT filtering behvaiour. By default, where the `\"rct_bot\"` is being used, RobotReviewer will not continue any further annotation tasks for articles deemed to be non-RCTs (since most models are designed for RCTs only). This can be overridden by explicitly setting the values of `\"sensitive\"`, `\"balanced\"`, or `\"precise\"`, or `\"none\"`. By default, `filter_rcts` is set to `\"balanced\"` when RCT classification is requested, or `\"none\"` where RCT classification is not requested.\n\nThe \"balanced\" RCT threshold has a sensitivity of 97.4% and specificity of 96.8%.",
+                "operationId": "robotreviewer.cnxapp.queue_documents",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "uploads"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "articles": {
+                                    "type": "array",
+                                    "minItems": 1,
+                                    "items": {
+                                        "$ref": "#/definitions/article"
+                                    }
+                                },
+                                "robots": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "enum": [
+                                            "rct_bot",
+                                            "pico_bot",
+                                            "sample_size_bot",
+                                            "punchline_bot",
+                                            "pico_span_bot",
+                                            "bias_ab_bot",
+                                            "human_bot",
+                                            "bias_bot"
+                                        ]
+                                    }
+                                },
+                                "filter_rcts": {
+                                    "type": "string",
+                                    "enum": [
+                                        "is_rct_precise",
+                                        "is_rct_balanced",
+                                        "is_rct_sensitive",
+                                        "none"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "articles",
+                                "robots"
+                            ]
+                        },
+                        "description": "List of documents for annotation",
+                        "x-examples": {
+                            "application/json": {
+                                "articles": [
+                                    {
+                                        "ti": "reprehenderit laboris commodo esse",
+                                        "ab": "exercitation est",
+                                        "ptyp": [
+                                            "ut commodo ipsum",
+                                            "ut laboris amet mollit adipisicing",
+                                            "irure consectetur cupidatat proident velit"
+                                        ],
+                                        "fullText": "est ad incididunt",
+                                        "pmid": "non"
+                                    },
+                                    {
+                                        "ti": "amet non in",
+                                        "ab": "mollit consectetur nulla velit cupidatat",
+                                        "ptyp": [
+                                            "sunt deserunt eiusmod magna",
+                                            "exercitation in"
+                                        ],
+                                        "fullText": "labore veniam occaecat",
+                                        "pmid": "proide"
+                                    },
+                                    {
+                                        "ti": "v",
+                                        "ab": "consequat est Excepteur Ut proident",
+                                        "ptyp": [
+                                            "cillum laborum aute",
+                                            "deserunt Lorem dolor adipisicing irure",
+                                            "reprehenderit",
+                                            "incididunt qu"
+                                        ],
+                                        "fullText": "ip",
+                                        "pmid": "sed"
+                                    },
+                                    {
+                                        "ti": "dolore cupidatat tempor",
+                                        "ab": "ea pariatur non",
+                                        "ptyp": [
+                                            "cillum amet magna consequat voluptate",
+                                            "quis consectetur",
+                                            "ex anim adipisicing"
+                                        ],
+                                        "fullText": "eiusmod do sed",
+                                        "pmid": "id consectetur"
+                                    }
+                                ],
+                                "robots": [
+                                    "pico_span_bot",
+                                    "sample_size_bot"
+                                ],
+                                "filter_rcts": "none"
+                            }
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "robotreviewer-auth": []
+                    }
+                ]
+            }
+        },
+        "/report-status/{report_id}": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "JSON containing status information, which may be any of:\n{'status': 'in progress}\n{'status': 'complete'}\n{'status': 'error'}\n",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status": {
+                                    "type": "string",
+                                    "enum": [
+                                        "complete",
+                                        "in progress",
+                                        "error"
+                                    ]
+                                }
+                            }
+                        },
+                        "examples": {
+                            "application/json": {
+                                "status": "in progress"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Incorrect request format"
+                    },
+                    "404": {
+                        "description": "No report with the requested ID found."
+                    }
+                },
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/report_id"
+                    }
+                ],
+                "summary": "Get status of queued report",
+                "operationId": "robotreviewer.cnxapp.report_status",
+                "tags": [
+                    "report"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "description": "Returns the status of a report with the id {report_id}.\n\nReturns one of: `{‘status’: 'in progress}`, `{‘status’: ‘complete’}`, or `{‘status’: ‘error’}`",
+                "security": [
+                    {
+                        "robotreviewer-auth": []
+                    }
+                ]
+            }
+        },
+        "/report/{report_id}": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Returns array of completed annotations from the uploaded documents.\nCurrently, these are returned in the order they are sent, but otherwise do not have a unique ID.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/annotations"
+                            }
+                        },
+                        "examples": {
+                            "application/json": [
+                                {
+                                    "pico": {
+                                        "participants": [
+                                            "irure consequat"
+                                        ],
+                                        "interventions": [
+                                            "fugiat sunt",
+                                            "enim ex occaecat aute et",
+                                            "dolor minim elit eu"
+                                        ],
+                                        "outcomes": [
+                                            "es",
+                                            "ad tempor aliqua mollit",
+                                            "officia dolor"
+                                        ]
+                                    },
+                                    "rct": {
+                                        "is_rct": false,
+                                        "is_rct_precise": false,
+                                        "is_rct_balanced": false,
+                                        "is_rct_sensitive": true,
+                                        "model": "svm",
+                                        "score": 88397270.41990373
+                                    },
+                                    "bias": {
+                                        "random_sequence_generation": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "qui sed adipisicing eiusmod laboris",
+                                                "in esse cillum"
+                                            ]
+                                        },
+                                        "allocation_concealment": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "ut",
+                                                "culpa laborum sint"
+                                            ]
+                                        },
+                                        "blinding_participants_personnel": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "irure sint",
+                                                "ex"
+                                            ]
+                                        },
+                                        "blinding_outcome_assessment": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "nisi cu",
+                                                "laboris sint"
+                                            ]
+                                        }
+                                    },
+                                    "punchline": {
+                                        "punchline_text": "ipsum magna",
+                                        "effect": "ipsum in adipisicing elit"
+                                    },
+                                    "sample_size": {
+                                        "num_randomized": -8538920
+                                    },
+                                    "bias_ab": {
+                                        "random_sequence_generation": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "tempor",
+                                                "nisi elit"
+                                            ]
+                                        },
+                                        "allocation_concealment": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "aute",
+                                                "ex ad dolore velit"
+                                            ]
+                                        },
+                                        "blinding_participants_personnel": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "laboris",
+                                                "irure magna i"
+                                            ]
+                                        },
+                                        "blinding_outcome_assessment": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "eu eiusmod in",
+                                                "ex non"
+                                            ]
+                                        }
+                                    }
+                                },
+                                {
+                                    "pico": {
+                                        "participants": [
+                                            "et in laboris Lorem dolor"
+                                        ],
+                                        "interventions": [
+                                            "mollit laborum Lorem non do",
+                                            "Ut enim elit",
+                                            "aliquip qui quis sunt laboris",
+                                            "Duis est"
+                                        ],
+                                        "outcomes": [
+                                            "ea elit",
+                                            "incididunt aliqua sit",
+                                            "ut",
+                                            "in id",
+                                            "dolor"
+                                        ]
+                                    },
+                                    "rct": {
+                                        "is_rct": false,
+                                        "is_rct_precise": true,
+                                        "is_rct_balanced": true,
+                                        "is_rct_sensitive": false,
+                                        "model": "svm_cnn",
+                                        "score": -16281088.35071908
+                                    },
+                                    "bias": {
+                                        "random_sequence_generation": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "pariatur reprehenderit veniam laborum Duis",
+                                                "culpa reprehenderit dolore incididunt"
+                                            ]
+                                        },
+                                        "allocation_concealment": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "minim commodo",
+                                                "tempor"
+                                            ]
+                                        },
+                                        "blinding_participants_personnel": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "nulla esse dolore",
+                                                "Lorem"
+                                            ]
+                                        },
+                                        "blinding_outcome_assessment": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "cupidatat sint enim mollit eiusmod",
+                                                "labore"
+                                            ]
+                                        }
+                                    },
+                                    "punchline": {
+                                        "punchline_text": "ea culpa sit occaecat elit",
+                                        "effect": "sint veniam amet in ut"
+                                    },
+                                    "sample_size": {
+                                        "num_randomized": 1941420
+                                    },
+                                    "bias_ab": {
+                                        "random_sequence_generation": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "voluptate do exercitation",
+                                                "enim laborum incididunt esse minim"
+                                            ]
+                                        },
+                                        "allocation_concealment": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "nostrud",
+                                                "ut fugiat"
+                                            ]
+                                        },
+                                        "blinding_participants_personnel": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "dolore",
+                                                "deserunt esse cupidatat cillum"
+                                            ]
+                                        },
+                                        "blinding_outcome_assessment": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "ad esse aute in sunt",
+                                                "dolor sunt ad ullamco qui"
+                                            ]
+                                        }
+                                    }
+                                },
+                                {
+                                    "pico": {
+                                        "participants": [
+                                            "proident aliquip nisi esse occaecat",
+                                            "minim pariatur dolor",
+                                            "in non veniam ex laborum",
+                                            "tempor"
+                                        ],
+                                        "interventions": [
+                                            "pariatur minim occaecat et",
+                                            "qui veniam",
+                                            "in labore",
+                                            "eu"
+                                        ],
+                                        "outcomes": [
+                                            "Duis mollit velit Lorem sint",
+                                            "ut",
+                                            "in",
+                                            "anim qui incididunt",
+                                            "mollit commodo deserunt qui"
+                                        ]
+                                    },
+                                    "rct": {
+                                        "is_rct": false,
+                                        "is_rct_precise": true,
+                                        "is_rct_balanced": true,
+                                        "is_rct_sensitive": true,
+                                        "model": "svm",
+                                        "score": 74267534.18969768
+                                    },
+                                    "bias": {
+                                        "random_sequence_generation": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "nisi velit amet",
+                                                "aute irure elit Ut cillum"
+                                            ]
+                                        },
+                                        "allocation_concealment": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "consectetur",
+                                                "incididunt nisi tempor sunt in"
+                                            ]
+                                        },
+                                        "blinding_participants_personnel": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "pariatur minim veniam",
+                                                "Excepteur sit ex"
+                                            ]
+                                        },
+                                        "blinding_outcome_assessment": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "voluptate do occaecat",
+                                                "dolor eiusmod cupidatat p"
+                                            ]
+                                        }
+                                    },
+                                    "punchline": {
+                                        "punchline_text": "in",
+                                        "effect": "fugiat consequat"
+                                    },
+                                    "sample_size": {
+                                        "num_randomized": 33814376
+                                    },
+                                    "bias_ab": {
+                                        "random_sequence_generation": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "sit consequat deserunt tempor",
+                                                "veniam aliqua nulla esse"
+                                            ]
+                                        },
+                                        "allocation_concealment": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "commodo velit quis",
+                                                "irure ut sunt id"
+                                            ]
+                                        },
+                                        "blinding_participants_personnel": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "aut",
+                                                "aliqua adipisicing consequat"
+                                            ]
+                                        },
+                                        "blinding_outcome_assessment": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "sit nulla reprehenderit",
+                                                "reprehend"
+                                            ]
+                                        }
+                                    }
+                                },
+                                {
+                                    "pico": {
+                                        "participants": [
+                                            "cupidatat",
+                                            "Duis sint",
+                                            "enim",
+                                            "magna aliqua",
+                                            "consequat sed "
+                                        ],
+                                        "interventions": [
+                                            "culpa"
+                                        ],
+                                        "outcomes": [
+                                            "non pariatur exercitation elit"
+                                        ]
+                                    },
+                                    "rct": {
+                                        "is_rct": false,
+                                        "is_rct_precise": false,
+                                        "is_rct_balanced": false,
+                                        "is_rct_sensitive": false,
+                                        "model": "cnn_ptyp",
+                                        "score": -35899891.015376896
+                                    },
+                                    "bias": {
+                                        "random_sequence_generation": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "commodo id in",
+                                                "culpa"
+                                            ]
+                                        },
+                                        "allocation_concealment": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "pariatur do minim",
+                                                "fugiat esse magna ut enim"
+                                            ]
+                                        },
+                                        "blinding_participants_personnel": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "anim",
+                                                "elit nostrud ex irure"
+                                            ]
+                                        },
+                                        "blinding_outcome_assessment": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "esse cillum pariatur eu aliqua",
+                                                "adipisicing dolore"
+                                            ]
+                                        }
+                                    },
+                                    "punchline": {
+                                        "punchline_text": "in cupidatat dolore id",
+                                        "effect": "proident"
+                                    },
+                                    "sample_size": {
+                                        "num_randomized": -75766775
+                                    },
+                                    "bias_ab": {
+                                        "random_sequence_generation": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "dolore magna sit",
+                                                "pariatur anim sit sint est"
+                                            ]
+                                        },
+                                        "allocation_concealment": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "dolore elit sunt officia",
+                                                "mollit Lorem"
+                                            ]
+                                        },
+                                        "blinding_participants_personnel": {
+                                            "judgement": "high/unclear",
+                                            "rationales": [
+                                                "deserunt",
+                                                "eiusmod sed qui ipsum laborum"
+                                            ]
+                                        },
+                                        "blinding_outcome_assessment": {
+                                            "judgement": "low",
+                                            "rationales": [
+                                                "irure elit et sed",
+                                                "in ut sunt cupi"
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Incorrect request format"
+                    },
+                    "404": {
+                        "description": "No report with the requested ID found."
+                    }
+                },
+                "summary": "Get report",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/report_id"
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "report"
+                ],
+                "operationId": "robotreviewer.cnxapp.report",
+                "description": "Retrieves a structured report of the extracted data and classifications of the uploaded articles.\n\nReturns an array of article annotations (one JSON object per uploaded article). Each object will have a key for every robot which has annotated the document.\n\n\n\n",
+                "security": [
+                    {
+                        "robotreviewer-auth": []
+                    }
+                ]
+            }
+        }
+    },
+    "schemes": [
+        "https"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "definitions": {
+        "article": {
+            "type": "object",
+            "title": "RobotReviewer article",
+            "description": "Data format accepted by RobotReviewer for clinical trial articles.",
+            "additionalProperties": false,
+            "properties": {
+                "ti": {
+                    "type": "string"
+                },
+                "ab": {
+                    "type": "string"
+                },
+                "ptyp": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "fullText": {
+                    "type": "string"
+                },
+                "pmid": {
+                    "type": "string"
+                }
+            }
+        },
+        "annotations": {
+            "type": "object",
+            "title": "RobotReviewer annotations",
+            "description": "Object containing all annotations pertaining to a single document",
+            "additionalProperties": false,
+            "properties": {
+                "rct": {
+                    "$ref": "#/definitions/rct-robot"
+                },
+                "bias": {
+                    "$ref": "#/definitions/bias-robot"
+                },
+                "pico": {
+                    "$ref": "#/definitions/pico-robot"
+                },
+                "punchline": {
+                    "$ref": "#/definitions/punchlines"
+                },
+                "sample_size": {
+                    "$ref": "#/definitions/sample-size-robot"
+                },
+                "bias_ab": {
+                    "$ref": "#/definitions/bias_ab"
+                },
+                "human": {
+                    "$ref": "#/definitions/human_robot"
+                }
+            }
+        },
+        "rct-robot": {
+            "type": "object",
+            "title": "RCT classifier output",
+            "additionalProperties": false,
+            "properties": {
+                "is_rct": {
+                    "type": "boolean"
+                },
+                "is_rct_precise": {
+                    "type": "boolean"
+                },
+                "is_rct_balanced": {
+                    "type": "boolean"
+                },
+                "is_rct_sensitive": {
+                    "type": "boolean"
+                },
+                "model": {
                     "type": "string",
                     "enum": [
-                      "rct_bot",
-                      "pico_bot",
-                      "sample_size_bot",
-                      "punchline_bot",
-                      "pico_span_bot",
-                      "bias_ab_bot",
-                      "human_bot",
-                      "bias_bot"
+                        "svm",
+                        "cnn",
+                        "svm_cnn",
+                        "svm_ptyp",
+                        "cnn_ptyp",
+                        "svm_cnn_ptyp"
                     ]
-                  }
                 },
-                "filter_rcts": {
-                  "type": "string",
-                  "enum": [
-                    "is_rct_precise",
-                    "is_rct_balanced",
-                    "is_rct_sensitive",
-                    "none"
-                  ]
+                "score": {
+                    "type": "number"
                 }
-              },
-              "required": [
-                "articles",
-                "robots"
-              ]
             },
-            "description": "List of documents for annotation",
-            "x-examples": {
-              "application/json": {
-                "articles": [
-                  {
-                    "ti": "reprehenderit laboris commodo esse",
-                    "ab": "exercitation est",
-                    "ptyp": [
-                      "ut commodo ipsum",
-                      "ut laboris amet mollit adipisicing",
-                      "irure consectetur cupidatat proident velit"
-                    ],
-                    "fullText": "est ad incididunt",
-                    "pmid": "non"
-                  },
-                  {
-                    "ti": "amet non in",
-                    "ab": "mollit consectetur nulla velit cupidatat",
-                    "ptyp": [
-                      "sunt deserunt eiusmod magna",
-                      "exercitation in"
-                    ],
-                    "fullText": "labore veniam occaecat",
-                    "pmid": "proide"
-                  },
-                  {
-                    "ti": "v",
-                    "ab": "consequat est Excepteur Ut proident",
-                    "ptyp": [
-                      "cillum laborum aute",
-                      "deserunt Lorem dolor adipisicing irure",
-                      "reprehenderit",
-                      "incididunt qu"
-                    ],
-                    "fullText": "ip",
-                    "pmid": "sed"
-                  },
-                  {
-                    "ti": "dolore cupidatat tempor",
-                    "ab": "ea pariatur non",
-                    "ptyp": [
-                      "cillum amet magna consequat voluptate",
-                      "quis consectetur",
-                      "ex anim adipisicing"
-                    ],
-                    "fullText": "eiusmod do sed",
-                    "pmid": "id consectetur"
-                  }
-                ],
-                "robots": [
-                  "pico_span_bot",
-                  "sample_size_bot"
-                ],
-                "filter_rcts": "none"
-              }
-            }
-          }
-        ]
-      }
-    },
-    "/report-status/{report_id}": {
-      "get": {
-        "responses": {
-          "200": {
-            "description": "JSON containing status information, which may be any of:\n{'status': 'in progress}\n{'status': 'complete'}\n{'status': 'error'}\n",
-            "schema": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "complete",
-                    "in progress",
-                    "error"
-                  ]
+            "required": [
+                "is_rct"
+            ],
+            "description": "Results of the RobotReviewer RCT classification system"
+        },
+        "bias-robot": {
+            "type": "object",
+            "title": "Risk of bias classifier output",
+            "description": "Data structure for holding bias information.\n\nUsed with the first four domains of the Cochrane Risk of Bias tool: random sequence generation, allocation concealment, blinding of participants and personnel, and blinding of outcome assessment.\n\n(The domains of incomplete outcome data and selective outcome reporting have been withheld since, in theory, they should depend on some calculations based on numbers presented in the manuscript, and scrutiny of a protocol respectively: i.e. they should not be possible with the published article alone using out methods).\n\n\n",
+            "additionalProperties": false,
+            "properties": {
+                "random_sequence_generation": {
+                    "$ref": "#/definitions/bias-rationale"
+                },
+                "allocation_concealment": {
+                    "$ref": "#/definitions/bias-rationale"
+                },
+                "blinding_participants_personnel": {
+                    "$ref": "#/definitions/bias-rationale"
+                },
+                "blinding_outcome_assessment": {
+                    "$ref": "#/definitions/bias-rationale"
                 }
-              }
             },
-            "examples": {
-              "application/json": {
-                "status": "in progress"
-              }
-            }
-          },
-          "400": {
-            "description": "Incorrect request format"
-          },
-          "404": {
-            "description": "No report with the requested ID found."
-          }
+            "required": [
+                "random_sequence_generation",
+                "allocation_concealment",
+                "blinding_participants_personnel",
+                "blinding_outcome_assessment"
+            ]
         },
-        "parameters": [
-          {
-            "$ref": "#/parameters/report_id"
-          }
-        ],
-        "summary": "Get status of queued report",
-        "operationId": "robotreviewer.cnxapp.report_status",
-        "tags": [
-          "report"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "description": "Returns the status of a report with the id {report_id}.\n\nReturns one of: `{‘status’: 'in progress}`, `{‘status’: ‘complete’}`, or `{‘status’: ‘error’}`"
-      }
-    },
-    "/report/{report_id}": {
-      "get": {
-        "responses": {
-          "200": {
-            "description": "Returns array of completed annotations from the uploaded documents.\nCurrently, these are returned in the order they are sent, but otherwise do not have a unique ID.",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/annotations"
-              }
-            },
-            "examples": {
-              "application/json": [
-                {
-                  "pico": {
-                    "participants": [
-                      "irure consequat"
-                    ],
-                    "interventions": [
-                      "fugiat sunt",
-                      "enim ex occaecat aute et",
-                      "dolor minim elit eu"
-                    ],
-                    "outcomes": [
-                      "es",
-                      "ad tempor aliqua mollit",
-                      "officia dolor"
+        "bias-rationale": {
+            "type": "object",
+            "title": "Bias judgement with rationale",
+            "description": "For bias classification models using rationales, comprises a judgement (high/unclear, or low), plus one (or more) text snippets which justify the decision.",
+            "additionalProperties": false,
+            "properties": {
+                "judgement": {
+                    "type": "string",
+                    "enum": [
+                        "low",
+                        "high/unclear"
                     ]
-                  },
-                  "rct": {
-                    "is_rct": false,
-                    "is_rct_precise": false,
-                    "is_rct_balanced": false,
-                    "is_rct_sensitive": true,
-                    "model": "svm",
-                    "score": 88397270.41990373
-                  },
-                  "bias": {
-                    "random_sequence_generation": {
-                      "judgement": "low",
-                      "rationales": [
-                        "qui sed adipisicing eiusmod laboris",
-                        "in esse cillum"
-                      ]
-                    },
-                    "allocation_concealment": {
-                      "judgement": "low",
-                      "rationales": [
-                        "ut",
-                        "culpa laborum sint"
-                      ]
-                    },
-                    "blinding_participants_personnel": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "irure sint",
-                        "ex"
-                      ]
-                    },
-                    "blinding_outcome_assessment": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "nisi cu",
-                        "laboris sint"
-                      ]
-                    }
-                  },
-                  "punchline": {
-                    "punchline_text": "ipsum magna",
-                    "effect": "ipsum in adipisicing elit"
-                  },
-                  "sample_size": {
-                    "num_randomized": -8538920
-                  },
-                  "bias_ab": {
-                    "random_sequence_generation": {
-                      "judgement": "low",
-                      "rationales": [
-                        "tempor",
-                        "nisi elit"
-                      ]
-                    },
-                    "allocation_concealment": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "aute",
-                        "ex ad dolore velit"
-                      ]
-                    },
-                    "blinding_participants_personnel": {
-                      "judgement": "low",
-                      "rationales": [
-                        "laboris",
-                        "irure magna i"
-                      ]
-                    },
-                    "blinding_outcome_assessment": {
-                      "judgement": "low",
-                      "rationales": [
-                        "eu eiusmod in",
-                        "ex non"
-                      ]
-                    }
-                  }
                 },
-                {
-                  "pico": {
-                    "participants": [
-                      "et in laboris Lorem dolor"
-                    ],
-                    "interventions": [
-                      "mollit laborum Lorem non do",
-                      "Ut enim elit",
-                      "aliquip qui quis sunt laboris",
-                      "Duis est"
-                    ],
-                    "outcomes": [
-                      "ea elit",
-                      "incididunt aliqua sit",
-                      "ut",
-                      "in id",
-                      "dolor"
-                    ]
-                  },
-                  "rct": {
-                    "is_rct": false,
-                    "is_rct_precise": true,
-                    "is_rct_balanced": true,
-                    "is_rct_sensitive": false,
-                    "model": "svm_cnn",
-                    "score": -16281088.35071908
-                  },
-                  "bias": {
-                    "random_sequence_generation": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "pariatur reprehenderit veniam laborum Duis",
-                        "culpa reprehenderit dolore incididunt"
-                      ]
-                    },
-                    "allocation_concealment": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "minim commodo",
-                        "tempor"
-                      ]
-                    },
-                    "blinding_participants_personnel": {
-                      "judgement": "low",
-                      "rationales": [
-                        "nulla esse dolore",
-                        "Lorem"
-                      ]
-                    },
-                    "blinding_outcome_assessment": {
-                      "judgement": "low",
-                      "rationales": [
-                        "cupidatat sint enim mollit eiusmod",
-                        "labore"
-                      ]
+                "rationales": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                        "type": "string"
                     }
-                  },
-                  "punchline": {
-                    "punchline_text": "ea culpa sit occaecat elit",
-                    "effect": "sint veniam amet in ut"
-                  },
-                  "sample_size": {
-                    "num_randomized": 1941420
-                  },
-                  "bias_ab": {
-                    "random_sequence_generation": {
-                      "judgement": "low",
-                      "rationales": [
-                        "voluptate do exercitation",
-                        "enim laborum incididunt esse minim"
-                      ]
-                    },
-                    "allocation_concealment": {
-                      "judgement": "low",
-                      "rationales": [
-                        "nostrud",
-                        "ut fugiat"
-                      ]
-                    },
-                    "blinding_participants_personnel": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "dolore",
-                        "deserunt esse cupidatat cillum"
-                      ]
-                    },
-                    "blinding_outcome_assessment": {
-                      "judgement": "low",
-                      "rationales": [
-                        "ad esse aute in sunt",
-                        "dolor sunt ad ullamco qui"
-                      ]
-                    }
-                  }
-                },
-                {
-                  "pico": {
-                    "participants": [
-                      "proident aliquip nisi esse occaecat",
-                      "minim pariatur dolor",
-                      "in non veniam ex laborum",
-                      "tempor"
-                    ],
-                    "interventions": [
-                      "pariatur minim occaecat et",
-                      "qui veniam",
-                      "in labore",
-                      "eu"
-                    ],
-                    "outcomes": [
-                      "Duis mollit velit Lorem sint",
-                      "ut",
-                      "in",
-                      "anim qui incididunt",
-                      "mollit commodo deserunt qui"
-                    ]
-                  },
-                  "rct": {
-                    "is_rct": false,
-                    "is_rct_precise": true,
-                    "is_rct_balanced": true,
-                    "is_rct_sensitive": true,
-                    "model": "svm",
-                    "score": 74267534.18969768
-                  },
-                  "bias": {
-                    "random_sequence_generation": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "nisi velit amet",
-                        "aute irure elit Ut cillum"
-                      ]
-                    },
-                    "allocation_concealment": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "consectetur",
-                        "incididunt nisi tempor sunt in"
-                      ]
-                    },
-                    "blinding_participants_personnel": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "pariatur minim veniam",
-                        "Excepteur sit ex"
-                      ]
-                    },
-                    "blinding_outcome_assessment": {
-                      "judgement": "low",
-                      "rationales": [
-                        "voluptate do occaecat",
-                        "dolor eiusmod cupidatat p"
-                      ]
-                    }
-                  },
-                  "punchline": {
-                    "punchline_text": "in",
-                    "effect": "fugiat consequat"
-                  },
-                  "sample_size": {
-                    "num_randomized": 33814376
-                  },
-                  "bias_ab": {
-                    "random_sequence_generation": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "sit consequat deserunt tempor",
-                        "veniam aliqua nulla esse"
-                      ]
-                    },
-                    "allocation_concealment": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "commodo velit quis",
-                        "irure ut sunt id"
-                      ]
-                    },
-                    "blinding_participants_personnel": {
-                      "judgement": "low",
-                      "rationales": [
-                        "aut",
-                        "aliqua adipisicing consequat"
-                      ]
-                    },
-                    "blinding_outcome_assessment": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "sit nulla reprehenderit",
-                        "reprehend"
-                      ]
-                    }
-                  }
-                },
-                {
-                  "pico": {
-                    "participants": [
-                      "cupidatat",
-                      "Duis sint",
-                      "enim",
-                      "magna aliqua",
-                      "consequat sed "
-                    ],
-                    "interventions": [
-                      "culpa"
-                    ],
-                    "outcomes": [
-                      "non pariatur exercitation elit"
-                    ]
-                  },
-                  "rct": {
-                    "is_rct": false,
-                    "is_rct_precise": false,
-                    "is_rct_balanced": false,
-                    "is_rct_sensitive": false,
-                    "model": "cnn_ptyp",
-                    "score": -35899891.015376896
-                  },
-                  "bias": {
-                    "random_sequence_generation": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "commodo id in",
-                        "culpa"
-                      ]
-                    },
-                    "allocation_concealment": {
-                      "judgement": "low",
-                      "rationales": [
-                        "pariatur do minim",
-                        "fugiat esse magna ut enim"
-                      ]
-                    },
-                    "blinding_participants_personnel": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "anim",
-                        "elit nostrud ex irure"
-                      ]
-                    },
-                    "blinding_outcome_assessment": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "esse cillum pariatur eu aliqua",
-                        "adipisicing dolore"
-                      ]
-                    }
-                  },
-                  "punchline": {
-                    "punchline_text": "in cupidatat dolore id",
-                    "effect": "proident"
-                  },
-                  "sample_size": {
-                    "num_randomized": -75766775
-                  },
-                  "bias_ab": {
-                    "random_sequence_generation": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "dolore magna sit",
-                        "pariatur anim sit sint est"
-                      ]
-                    },
-                    "allocation_concealment": {
-                      "judgement": "low",
-                      "rationales": [
-                        "dolore elit sunt officia",
-                        "mollit Lorem"
-                      ]
-                    },
-                    "blinding_participants_personnel": {
-                      "judgement": "high/unclear",
-                      "rationales": [
-                        "deserunt",
-                        "eiusmod sed qui ipsum laborum"
-                      ]
-                    },
-                    "blinding_outcome_assessment": {
-                      "judgement": "low",
-                      "rationales": [
-                        "irure elit et sed",
-                        "in ut sunt cupi"
-                      ]
-                    }
-                  }
                 }
-              ]
             }
-          },
-          "400": {
-            "description": "Incorrect request format"
-          },
-          "404": {
-            "description": "No report with the requested ID found."
-          }
         },
-        "summary": "Get report",
-        "parameters": [
-          {
-            "$ref": "#/parameters/report_id"
-          }
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "report"
-        ],
-        "operationId": "robotreviewer.cnxapp.report",
-        "description": "Retrieves a structured report of the extracted data and classifications of the uploaded articles.\n\nReturns an array of article annotations (one JSON object per uploaded article). Each object will have a key for every robot which has annotated the document.\n\n\n\n"
-      }
-    }
-  },
-  "schemes": [
-    "https"
-  ],
-  "consumes": [
-    "application/json"
-  ],
-  "produces": [
-    "application/json"
-  ],
-  "definitions": {
-    "article": {
-      "type": "object",
-      "title": "RobotReviewer article",
-      "description": "Data format accepted by RobotReviewer for clinical trial articles.",
-      "additionalProperties": false,
-      "properties": {
-        "ti": {
-          "type": "string"
+        "pico-robot": {
+            "type": "object",
+            "title": "PICO snippet extraction",
+            "description": "Data format for extracted PICO snippets (typically from abstract).\n",
+            "required": [
+                "participants",
+                "interventions",
+                "outcomes"
+            ],
+            "additionalProperties": false,
+            "properties": {
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "interventions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "outcomes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
         },
-        "ab": {
-          "type": "string"
+        "sample-size-robot": {
+            "type": "object",
+            "title": "Number of participants",
+            "description": "Returns details about the number of participants in the trial",
+            "properties": {
+                "num_randomized": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "num_randomized"
+            ]
         },
-        "ptyp": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "fullText": {
-          "type": "string"
-        },
-        "pmid": {
-          "type": "string"
-        }
-      }
-    },
-    "annotations": {
-      "type": "object",
-      "title": "RobotReviewer annotations",
-      "description": "Object containing all annotations pertaining to a single document",
-      "additionalProperties": false,
-      "properties": {
-        "rct": {
-          "$ref": "#/definitions/rct-robot"
+        "punchlines": {
+            "type": "object",
+            "description": "Returns a key conclusion sentence (e.g. \"Intervention A significantly increased happiness compared with intervention B (OR 3.02, 95% CI 1.96 to 5.2)\")\n\nAdditionally returns structured data with estimate of direction, which may be a significant increase (\"sig_increase\"), significant reduction (\"sig_reduction\"), or no significant difference (\"no_sig_difference\"). ",
+            "title": "Key conclusion, and effect direction",
+            "properties": {
+                "punchline_text": {
+                    "type": "string"
+                },
+                "effect": {
+                    "type": "string"
+                }
+            }
         },
         "bias": {
-          "$ref": "#/definitions/bias-robot"
-        },
-        "pico": {
-          "$ref": "#/definitions/pico-robot"
-        },
-        "punchline": {
-          "$ref": "#/definitions/punchlines"
-        },
-        "sample_size": {
-          "$ref": "#/definitions/sample-size-robot"
+            "type": "object",
+            "description": "For bias classification models without rationales, comprises a judgement (high/unclear, or low).",
+            "title": "Bias judgement no rationale",
+            "properties": {
+                "judgement": {
+                    "type": "string",
+                    "enum": [
+                        "low",
+                        "high/unclear"
+                    ]
+                }
+            }
         },
         "bias_ab": {
-          "$ref": "#/definitions/bias_ab"
+            "type": "object",
+            "description": "Data structure for holding bias information.\n\nUsed with the first three domains of the Cochrane Risk of Bias tool: random sequence generation, allocation concealment, and blinding of participants and personnel.\n\nGiven the results are from the abstract only, these should be treated as indicitive only.",
+            "title": "Risk of bias from abstracts output ",
+            "properties": {
+                "random_sequence_generation": {
+                    "$ref": "#/definitions/bias"
+                },
+                "allocation_concealment": {
+                    "$ref": "#/definitions/bias"
+                },
+                "blinding_participants_personnel": {
+                    "$ref": "#/definitions/bias"
+                }
+            },
+            "required": [
+                "random_sequence_generation",
+                "allocation_concealment",
+                "blinding_participants_personnel"
+            ]
         },
-        "human": {
-          "$ref": "#/definitions/human_robot"
+        "human_robot": {
+            "title": "Human trial classifier output",
+            "description": "Classifications based on Cohen, A. M., Dunivin, Z. O., & Smalheiser, N. R. (2018). A probabilistic automated tagger to identify human-related publications. Database, Vol. 2018. https://doi.org/10.1093/database/bay079\n\n",
+            "type": "object",
+            "properties": {
+                "is_human": {
+                    "type": "boolean"
+                }
+            }
         }
-      }
     },
-    "rct-robot": {
-      "type": "object",
-      "title": "RCT classifier output",
-      "additionalProperties": false,
-      "properties": {
-        "is_rct": {
-          "type": "boolean"
+    "tags": [
+        {
+            "name": "upload documents"
         },
-        "is_rct_precise": {
-          "type": "boolean"
+        {
+            "name": "report"
         },
-        "is_rct_balanced": {
-          "type": "boolean"
+        {
+            "name": "upload"
         },
-        "is_rct_sensitive": {
-          "type": "boolean"
+        {
+            "name": "uploads"
         },
-        "model": {
-          "type": "string",
-          "enum": [
-            "svm",
-            "cnn",
-            "svm_cnn",
-            "svm_ptyp",
-            "cnn_ptyp",
-            "svm_cnn_ptyp"
-          ]
-        },
-        "score": {
-          "type": "number"
+        {
+            "name": "webapp"
         }
-      },
-      "required": [
-        "is_rct"
-      ],
-      "description": "Results of the RobotReviewer RCT classification system"
+    ],
+    "securityDefinitions": {
+        "robotreviewer-auth": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "api-key",
+            "description": "An API key is required to access RobotReviewer. Please email mail@ijmarshall.com for details.",
+            "x-apikeyInfoFunc": "robotreviewer.cnxapp.auth"
+        }
     },
-    "bias-robot": {
-      "type": "object",
-      "title": "Risk of bias classifier output",
-      "description": "Data structure for holding bias information.\n\nUsed with the first four domains of the Cochrane Risk of Bias tool: random sequence generation, allocation concealment, blinding of participants and personnel, and blinding of outcome assessment.\n\n(The domains of incomplete outcome data and selective outcome reporting have been withheld since, in theory, they should depend on some calculations based on numbers presented in the manuscript, and scrutiny of a protocol respectively: i.e. they should not be possible with the published article alone using out methods).\n\n\n",
-      "additionalProperties": false,
-      "properties": {
-        "random_sequence_generation": {
-          "$ref": "#/definitions/bias-rationale"
-        },
-        "allocation_concealment": {
-          "$ref": "#/definitions/bias-rationale"
-        },
-        "blinding_participants_personnel": {
-          "$ref": "#/definitions/bias-rationale"
-        },
-        "blinding_outcome_assessment": {
-          "$ref": "#/definitions/bias-rationale"
+    "parameters": {
+        "report_id": {
+            "name": "report_id",
+            "in": "path",
+            "type": "string",
+            "required": true,
+            "description": "Unique identifier of report, generated by RobotReviewer when documents uploaded, and used to access report status and final report. "
         }
-      },
-      "required": [
-        "random_sequence_generation",
-        "allocation_concealment",
-        "blinding_participants_personnel",
-        "blinding_outcome_assessment"
-      ]
-    },
-    "bias-rationale": {
-      "type": "object",
-      "title": "Bias judgement with rationale",
-      "description": "For bias classification models using rationales, comprises a judgement (high/unclear, or low), plus one (or more) text snippets which justify the decision.",
-      "additionalProperties": false,
-      "properties": {
-        "judgement": {
-          "type": "string",
-          "enum": [
-            "low",
-            "high/unclear"
-          ]
-        },
-        "rationales": {
-          "type": "array",
-          "minItems": 1,
-          "maxItems": 10,
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "pico-robot": {
-      "type": "object",
-      "title": "PICO snippet extraction",
-      "description": "Data format for extracted PICO snippets (typically from abstract).\n",
-      "required": [
-        "participants",
-        "interventions",
-        "outcomes"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "participants": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "interventions": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "outcomes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "sample-size-robot": {
-      "type": "object",
-      "title": "Number of participants",
-      "description": "Returns details about the number of participants in the trial",
-      "properties": {
-        "num_randomized": {
-          "type": "integer"
-        }
-      },
-      "required": [
-        "num_randomized"
-      ]
-    },
-    "punchlines": {
-      "type": "object",
-      "description": "Returns a key conclusion sentence (e.g. \"Intervention A significantly increased happiness compared with intervention B (OR 3.02, 95% CI 1.96 to 5.2)\")\n\nAdditionally returns structured data with estimate of direction, which may be a significant increase (\"sig_increase\"), significant reduction (\"sig_reduction\"), or no significant difference (\"no_sig_difference\"). ",
-      "title": "Key conclusion, and effect direction",
-      "properties": {
-        "punchline_text": {
-          "type": "string"
-        },
-        "effect": {
-          "type": "string"
-        }
-      }
-    },
-    "bias": {
-      "type": "object",
-      "description": "For bias classification models without rationales, comprises a judgement (high/unclear, or low).",
-      "title": "Bias judgement no rationale",
-      "properties": {
-        "judgement": {
-          "type": "string",
-          "enum": [
-            "low",
-            "high/unclear"
-          ]
-        }
-      }
-    },
-    "bias_ab": {
-      "type": "object",
-      "description": "Data structure for holding bias information.\n\nUsed with the first three domains of the Cochrane Risk of Bias tool: random sequence generation, allocation concealment, and blinding of participants and personnel.\n\nGiven the results are from the abstract only, these should be treated as indicitive only.",
-      "title": "Risk of bias from abstracts output ",
-      "properties": {
-        "random_sequence_generation": {
-          "$ref": "#/definitions/bias"
-        },
-        "allocation_concealment": {
-          "$ref": "#/definitions/bias"
-        },
-        "blinding_participants_personnel": {
-          "$ref": "#/definitions/bias"
-        }
-      },
-      "required": [
-        "random_sequence_generation",
-        "allocation_concealment",
-        "blinding_participants_personnel"
-      ]
-    },
-    "human_robot": {
-      "title": "Human trial classifier output",
-      "description": "Classifications based on Cohen, A. M., Dunivin, Z. O., & Smalheiser, N. R. (2018). A probabilistic automated tagger to identify human-related publications. Database, Vol. 2018. https://doi.org/10.1093/database/bay079\n\n",
-      "type": "object",
-      "properties": {
-        "is_human": {
-          "type": "boolean"
-        }
-      }
     }
-  },
-  "tags": [
-    {
-      "name": "upload documents"
-    },
-    {
-      "name": "report"
-    },
-    {
-      "name": "upload"
-    },
-    {
-      "name": "uploads"
-    },
-    {
-      "name": "webapp"
-    }
-  ],
-  "securityDefinitions": {
-    
-  },
-  "parameters": {
-    "report_id": {
-      "name": "report_id",
-      "in": "path",
-      "type": "string",
-      "required": true,
-      "description": "Unique identifier of report, generated by RobotReviewer when documents uploaded, and used to access report status and final report. "
-    }
-  }
 }

@@ -6,13 +6,21 @@ from datetime import datetime
 import robotreviewer
 import sqlite3
 import json
-
 import connexion
+from connexion.exceptions import OAuthProblem
 
 celery_app = Celery('robotreviewer.ml_worker', backend='amqp://', broker='amqp://')
 celery_tasks = {"api_annotate": celery_app.signature('robotreviewer.ml_worker.api_annotate')}
 
 rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES,  check_same_thread=False)
+
+
+def auth(api_key, required_scopes):
+    info = robotreviewer.config.API_KEYS.get(api_key, None)
+    if not info:
+        raise OAuthProblem('Invalid token')
+    return info
+
 
 def queue_documents(body):
     report_uuid = rand_id()

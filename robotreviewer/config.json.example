@@ -7,6 +7,8 @@
         "spacy_threads": 8,
         "dont_delete": 0,
         "rest_api": false,
-        "log": "log.txt"
+        "log": "log.txt",
+        "api_keys": {"secret_keys":
+                        {"uid": 1}}
 	}
 }
