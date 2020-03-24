@@ -9,7 +9,8 @@ import os
 import robotreviewer
 import pickle
 
-nlp = spacy.load("en")
+# nlp = spacy.load("en")
+nlp = spacy.load("en_core_web_sm")
 
 # ignore list
 with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'ignorelist.txt'), 'r') as f:
@@ -22,6 +23,19 @@ with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'str_to_cui.pck'), 'r
 
 with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'cui_to_mh.pck'), 'rb') as f:
     cui_to_mh = pickle.load(f)
+
+
+# add manual extras
+with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'str_to_cui_supp.pck'), 'rb') as f:
+    str_to_cui_supp = pickle.load(f)
+str_to_cui.update(str_to_cui_supp)
+
+
+with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'cui_to_mh_supp.pck'), 'rb') as f:
+    cui_to_mh_supp = pickle.load(f)
+cui_to_mh.update(cui_to_mh_supp)
+
+
 
 # some extra filtering rules to improve precision
 
