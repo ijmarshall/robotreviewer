@@ -56,7 +56,7 @@ We maintain a working Dockerfile in the repo, which is usually the easiest way t
 
 First you should clone this repository, and download/decompress the SciBERT model file.
 ```
-git clone https://github.com/ijmarshall/robotreviewer3.git
+git clone https://github.com/ijmarshall/robotreviewer.git
 wget https://s3-us-west-2.amazonaws.com/ai2-s2-research/scibert/tensorflow_models/scibert_scivocab_uncased.tar.gz
 tar -zxf scibert_scivocab_uncased.tar.gz --directory robotreviewer/robotreviewer/data
 ```
@@ -82,14 +82,16 @@ docker stop robotreviewer
 
 ## Installation
 
+We have tested the installation on Ubuntu, and Mac OS which both work successfully with the following instructions. Windows does work in the end but with a lot of installation headaches!
+
 1. Ensure you have a working version of Python 3.6. We strongly recommend using Python from the [Anaconda Python distribution](https://www.anaconda.com/distribution/) for a quicker and more reliable experience.
 
 2. [Install git-lfs](https://git-lfs.github.com/) for managing the model file versions (on Mac: `brew install git-lfs`). NB! If you already have git lfs installed, make sure it's the most recent version, since older versions have not downloaded files properly.
 
 3. Get a copy of the RobotReviewer repo, and go into that directory
     ```bash
-    git clone https://github.com/ijmarshall/robotreviewer3.git
-    cd robotreviewer3
+    git clone https://github.com/ijmarshall/robotreviewer.git
+    cd robotreviewer
     ```
 
 4. Install the Python libraries that RobotReviewer needs. The most reliable way is through a conda environment. The following downloads the packages, and installs the required data.
@@ -182,7 +184,7 @@ In the meantime, the code for the API endpoints can be found in `/robotreviewer/
 
 Some things remain simple; e.g., for an example of using RR to classify abstracts as RCTs (or not) see [this gist](https://gist.github.com/bwallace/beebf6d7bbacfbb91704f66c28dcc537).
 
-If you are interested in incorporating RobotReviewer into your own software, please [contact us](mailto:mail@ijmarshall) and we'd be pleased to assist.
+If you are interested in incorporating RobotReviewer into your own software, please [contact us](mailto:mail@ijmarshall.com) and we'd be pleased to assist.
 
 ## Testing
 
@@ -196,7 +198,7 @@ will run the testing modules. These should be used to assure that changes made d
 
 ## Help
 
-Feel free to contact us at [mail@ijmarshall.com](mailto:mail@ijmarshall) with any questions.
+Feel free to contact us at [mail@ijmarshall.com](mailto:mail@ijmarshall.com) with any questions.
 
 ### Common Problems
 
@@ -216,6 +218,13 @@ Often found on OS X. If you installed `rabbitmq` using Homebrew, running the com
 4. Marshall, I. J., Kuiper, J., & Wallace, B. C. (2014). Automating Risk of Bias Assessment for Clinical Trials. In Proceedings of the ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (ACM-BCB) (pp. 88–95). ACM. [[doi]](http://dx.doi.org/10.1145/2649387.2649406)
 
 Copyright (c) 2018 Iain Marshall, Joël Kuiper, and Byron Wallace
+
+## Acknowledgements
+
+We are enormously grateful to our many collaborators, whose work is incorporated in RobotReviewer. These include Ani Nenkova and Zachary Ives at UPenn, Benjamin Nye at Northeastern, James Thomas at the EPPI Centre, UCL, and Anna Noel-Storr at the University of Oxford and Cochrane Dementia group. 
+!e would like to express our gratitude to the Cochrane Collaboration, and especially to David Tovey and Chris Mavergames among many others who facilitated getting access to data, and made many useful introductions. We are hugely appreciative to the volunteers of the Cochrane Crowd, and to Anna Noel-Storr and Gordon Dooley, whose efforts and data we depend on to build our machine learning systems for identifying RCTs.
+
+We include an [implimentation](https://github.com/philgooch/abbreviation-extraction) of the [Schwartz-Hearst algorithm](https://psb.stanford.edu/psb-online/proceedings/psb03/schwartz.pdf) in Python by Vincent Van Asch and Phil Gooch, which is released under the MIT licence.
 
 ## Support
 
