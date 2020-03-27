@@ -2,7 +2,7 @@
     "swagger": "2.0",
     "info": {
         "title": "Robot Reviewer API",
-        "version": "1.2",
+        "version": "1.3",
         "description": "REST API for asyncronous machine-learning annotation of clinical trial reports.",
         "license": {
             "name": "GPL-3.0"
@@ -62,7 +62,7 @@
                     }
                 },
                 "summary": "Upload and queue documents",
-                "description": "RobotReviewer uses a queue system to annotate documents (since the process is fast, but not instantaneous).\nThis end point uses the RobotReviewer article format.\n\nNote that this endpoint takes plain text documents only, not PDFs. To convert a PDF into plain text, you may use a tool such as Grobid (https://github.com/kermitt2/grobid), or pdftotext (https://www.xpdfreader.com/pdftotext-man.html).\n\nThe accepted data format is a JSON object with three keys: `\"articles\"`, `\"robots\"`, and `\"filter_rcts\"`.\n\n`\"articles\"` takes an array of one or more articles. Each article is a JSON object, with the following keys: `\"ti\"`: title, `\"ab\"`: abstract, `\"ptyp\"`: an optional array of MEDLINE Publication Types (see https://www.nlm.nih.gov/mesh/pubtypes.html) which aids classification performance, and `\"full_text\"`: a string of the full text of the article. See the example below:\n\n```{\"ti\": \"article title\", \"ab\": \"article abstract\", \"full_text\": \"article full text (e.g. extracted from PDF, and including the title and abstract)\", \"ptyp\": [\"Journal Article\", \"Randomized Controlled Trial\"}```\n\t\n`\"robots\"` defines the annotation pipeline. Currently it accepts `\"rct_bot\"` and `\"bias_bot\"`, or `\"pico_bot\"` to come.\n\n`\"filter_rcts\"` is optional, and refines RobotReviewers RCT filtering behvaiour. By default, where the `\"rct_bot\"` is being used, RobotReviewer will not continue any further annotation tasks for articles deemed to be non-RCTs (since most models are designed for RCTs only). This can be overridden by explicitly setting the values of `\"sensitive\"`, `\"balanced\"`, or `\"precise\"`, or `\"none\"`. By default, `filter_rcts` is set to `\"balanced\"` when RCT classification is requested, or `\"none\"` where RCT classification is not requested.\n\nThe \"balanced\" RCT threshold has a sensitivity of 97.4% and specificity of 96.8%.",
+                "description": "RobotReviewer uses a queue system to annotate documents (since the process is fast, but not instantaneous).\nThis end point uses the RobotReviewer article format.\n\nNote that this endpoint takes plain text documents only, not PDFs. To convert a PDF into plain text, you may use a tool such as Grobid (https://github.com/kermitt2/grobid), or pdftotext (https://www.xpdfreader.com/pdftotext-man.html).\n\nThe accepted data format is a JSON object with three keys: `\"articles\"`, `\"robots\"`, and `\"filter_rcts\"`.\n\n`\"articles\"` takes an array of one or more articles. Each article is a JSON object, with the following keys: `\"ti\"`: title, `\"ab\"`: abstract, `\"ptyp\"`: an optional array of MEDLINE Publication Types (see https://www.nlm.nih.gov/mesh/pubtypes.html) which aids classification performance, and `\"full_text\"`: a string of the full text of the article. See the example below:\n\n```{\"ti\": \"article title\", \"ab\": \"article abstract\", \"full_text\": \"article full text (e.g. extracted from PDF, and including the title and abstract)\", \"ptyp\": [\"Journal Article\", \"Randomized Controlled Trial\"}```\n\t\n`\"robots\"` defines the annotation pipeline. Currently it accepts \"rct_bot\", \"pico_bot\", \"sample_size_bot\", \"punchline_bot\", \"pico_span_bot\", \"bias_ab_bot\", \"human_bot\", \"bias_bot\", and \"mesh_bot\".\n\n`\"filter_rcts\"` is optional, and refines RobotReviewers RCT filtering behvaiour. By default, where the `\"rct_bot\"` is being used, RobotReviewer will not continue any further annotation tasks for articles deemed to be non-RCTs (since most models are designed for RCTs only). This can be overridden by explicitly setting the values of `\"sensitive\"`, `\"balanced\"`, or `\"precise\"`, or `\"none\"`. By default, `filter_rcts` is set to `\"balanced\"` when RCT classification is requested, or `\"none\"` where RCT classification is not requested.\n\nThe \"balanced\" RCT threshold has a sensitivity of 97.4% and specificity of 96.8%.",
                 "operationId": "robotreviewer.cnxapp.queue_documents",
                 "consumes": [
                     "application/json"
@@ -100,7 +100,8 @@
                                             "pico_span_bot",
                                             "bias_ab_bot",
                                             "human_bot",
-                                            "bias_bot"
+                                            "bias_bot",
+                                            "mesh_bot"
                                         ]
                                     }
                                 },
@@ -691,6 +692,9 @@
                     "type": "string"
                 },
                 "pmid": {
+                    "type": "string"
+                },
+                "snippet": {
                     "type": "string"
                 }
             }

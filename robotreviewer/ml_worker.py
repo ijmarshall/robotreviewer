@@ -51,6 +51,7 @@ from robotreviewer.robots.pubmed_robot import PubmedRobot
 from robotreviewer.robots.pico_span_robot import PICOSpanRobot
 from robotreviewer.robots.bias_ab_robot import BiasAbRobot
 from robotreviewer.robots.human_robot import HumanRobot
+from robotreviewer.robots.mesh_robot import MeshRobot
 # from robotreviewer.robots.mendeley_robot import MendeleyRobot
 # from robotreviewer.robots.ictrp_robot import ICTRPRobot
 # from robotreviewer.robots import pico_viz_robot
@@ -118,6 +119,7 @@ def on_worker_init(**_):
             "pubmed_bot": PubmedRobot(),
             # "ictrp_bot": ICTRPRobot(),
             "rct_bot": RCTRobot(),
+            "mesh_bot": MeshRobot(),
             #"pico_viz_bot": PICOVizRobot(),
             "punchline_bot":PunchlinesBot(),
             "sample_size_bot":SampleSizeBot(),
@@ -129,6 +131,7 @@ def on_worker_init(**_):
                      "pico_bot": "Extracting PICO information from full text",
                      "rct_bot": "Assessing study design (is it an RCT?)",
                      "sample_size_bot": "Extracting sample size",
+                     "mesh_bot": "Extracting MeSH terms",
                      "punchline_bot": "Extracting main conclusions",
                      "pubmed_bot": "Looking up meta-data in PubMed",
                      "bias_ab_bot": "Assessing bias from abstract"}
