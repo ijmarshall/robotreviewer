@@ -57,6 +57,7 @@ from robotreviewer.robots.human_robot import HumanRobot
 # from robotreviewer.robots.pico_viz_robot import PICOVizRobot
 from robotreviewer.robots.punchlines_robot import PunchlinesBot
 from robotreviewer.robots.sample_size_robot import SampleSizeBot
+from robotreviewer.robots.inference_robot import InferenceRobot
 
 from robotreviewer.data_structures import MultiDict
 
@@ -105,6 +106,8 @@ rr_sql_conn.commit()
 def on_worker_init(**_):
     global bots
     global friendly_bots
+    global inf_bot 
+
     log.info("Loading the robots...")
 
     # pico span bot must be loaded first i have *no* idea why...
@@ -129,6 +132,10 @@ def on_worker_init(**_):
                      "punchline_bot": "Extracting main conclusions",
                      "pubmed_bot": "Looking up meta-data in PubMed",
                      "bias_ab_bot": "Assessing bias from abstract"}
+
+    # this requires assembling outputs from ICO bot, so we keep
+    # separate from pipeline for now
+    inf_bot = InferenceRobot()
 
     print("ROBOTS ALL LOADED")
     log.info("Robots loaded successfully! Ready...")
@@ -320,10 +327,10 @@ def pdf_annotate_study(data, bot_names=["bias_bot"]):
     annotations = pdf_annotation_pipeline(bot_names, data)
     return annotations
 
+
 def pdf_annotation_pipeline(bot_names, data):
     # makes it here!
     log.info("STARTING PIPELINE (made it to annotation_pipeline)")
-
 
 
     # DEBUG
@@ -333,10 +340,25 @@ def pdf_annotation_pipeline(bot_names, data):
     for bot_name in bot_names:
         log.info("STARTING {} BOT (annotation_pipeline)".format(bot_name))
         log.debug("Sending doc to {} for annotation...".format(bots[bot_name].__class__.__name__))
-        current_task.update_state(state='PROGRESS',meta={'process_percentage': 79, 'task': friendly_bots[bot_name]})
+        current_task.update_state(state='PROGRESS', meta={'process_percentage': 79, 'task': friendly_bots[bot_name]})
 
         data = bots[bot_name].pdf_annotate(data)
         log.debug("{} done!".format(bots[bot_name].__class__.__name__))
         log.info("COMPLETED {} BOT (annotation_pipeline)".format(bot_name))
         # current_task.update_state(state='PROGRESS',meta={'process_percentage': 79, 'task': 'Bot {} complete!'.format(bot_name)})
+    
+    
+    log.info("running inference...")
+
+    try:
+        # note that this will simplyy fail if abstract or pmid is unavailable
+        packaged_data = [{"pmid": data["pmid"], "abstract": str(data["abstract"]), 
+                         "p": data['pico_span']['population'], "i": data['pico_span']['interventions'], 
+                         "o": data['pico_span']['outcomes'] }]
+        inference_res = inf_bot.annotate(packaged_data)
+        log.info("success! {}".format(packaged_data[0]))
+        data["ico_results"] = packaged_data[0]['icos']
+    except: 
+        log.debug("inference call failed on {}".format(data))
+
     return data
