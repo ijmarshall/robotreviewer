@@ -45,9 +45,8 @@ class PunchlinesBot:
 
     def api_annotate(self, articles):
 
-        if not all(('ab' in article for article in articles)):
+        if not all((('ab' in article) or (article.get('skip_annotation')) for article in articles)):
             raise Exception('Punchline extraction model requires abstract to be able to complete annotation')
-
 
         out = []
 

@@ -232,7 +232,6 @@ def api_annotate(report_uuid):
 
 
 
-
     # now do the ML
     if filter_rcts != 'none':
 

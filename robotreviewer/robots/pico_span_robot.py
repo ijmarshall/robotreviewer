@@ -78,7 +78,7 @@ class PICOSpanRobot:
 
     def api_annotate(self, articles, get_berts=True, get_meshes=True):
 
-        if not (all(('parsed_ab' in article for article in articles)) and all(('parsed_ti' in article for article in articles))):
+        if not all(((('parsed_ab' in article) and ('parsed_ti' in article)) or (article.get('skip_annotation')) for article in articles)):
             raise Exception('PICO span model requires a title and abstract to be able to complete annotation')
         annotations = []
         for article in articles:

@@ -128,6 +128,8 @@ class RCTRobot:
         auto_use_ptyp=True
 
         # require a title and abstract. ptyp optional
+        if not articles:
+            return []
 
         if not(all(("ti" in article and "ab" in article for article in articles))):
             raise Exception("RCT robot requires a full title and abstract")

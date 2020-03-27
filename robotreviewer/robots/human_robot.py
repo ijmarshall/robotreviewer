@@ -44,9 +44,9 @@ class HumanRobot:
         `top_k` can be overridden here, else defaults to the class
         default set in __init__
         """
-        if not all(('ab' in article) and ('ti' in article) for article in articles):
-            raise Exception('Human/non-human model requires titles and abstracts to be able to complete annotation')
 
+        if not all(((('ab' in article) and ('ti' in article)) or (article.get('skip_annotation')) for article in articles)):
+            raise Exception('Human/non-human model requires a title and abstract to be able to complete annotation')
 
         fields = ["ti", "ab"]
         human_preds = []
