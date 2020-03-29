@@ -51,6 +51,9 @@ class PunchlinesBot:
         out = []
 
         for article in articles:
+            if article.get('skip_annotation'):
+                out.append({})
+                continue
 
             top_sentences = self.get_top_sentences(article['parsed_ab'].sents)
             if top_sentences:

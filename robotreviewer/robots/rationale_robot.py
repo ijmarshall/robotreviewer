@@ -282,6 +282,9 @@ class BiasRobot:
 
     def api_annotate(self, articles):
 
+        if not articles:
+            return []
+
         if not all(('parsed_fullText' in article for article in articles)):
             raise Exception('Bias model requires full text to be able to complete annotation')
 
