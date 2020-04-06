@@ -63,7 +63,7 @@ tar -zxf scibert_scivocab_uncased.tar.gz --directory robotreviewer/robotreviewer
 
 Then - to build and run, from within the code directory run:
 ```
-docker build -t robotreviewer
+docker build -t robotreviewer .
 ```
 
 If the build is successful, you can then start the website locally by running:
