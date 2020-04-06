@@ -30,21 +30,21 @@ def queue_documents(body):
     c.close()
     # send async request to Celery
     celery_tasks['api_annotate'].apply_async((report_uuid, ), task_id=report_uuid)
-    return json.dumps({"report_id": report_uuid})
+    return {"report_id": report_uuid}
 
 def report_status(report_id):
     '''
     check and return status of celery annotation process
     '''
     result = AsyncResult(report_id, app=celery_app)
-    return json.dumps({"state": result.state, "meta": result.result})
+    return {"state": result.state, "meta": result.result}
 
 def report(report_id):
     c = rr_sql_conn.cursor()
     c.execute("SELECT annotations FROM api_done WHERE report_uuid = ?", (report_id, ))
     result = c.fetchone()
     c.close()
-    return result[0]
+    return json.loads(result[0])
 
 import connexion
 app = connexion.FlaskApp(__name__, specification_dir='api/', port=5000, server='gevent')
