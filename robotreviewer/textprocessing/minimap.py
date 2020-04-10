@@ -20,9 +20,12 @@ with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'ignorelist.txt'), 'r
 with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'str_to_cui.pck'), 'rb') as f:
     str_to_cui = pickle.load(f)
 
+with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'cui_to_str.pck'), 'rb') as f:
+    cui_to_str = pickle.load(f)
 
-with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'cui_to_mh.pck'), 'rb') as f:
-    cui_to_mh = pickle.load(f)
+
+# with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'cui_to_mh.pck'), 'rb') as f:
+#     cui_to_mh = pickle.load(f)
 
 
 # add manual extras
@@ -31,9 +34,14 @@ with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'str_to_cui_supp.pck'
 str_to_cui.update(str_to_cui_supp)
 
 
-with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'cui_to_mh_supp.pck'), 'rb') as f:
-    cui_to_mh_supp = pickle.load(f)
-cui_to_mh.update(cui_to_mh_supp)
+with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'cui_to_str_supp.pck'), 'rb') as f:
+    cui_to_str_supp = pickle.load(f)
+cui_to_str.update(cui_to_str_supp)
+
+
+# with open(os.path.join(robotreviewer.DATA_ROOT, 'minimap', 'cui_to_mh_supp.pck'), 'rb') as f:
+#     cui_to_mh_supp = pickle.load(f)
+# cui_to_mh.update(cui_to_mh_supp)
 
 
 
@@ -176,7 +184,9 @@ def matcher(text, chunks=False):
 
 
                 for entry in str_to_cui[window_lemma]:
-                    mh = cui_to_mh[entry].copy()
+                    mh = {"cui": entry}
+                    if entry in cui_to_str:
+                    	mh['cui_str'] = cui_to_str[entry]
                     mh['start_idx'] = i
                     mh['end_idx'] = i+window
                     mh['source_text'] = doc[mh['start_idx']:mh['end_idx']].text
