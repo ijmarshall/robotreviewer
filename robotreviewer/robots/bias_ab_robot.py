@@ -1,22 +1,16 @@
 """
-the TripBiasRobot class takes the *abstract* of a clinical trial as
+the BiasAbRobot class takes the *abstract* of a clinical trial as
 input as a string, and returns bias information as a dict which
 can be easily converted to JSON.
 
-    text = "Streptomycin Treatment of Pulmonary Tuberculosis: A Medical Research Council Investigation..."
+V2.0
 
-    robot = BiasRobot()
-    annotations = robot.annotate(text)
+Returns an indicative probability that the article is at low risk of bias, based on the abstract alone.
 
-Based on the document-level models which were validated in the paper:
+Trained on 
 
-Marshall IJ, Kuiper J, & Wallace BC. RobotReviewer: evaluation of a system for automatically assessing bias in clinical trials. Journal of the American Medical Informatics Association 2015.doi:10.1093/jamia/ocv044
 
-Returns only data about:
-- Random sequence generation
-- Allocation concealment
-- Blinding
-as other domains did not make as much sense to detect from abstact data
+
 """
 
 # Authors:  Iain Marshall <mail@ijmarshall.com>
@@ -26,14 +20,13 @@ as other domains did not make as much sense to detect from abstact data
 import json
 import uuid
 import os
-
-
 import robotreviewer
-from robotreviewer.ml.classifier import MiniClassifier
-from robotreviewer.ml.vectorizer import ModularVectorizer
-
+from sklearn.feature_extraction.text import HashingVectorizer
+import pickle
 import numpy as np
 import re
+from scipy.sparse import hstack
+
 
 class BiasAbRobot:
 
@@ -48,12 +41,13 @@ class BiasAbRobot:
         and we suggest top-3 as default
         """
 
+        with open(robotreviewer.get_data(os.path.join('bias_ab', 'domain_clf.pck')), 'rb') as f:
+            self.domain_clf = pickle.load(f)
 
-        self.doc_clf = MiniClassifier(robotreviewer.get_data(os.path.join('bias_ab', 'bias_ab.npz')))
-        self.vec = ModularVectorizer(norm=None, non_negative=True, binary=True, ngram_range=(1, 2))
-        self.bias_domains = ['random_sequence_generation', 'allocation_concealment', 'blinding_participants_personnel']
-        self.top_k = top_k
+        with open(robotreviewer.get_data(os.path.join('bias_ab', 'overall_clf.pck')), 'rb') as f:
+            self.overall_clf = pickle.load(f)
 
+        self.vec = HashingVectorizer(ngram_range=(1, 2))
 
 
     def api_annotate(self, articles, top_k=None):
@@ -69,31 +63,34 @@ class BiasAbRobot:
             raise Exception('Abstract bias model requires titles and abstracts to be able to complete annotation')
 
 
-        if top_k is None:
-            top_k = self.top_k
+        X_domains_t = [[], [], [], [], []]
 
+        for article in articles:
+            for i in range(4):
+                for j in range(4):
+                    if i==j:
+                        X_domains_t[i].append(article['ti'] + '\n\n' + article['ab'])
+                    else:
+                        X_domains_t[i].append("")
+                X_domains_t[4].append(article['ti'] + '\n\n' + article['ab'])
 
+        X_vecs = []
+
+        for xdt_i in X_domains_t:
+            X_vecs.append(self.vec.transform(xdt_i))
+
+        X_domains = hstack(X_vecs)
+        X_domains = X_domains.tocsr()
+
+        prob_domains = self.domain_clf.predict_proba(X_domains)[:,1]
+        X_all = prob_domains.reshape((int(prob_domains.shape[0]/4), 4))
+        prob_all = self.overall_clf.predict_proba(X_all)[:,1].tolist()
 
         out = []
 
-        for article in articles:
-            doc_text = article['ti'] + "  " + article['ab']
-            row = {}
-            for domain in self.bias_domains:
-
-                #
-                # build up document feature set
-                #
-                self.vec.builder_clear()
-
-                # uni-bigrams
-                self.vec.builder_add_docs([doc_text])
-
-                # uni-bigrams/domain interaction
-                self.vec.builder_add_docs([(doc_text, domain)])
-                x = self.vec.builder_transform()
-                bias_pred = self.doc_clf.predict(x)
-                bias_class = ["high/unclear", "low"][bias_pred[0]]
-                row[domain] = {"judgement": bias_class}
+        for i in prob_all:
+            
+            row = {"prob_low_rob": i}
+            
             out.append(row)
-        return out 
+        return out
