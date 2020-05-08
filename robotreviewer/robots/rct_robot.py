@@ -244,7 +244,7 @@ class RCTRobot:
 
             for r in X_calib:
 
-                if r[11] != -1:
+                if r[11] == -1:
                     probs.append(self.calibration_lr['svm_cnn'].predict_proba([r[:11]])[0][1])
                 else:
                     probs.append(self.calibration_lr['svm_cnn_ptyp'].predict_proba([r])[0][1])
@@ -252,7 +252,8 @@ class RCTRobot:
             preds_l['probability'] = probs
 
         if get_raw:
-            return {"svm": svm_preds, "cnn": cnn_preds, "ptyp": pt_mask}
+            return preds_l
+            # return {"svm": svm_preds, "cnn": cnn_preds, "ptyp": pt_mask}
 
         preds_d =[dict(zip(preds_l, i)) for i in zip(*preds_l.values())]
 
