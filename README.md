@@ -27,7 +27,7 @@ RobotReviewer is open source and free to use under the GPL license, version 3.0 
 
 We'd appreciate it if you would:
 
-1. Display the text, 'Risk of Bias automation by RobotReviewer ([how to cite](https://robotreviewer.net))' on the same screen or webpage on which the RobotReviewer results (highlighted text or risk of bias judgements) are displayed.
+1. Display the text, 'Risk of Bias automation by RobotReviewer ([how to cite](http://vortext.systems/robotreviewer))' on the same screen or webpage on which the RobotReviewer results (highlighted text or risk of bias judgements) are displayed.
 2. For web-based tools, the text 'how to cite' should link to our website `http://vortext.systems/robotreviewer`
 3. For desktop software, you should usually link to the same website. If this is not possible, you may alternately display the text and example citations from the 'How to cite RobotReviewer' section below.
 
