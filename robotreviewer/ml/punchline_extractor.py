@@ -12,7 +12,11 @@ from keras.models import Model, model_from_json
 from keras.callbacks import ModelCheckpoint 
 
 from bert_serving.client import BertClient
+
 BERT_HIDDEN_DIM = 768
+BERT_IP = "bert"
+BERT_PORT = 5555
+BERT_PORT_OUT = 5556
 
 
 class PunchlineExtractor:
@@ -20,7 +24,7 @@ class PunchlineExtractor:
     def __init__(self, architecture_path=None, weights_path=None):
         self.bc = None
         try: 
-            self.bc = BertClient() 
+            self.bc = BertClient(ip=BERT_IP, port=BERT_PORT, port_out=BERT_PORT_OUT)
         except:
             raise Exception("PunchlineExtractor: Cannot instantiate BertClient. Is it running???")
 
@@ -62,7 +66,7 @@ class SimpleInferenceNet:
     def __init__(self, architecture_path=None, weights_path=None):
         self.bc = None
         try: 
-            self.bc = BertClient() 
+            self.bc = BertClient(ip=BERT_IP, port=BERT_PORT, port_out=BERT_PORT_OUT)
         except:
             raise Exception("PunchlineExtractor: Cannot instantiate BertClient. Is it running???")
 

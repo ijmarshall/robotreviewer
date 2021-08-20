@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+
+  web:
+    image: docker.unholster.com/robotreviewer-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DEV=false
+      - DEBUG=false
+      - KERAS_BACKEND=tensorflow
+    volumes:
+      - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
+      - ./robotreviewer:/var/lib/deploy/robotreviewer
+    restart: unless-stopped
+    command: web
+    ports:
+      - 5050:5000
+    depends_on:
+      - celery
+
+  celery:
+    image: docker.unholster.com/robotreviewer-celery
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DEV=false
+      - DEBUG=false
+      - KERAS_BACKEND=tensorflow
+    volumes:
+      - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
+      - ./robotreviewer:/var/lib/deploy/robotreviewer
+    restart: unless-stopped
+    command: celery
+    depends_on:
+      - rabbitmq
+      - bert
+      - grobid
+
+  bert:
+    image: docker.unholster.com/robotreviewer-bert
+    build: ./bert
+    environment:
+      - SCIBERT_PATH_MODEL=/var/lib/deploy/robotreviewer/data/scibert_scivocab_uncased
+    volumes:
+      - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-alpine
+    restart: unless-stopped
+    volumes:
+      - ./rabbitmq/:/etc/rabbitmq/
+
+  grobid:
+    image: grobid/grobid:0.6.2
+    restart: unless-stopped

@@ -52,7 +52,7 @@ A BibTeX entry for LaTeX users is:
 
 ## Docker
 
-We maintain a working Dockerfile in the repo, which is usually the easiest way to install locally.
+The project can be run as a set of Docker services using the `docker-compose` command, which is usually the easiest way to install locally.
 
 First you should clone this repository, and download/decompress the SciBERT model file.
 ```
@@ -60,23 +60,25 @@ git clone https://github.com/ijmarshall/robotreviewer.git
 wget https://s3-us-west-2.amazonaws.com/ai2-s2-research/scibert/tensorflow_models/scibert_scivocab_uncased.tar.gz
 tar -zxf scibert_scivocab_uncased.tar.gz --directory robotreviewer/robotreviewer/data
 ```
+Then, create a `config.json` file from `config.json.example`, setting `grobid_host` towards the Docker grobid service: `"http://grobid:8070"`.
+You can also edit the `DEV` and `DEBUG` environment variables from the `docker-compose.yml` file in the `web` and `celery` services.
 
 Then - to build and run, from within the code directory run:
 ```
-docker build -t robotreviewer .
+docker compose build
 ```
 
 If the build is successful, you can then start the website locally by running:
 
 ```
-./start.sh
+docker compose up
 ```
 
 You can then access the website on any webbrowser on your local machine at: http://localhost:5050.
 
 To stop the websever, run:
 ```
-docker stop robotreviewer
+docker compose down
 ```
 
 

@@ -35,6 +35,9 @@ log = logging.getLogger(__name__)
 
 from celery.contrib import rdb
 
+BERT_IP = "bert"
+BERT_PORT = 5555
+BERT_PORT_OUT = 5556
 
 def cleanup(spans):
     '''
@@ -73,7 +76,7 @@ class PICOSpanRobot:
 
         self.model.restore_session(os.path.join(robotreviewer.DATA_ROOT, "pico_spans/model.weights/"))
         logging.debug("PICO classifiers loaded")
-        self.bert = BertClient()
+        self.bert = BertClient(ip=BERT_IP, port=BERT_PORT, port_out=BERT_PORT_OUT)
 
 
     def api_annotate(self, articles, get_berts=True, get_meshes=True):

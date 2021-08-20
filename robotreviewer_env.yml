@@ -22,8 +22,8 @@ dependencies:
   - urllib3=1.23
   - pip:
     - gevent
-    - amqp==2.3.2
-    - celery==4.2.1
+    - celery==4.4.7
+    - werkzeug==0.16.0
     - flask-wtf==0.14.2
     - fuzzywuzzy==0.17.0
     - keras==2.1.5
@@ -32,6 +32,5 @@ dependencies:
     - wtforms==2.2.1
     - h5py==2.8.0
     - connexion[swagger-ui]
-    - bert-serving-server
     - bert-serving-client
 prefix: /anaconda-rr/anaconda3/envs/rr3

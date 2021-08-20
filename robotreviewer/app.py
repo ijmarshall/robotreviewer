@@ -19,7 +19,6 @@ LOG_LEVEL = (logging.DEBUG if DEBUG_MODE else logging.INFO)
 
 logging.basicConfig(level=LOG_LEVEL, format='[%(levelname)s] %(name)s %(asctime)s: %(message)s')
 log = logging.getLogger(__name__)
-log.info("Welcome to RobotReviewer server :)")
 
 from flask import Flask, json, make_response, send_file
 from flask import redirect, url_for, jsonify
@@ -59,28 +58,50 @@ import hashlib
 
 import numpy as np # note - this should probably be moved!
 
-app = Flask(__name__,  static_url_path='')
-from robotreviewer import formatting
 from robotreviewer.data_structures import MultiDict
-app.secret_key = os.environ.get("SECRET", "super secret key")
-# setting max file upload size 100 mbs
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
-csrf = CsrfProtect()
-csrf.init_app(app)
+
+def create_celery_app():
+    celery_app = Celery(
+        'robotreviewer.ml_worker',
+        backend='amqp://guest:guest@rabbitmq:5672//',
+        broker='amqp://guest:guest@rabbitmq:5672//',
+    )
+    celery_tasks = {
+        "pdf_annotate": celery_app.signature('robotreviewer.ml_worker.pdf_annotate'),
+        "api_annotate": celery_app.signature('robotreviewer.ml_worker.api_annotate'),
+        "debug_task": celery_app.signature('robotreviewer.ml_worker.debug_task')
+    }
+    return celery_app, celery_tasks
 
 #####
 ## connect to celery app
 #####
+celery_app, celery_tasks = create_celery_app()
 
-celery_app = Celery('robotreviewer.ml_worker', backend='amqp://', broker='amqp://')
-celery_tasks = {"pdf_annotate": celery_app.signature('robotreviewer.ml_worker.pdf_annotate')}
+
+def create_app(extensions=()):
+    app = Flask(__name__,  static_url_path='')
+    app.secret_key = os.environ.get("SECRET", "super secret key")
+    # setting max file upload size 100 mbs
+    app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
+    for extension in extensions:
+        extension.init_app(app)
+    log.info("Welcome to RobotReviewer server :)")
+    return app
+
+
+#####
+## create app
+#####
+csrf = CsrfProtect()
+app = create_app(extensions=[csrf])
+from robotreviewer import formatting    # This is necessary for registering some render template function
 
 #####
 ## connect to database
 #####
 rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES,  check_same_thread=False)
-
 
 
 ######
@@ -100,10 +121,13 @@ bots = {"pico_span_bot": PICOSpanRobot,
         # "mendeley_bot": MendeleyRobot()}
 
 log.info("Robots loaded successfully! Ready...")
+
+
 @app.route('/')
 def main():
     resp = make_response(render_template('index.html'))
     return resp
+
 
 @csrf.exempt # TODO: add csrf back in
 @app.route('/upload_and_annotate_pdfs', methods=['POST'])
@@ -115,7 +139,7 @@ def upload_and_annotate_pdfs():
     # returns the report run uuid + list of article uuids
 
     report_uuid = rand_id()
-
+    log.info(f'Processing uploaded PDFs on report: {report_uuid}')
     uploaded_files = request.files.getlist("file")
     c = rr_sql_conn.cursor()
 
@@ -128,11 +152,12 @@ def upload_and_annotate_pdfs():
         c.execute("INSERT INTO doc_queue (report_uuid, pdf_uuid, pdf_hash, pdf_filename, pdf_file, timestamp) VALUES (?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, filename, sqlite3.Binary(blob), datetime.now()))
         rr_sql_conn.commit()
     c.close()
-
+    log.debug(f'Running celery task: pdf_annotate for report: {report_uuid}')
     # send async request to Celery
     celery_tasks['pdf_annotate'].apply_async((report_uuid, ), task_id=report_uuid)
 
     return json.dumps({"report_uuid": report_uuid})
+
 
 @csrf.exempt
 @app.route('/annotate_status/<report_uuid>')
@@ -140,11 +165,11 @@ def annotate_status(report_uuid):
     '''
     check and return status of celery annotation process
     '''
+    log.debug(f"Calling AsyncResult to annotate status of task: {report_uuid}")
     result = AsyncResult(report_uuid, app=celery_app)
-    return json.dumps({"state": result.state, "meta": result.result})
-
-
-
+    result_data = {"state": result.state, "meta": result.result}
+    log.debug(f"result: {result_data}")
+    return json.dumps(result_data)
 
 
 @app.errorhandler(413)
@@ -157,6 +182,7 @@ def request_entity_too_large(error):
 @app.route('/report_view/<report_uuid>/<format>')
 def report_view(report_uuid, format):
     return produce_report(report_uuid, format, download=False)
+
 
 @csrf.exempt # TODO: add csrf back in
 @app.route('/download_report/<report_uuid>/<format>')
@@ -192,7 +218,6 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=False
         data.load_json(row[1])
         articles.append(data)
         article_ids.append(row[0])
-
 
     if reportformat=='html' or reportformat=='doc':
         # embeddings only relatively meaningful; do not generate
@@ -245,6 +270,7 @@ def produce_report(report_uuid, reportformat, download=False, PICO_vectors=False
     else:
         raise Exception('format "{}" was requested but not available'.format(reportformat))
 
+
 @app.route('/pdf/<report_uuid>/<pdf_uuid>')
 def get_pdf(report_uuid, pdf_uuid):
     # returns PDF binary from database by pdf_uuid
@@ -273,6 +299,7 @@ def get_marginalia(report_uuid, pdf_uuid):
     marginalia = bots[annotation_type].get_marginalia(data)
     return json.dumps(marginalia)
 
+
 @csrf.exempt # TODO: add csrf back in
 @app.route('/annotate', methods=['POST'])
 def json_annotate():
@@ -283,6 +310,7 @@ def json_annotate():
     annotations = annotate(json_data)
     return json.dumps(annotations)
 
+
 def annotate(data, bot_names=["bias_bot"]):
     #
     # ANNOTATION TAKES PLACE HERE
@@ -292,6 +320,7 @@ def annotate(data, bot_names=["bias_bot"]):
     annotations = annotation_pipeline(bot_names, data)
     return annotations
 
+
 def annotation_pipeline(bot_names, data):
     for bot_name in bot_names:
         log.debug("Sending doc to {} for annotation...".format(bots[bot_name].__class__.__name__))
@@ -299,6 +328,7 @@ def annotation_pipeline(bot_names, data):
         data = bots[bot_name].annotate(data)
         log.debug("{} done!".format(bots[bot_name].__class__.__name__))
     return data
+
 
 def cleanup_database(days=1):
     """
