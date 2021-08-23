@@ -19,7 +19,7 @@ web)
     ;;
 test)
     echo "[entrypoint.sh] Running RobotReviewer unit tests"
-    cd /var/lib/deploy/ && python -m unittest
+    cd /var/lib/deploy/ && python -m unittest &
     sleep infinity
     ;;
 *)
