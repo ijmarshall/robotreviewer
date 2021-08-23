@@ -58,7 +58,6 @@ from robotreviewer.robots.mesh_robot import MeshRobot
 # from robotreviewer.robots.pico_viz_robot import PICOVizRobot
 from robotreviewer.robots.punchlines_robot import PunchlinesBot
 from robotreviewer.robots.sample_size_robot import SampleSizeBot
-from robotreviewer.robots.inference_robot import InferenceRobot
 
 from robotreviewer.data_structures import MultiDict
 
@@ -107,7 +106,6 @@ rr_sql_conn.commit()
 def on_worker_init(**_):
     global bots
     global friendly_bots
-    global inf_bot 
 
     log.info("Loading the robots...")
 
@@ -135,10 +133,6 @@ def on_worker_init(**_):
                      "punchline_bot": "Extracting main conclusions",
                      "pubmed_bot": "Looking up meta-data in PubMed",
                      "bias_ab_bot": "Assessing bias from abstract"}
-
-    # this requires assembling outputs from ICO bot, so we keep
-    # separate from pipeline for now
-    inf_bot = InferenceRobot()
 
     print("ROBOTS ALL LOADED")
     log.info("Robots loaded successfully! Ready...")
@@ -349,19 +343,5 @@ def pdf_annotation_pipeline(bot_names, data):
         log.debug("{} done!".format(bots[bot_name].__class__.__name__))
         log.info("COMPLETED {} BOT (annotation_pipeline)".format(bot_name))
         # current_task.update_state(state='PROGRESS',meta={'process_percentage': 79, 'task': 'Bot {} complete!'.format(bot_name)})
-    
-    
-    log.info("running inference...")
-
-    try:
-        # note that this will simplyy fail if abstract or pmid is unavailable
-        packaged_data = [{"pmid": data["pmid"], "abstract": str(data["abstract"]), 
-                         "p": data['pico_span']['population'], "i": data['pico_span']['interventions'], 
-                         "o": data['pico_span']['outcomes'] }]
-        inference_res = inf_bot.annotate(packaged_data)
-        log.info("success! {}".format(packaged_data[0]))
-        data["ico_results"] = packaged_data[0]['icos']
-    except: 
-        log.debug("inference call failed on {}".format(data))
 
     return data
