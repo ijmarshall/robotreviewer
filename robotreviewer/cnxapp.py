@@ -9,8 +9,7 @@ import connexion
 from connexion import NoContent
 from connexion.exceptions import OAuthProblem
 import robotreviewer
-from robotreviewer.app import str2bool
-from robotreviewer.util import rand_id
+from robotreviewer.util import rand_id, str2bool
 import sqlite3
 
 

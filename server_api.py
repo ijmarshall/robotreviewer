@@ -9,5 +9,5 @@ if FLASK_ENV != 'development':
 
 from robotreviewer.cnxapp import app
 
-flask_app = app.app
+flask_app = app.app     # When creating a Flask App from connexion
 

@@ -6,19 +6,11 @@ RobotReviewer server
 #           Joel Kuiper <me@joelkuiper.com>
 #           Byron Wallace <byron@ccs.neu.edu>
 
-import logging, os
+import logging
 from datetime import datetime, timedelta
 import os
 
-def str2bool(v):
-    return v.lower() in ("yes", "true", "t", "1")
-
-DEBUG_MODE = str2bool(os.environ.get("DEBUG", "true"))
-LOCAL_PATH = "robotreviewer/uploads"
-LOG_LEVEL = (logging.DEBUG if DEBUG_MODE else logging.INFO)
-
-logging.basicConfig(level=LOG_LEVEL, format='[%(levelname)s] %(name)s %(asctime)s: %(message)s')
-log = logging.getLogger(__name__)
+from robotreviewer.util import rand_id, str2bool
 
 from flask import Flask, json, make_response, send_file
 from flask import redirect, url_for, jsonify
@@ -37,7 +29,6 @@ try:
 except ImportError:
     from io import BytesIO as StringIO # py3
 import uuid
-from robotreviewer.util import rand_id
 import sqlite3
 
 ''' robots! '''
@@ -60,6 +51,12 @@ import numpy as np # note - this should probably be moved!
 
 from robotreviewer.data_structures import MultiDict
 
+DEBUG_MODE = str2bool(os.environ.get("DEBUG", "true"))
+LOCAL_PATH = "robotreviewer/uploads"
+LOG_LEVEL = (logging.DEBUG if DEBUG_MODE else logging.INFO)
+
+logging.basicConfig(level=LOG_LEVEL, format='[%(levelname)s] %(name)s %(asctime)s: %(message)s')
+log = logging.getLogger(__name__)
 
 #####
 ## connect to celery app

@@ -60,8 +60,25 @@ git clone https://github.com/ijmarshall/robotreviewer.git
 wget https://s3-us-west-2.amazonaws.com/ai2-s2-research/scibert/tensorflow_models/scibert_scivocab_uncased.tar.gz
 tar -zxf scibert_scivocab_uncased.tar.gz --directory robotreviewer/robotreviewer/data
 ```
-Then, create a `config.json` file from `config.json.example`, setting `grobid_host` towards the Docker grobid service: `"http://grobid:8070"`.
-You can also edit the `DEV` and `DEBUG` environment variables from the `docker-compose.yml` file in the `web` and `celery` services.
+Afterwards, create a `config.json` file from `config.json.example`. When running from docker-compose, the following configuration for running locally is enough:
+```json
+{
+    "robotreviewer": {
+        "use_grobid": true,
+        "grobid_threads": 4,
+        "spacy_threads": 4,
+        "dont_delete": 0,
+        "log": "log.txt",
+        "api_keys": {
+            "secret_keys": {
+                "uid": 1
+            }
+        }
+    }
+}
+```
+Then, create an `.env` file from the `.envTemplate` file. Keep the `ROBOTREVIEWER_GROBID_HOST` value if the
+docker-compose files are not modified and th `grobid` service is running on port 8070.
 
 Then - to build and run, from within the code directory run:
 ```
@@ -74,11 +91,22 @@ If the build is successful, you can then start the website locally by running:
 docker compose up
 ```
 
-You can then access the website on any webbrowser on your local machine at: http://localhost:5050.
+You can then access the website on any webbrowser on your local machine at: http://localhost:5050, while the
+API server will be available at: http://localhost:5051 (consider using [Postman](https://www.postman.com/) for testing the endpoints.) 
 
 To stop the websever, run:
 ```
-docker compose down
+docker compose down --remove-orphans
+```
+
+## Docker running Flask apps in development mode
+
+The `docker-compose.dev.yml` can be used when running the Flask development server is desired instead of running the servers with Gunicorn. 
+To run in development mode, use the same commands as before, specifying the compose file:
+```
+docker compose -f docker-compose.dev.yml build
+docker compose -f docker-compose.dev.yml up
+docker compose -f docker-compose.dev.yml down --remove-orphans
 ```
 
 
