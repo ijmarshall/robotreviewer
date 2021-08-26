@@ -23,7 +23,6 @@ def str2bool(v):
 
 import robotreviewer
 from robotreviewer import config
-from robotreviewer.app import create_celery_app
 
 DEBUG_MODE = str2bool(os.environ.get("DEBUG", "true"))
 LOCAL_PATH = "robotreviewer/uploads"
@@ -87,7 +86,12 @@ log.info("Robots loaded successfully! Ready...")
 pdf_reader.connect()
 
 # create Celery app
-app, _ = create_celery_app()
+app = Celery(
+    'robotreviewer.ml_worker',
+    backend='amqp://guest:guest@rabbitmq:5672//',
+    broker='amqp://guest:guest@rabbitmq:5672//',
+)
+
 
 #####
 ## connect to and set up database

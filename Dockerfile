@@ -49,6 +49,7 @@ USER root
 
 RUN mkdir -p /var/lib/deploy/robotreviewer/data
 ADD server.py /var/lib/deploy/
+ADD server_api.py /var/lib/deploy/
 ADD entrypoint.sh /var/lib/deploy/
 ADD robotreviewer /var/lib/deploy/robotreviewer
 RUN chown -R deploy.deploy /var/lib/deploy/robotreviewer
@@ -65,6 +66,8 @@ RUN cd /var/lib/deploy/robotreviewer/ && \
 ENV HOME /var/lib/deploy
 
 USER root
+
+RUN pip install gunicorn gevent
 
 RUN chmod +x /var/lib/deploy/entrypoint.sh
 

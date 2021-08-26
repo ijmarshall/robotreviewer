@@ -15,7 +15,27 @@ celery)
     ;;
 web)
     echo "[entrypoint.sh] Starting RobotReviewer Web server"
-    python /var/lib/deploy/server.py
+    cd /var/lib/deploy/ && gunicorn --worker-class gevent --workers $GUNICORN_WORKERS --timeout $GUNICORN_WORKER_TIMEOUT -b 0.0.0.0:5000 server:app
+    ;;
+web-dev)
+    echo "[entrypoint.sh] Starting RobotReviewer Web server in development mode"
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+    export FLASK_APP=server:app
+    export FLASK_ENV=development
+    cd /var/lib/deploy/ && flask run --host 0.0.0.0 --port 5000 --eager-loading --no-reload
+    ;;
+api)
+    echo "[entrypoint.sh] Starting RobotReviewer API server"
+    cd /var/lib/deploy/ && gunicorn --worker-class gevent --workers $GUNICORN_WORKERS --timeout $GUNICORN_WORKER_TIMEOUT -b 0.0.0.0:5001 server_api:app
+    ;;
+api-dev)
+    echo "[entrypoint.sh] Starting RobotReviewer API server in development mode"
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+    export FLASK_APP=server_api:flask_app
+    export FLASK_ENV=development
+    cd /var/lib/deploy/ && flask run --host 0.0.0.0 --port 5001 --eager-loading --no-reload
     ;;
 test)
     echo "[entrypoint.sh] Running RobotReviewer unit tests"

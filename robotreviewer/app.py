@@ -61,23 +61,17 @@ import numpy as np # note - this should probably be moved!
 from robotreviewer.data_structures import MultiDict
 
 
-def create_celery_app():
-    celery_app = Celery(
-        'robotreviewer.ml_worker',
-        backend='amqp://guest:guest@rabbitmq:5672//',
-        broker='amqp://guest:guest@rabbitmq:5672//',
-    )
-    celery_tasks = {
-        "pdf_annotate": celery_app.signature('robotreviewer.ml_worker.pdf_annotate'),
-        "api_annotate": celery_app.signature('robotreviewer.ml_worker.api_annotate'),
-        "debug_task": celery_app.signature('robotreviewer.ml_worker.debug_task')
-    }
-    return celery_app, celery_tasks
-
 #####
 ## connect to celery app
 #####
-celery_app, celery_tasks = create_celery_app()
+celery_app = Celery(
+    'robotreviewer.ml_worker',
+    backend='amqp://guest:guest@rabbitmq:5672//',
+    broker='amqp://guest:guest@rabbitmq:5672//',
+)
+celery_tasks = {
+    'pdf_annotate': celery_app.signature('robotreviewer.ml_worker.pdf_annotate'),
+}
 
 
 def create_app(extensions=()):

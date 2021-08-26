@@ -13,8 +13,7 @@ services:
       - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
       - ./robotreviewer:/var/lib/deploy/robotreviewer
     restart: unless-stopped
-    command: web
-    runtime: runc  # nvidia
+    command: web-dev
     ports:
       - 5050:5000
     depends_on:
@@ -29,9 +28,9 @@ services:
       - .env
     volumes:
       - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
+      - ./robotreviewer:/var/lib/deploy/robotreviewer
     restart: unless-stopped
-    command: api
-    runtime: runc  # nvidia
+    command: api-dev
     ports:
       - 5051:5001
     depends_on:
@@ -46,9 +45,9 @@ services:
       - .env
     volumes:
       - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
+      - ./robotreviewer:/var/lib/deploy/robotreviewer
     restart: unless-stopped
     command: celery
-    runtime: runc  # nvidia
     depends_on:
       - rabbitmq
       - bert

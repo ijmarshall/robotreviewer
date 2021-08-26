@@ -3,11 +3,13 @@ import os
 from datetime import datetime
 import json
 
+from celery import Celery
 from celery.result import AsyncResult
 import connexion
+from connexion import NoContent
 from connexion.exceptions import OAuthProblem
 import robotreviewer
-from robotreviewer.app import create_celery_app, str2bool
+from robotreviewer.app import str2bool
 from robotreviewer.util import rand_id
 import sqlite3
 
@@ -19,7 +21,14 @@ log = logging.getLogger(__name__)
 
 rr_sql_conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'), detect_types=sqlite3.PARSE_DECLTYPES,  check_same_thread=False)
 
-celery_app, celery_tasks = create_celery_app()
+celery_app = Celery(
+    'robotreviewer.ml_worker',
+    backend='amqp://guest:guest@rabbitmq:5672//',
+    broker='amqp://guest:guest@rabbitmq:5672//',
+)
+celery_tasks = {
+    'api_annotate': celery_app.signature('robotreviewer.ml_worker.api_annotate'),
+}
 
 def auth(api_key, required_scopes):
     info = robotreviewer.config.API_KEYS.get(api_key, None)
@@ -52,9 +61,13 @@ def report_status(report_id):
 
 def report(report_id):
     c = rr_sql_conn.cursor()
+    log.info(f'Fetching report: {report_id}')
     c.execute("SELECT annotations FROM api_done WHERE report_uuid = ?", (report_id, ))
     result = c.fetchone()
     c.close()
+    log.debug(f'result: {result}')
+    if not result or len(result) == 0:
+        return NoContent, 404
     return json.loads(result[0])
 
 
