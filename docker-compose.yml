@@ -11,7 +11,9 @@ services:
       - .env
     volumes:
       - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
-      - ./robotreviewer:/var/lib/deploy/robotreviewer
+    configs:
+      - source: rr-config
+        target: /var/lib/deploy/config.json
     restart: unless-stopped
     command: web
     runtime: runc  # nvidia
@@ -29,6 +31,9 @@ services:
       - .env
     volumes:
       - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
+    configs:
+      - source: rr-config
+        target: /var/lib/deploy/config.json
     restart: unless-stopped
     command: api
     runtime: runc  # nvidia
@@ -46,6 +51,9 @@ services:
       - .env
     volumes:
       - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
+    configs:
+      - source: rr-config
+        target: /var/lib/deploy/robotreviewer/config.json
     restart: unless-stopped
     command: celery
     runtime: runc  # nvidia
@@ -72,3 +80,8 @@ services:
   grobid:
     image: grobid/grobid:0.6.2
     restart: unless-stopped
+
+configs:
+  rr-config:
+    file: ./robotreviewer/config.json
+ 

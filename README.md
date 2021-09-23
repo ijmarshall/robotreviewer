@@ -106,9 +106,11 @@ To run in development mode, use the same commands as before, specifying the comp
 ```
 docker compose -f docker-compose.dev.yml build
 docker compose -f docker-compose.dev.yml up
+```
+To stop the services running in development mode, use:
+```
 docker compose -f docker-compose.dev.yml down --remove-orphans
 ```
-
 
 ## Installation
 

@@ -227,9 +227,20 @@ def api_annotate(report_uuid):
     )
 
     c = rr_sql_conn.cursor()
-
+    log.info(f'Fetching data for report_uuid = {report_uuid}')
     c.execute("SELECT uploaded_data, timestamp FROM api_queue WHERE report_uuid=?", (report_uuid, ))
     result = c.fetchone()
+    if result is None:
+        log.error(f'Failed to fetch data for report_uuid = {report_uuid}')
+        current_task.update_state(
+            state='FAILURE', 
+            meta=
+            {
+                'status': "failure",
+                'position': "fetching data"
+            },
+        )
+        return {"status": -1, "task": "failed"}   
     uploaded_data_s, timestamp = result
     uploaded_data = json.loads(uploaded_data_s)
 
