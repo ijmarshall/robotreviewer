@@ -3,7 +3,7 @@ version: "3.9"
 services:
 
   web:
-    image: docker.unholster.com/robotreviewer-web
+    image: robotreviewer
     build:
       context: .
       dockerfile: Dockerfile
@@ -16,14 +16,13 @@ services:
         target: /var/lib/deploy/config.json
     restart: unless-stopped
     command: web
-    runtime: runc  # nvidia
     ports:
       - 5050:5000
     depends_on:
       - celery
 
   api:
-    image: docker.unholster.com/robotreviewer-api
+    image: robotreviewer
     build:
       context: .
       dockerfile: Dockerfile
@@ -36,14 +35,13 @@ services:
         target: /var/lib/deploy/config.json
     restart: unless-stopped
     command: api
-    runtime: runc  # nvidia
     ports:
       - 5051:5001
     depends_on:
       - celery
 
   celery:
-    image: docker.unholster.com/robotreviewer-celery
+    image: robotreviewer
     build:
       context: .
       dockerfile: Dockerfile
@@ -56,14 +54,13 @@ services:
         target: /var/lib/deploy/robotreviewer/config.json
     restart: unless-stopped
     command: celery
-    runtime: runc  # nvidia
     depends_on:
       - rabbitmq
       - bert
       - grobid
 
   bert:
-    image: docker.unholster.com/robotreviewer-bert
+    image: robotreviewer-bert
     build: ./bert
     environment:
       - SCIBERT_PATH_MODEL=/var/lib/deploy/robotreviewer/data/scibert_scivocab_uncased

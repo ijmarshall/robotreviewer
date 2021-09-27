@@ -7,16 +7,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - OSVER=cuda:10.2-cudnn7-runtime
+        - TFVER=tensorflow-gpu
     env_file:
       - .env
     volumes:
       - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
-      - ./robotreviewer:/var/lib/deploy/robotreviewer
     configs:
       - source: rr-config
-        target: /var/lib/deploy/robotreviewer/config.json
+        target: /var/lib/deploy/config.json
     restart: unless-stopped
-    command: web-dev
+    command: web
     ports:
       - 5050:5000
     depends_on:
@@ -27,31 +29,42 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - OSVER=cuda:10.2-cudnn7-runtime
+        - TFVER=tensorflow-gpu
     env_file:
       - .env
     volumes:
       - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
-      - ./robotreviewer:/var/lib/deploy/robotreviewer
     configs:
       - source: rr-config
-        target: /var/lib/deploy/robotreviewer/config.json
+        target: /var/lib/deploy/config.json
     restart: unless-stopped
-    command: api-dev
+    command: api
     ports:
       - 5051:5001
     depends_on:
       - celery
 
   celery:
-    image: robotreviewer
+    image: robotreviewer-gpu
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - OSVER=cuda:10.2-cudnn7-runtime
+        - TFVER=tensorflow-gpu
     env_file:
       - .env
     volumes:
       - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
-      - ./robotreviewer:/var/lib/deploy/robotreviewer
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
     configs:
       - source: rr-config
         target: /var/lib/deploy/robotreviewer/config.json
@@ -69,6 +82,13 @@ services:
       - SCIBERT_PATH_MODEL=/var/lib/deploy/robotreviewer/data/scibert_scivocab_uncased
     volumes:
       - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
     restart: unless-stopped
 
   rabbitmq:
@@ -80,7 +100,14 @@ services:
   grobid:
     image: grobid/grobid:0.6.2
     restart: unless-stopped
-
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
 configs:
   rr-config:
     file: ./robotreviewer/config.json
+ 

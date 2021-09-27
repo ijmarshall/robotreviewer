@@ -1,5 +1,20 @@
 ARG OSVER=ubuntu:16.04
-FROM $OSVER
+FROM node:12-alpine as build-stage
+
+WORKDIR /app
+# node.js and utils
+RUN npm update
+RUN npm install -g requirejs
+COPY ./robotreviewer/static/ static/
+
+# compile client side assets
+RUN r.js -o static/build.js && \
+    mv static static.bak && \
+    mv build static && \
+    rm -rf static.bak
+
+FROM $OSVER as production-stage
+ARG OSVER
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -14,13 +29,6 @@ RUN xargs -a /tmp/apt-requirements.txt apt-get install -y --no-install-recommend
 # Certs
 RUN mkdir -p /etc/pki/tls/certs && \
     ln -s /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
-
-# node.js and utils
-RUN add-apt-repository ppa:chris-lea/node.js
-RUN apt-get install -y nodejs npm && npm update
-ENV NODE_PATH $NODE_PATH:/usr/local/lib/node_modules
-RUN npm install -g requirejs
-RUN ln -s /usr/bin/nodejs /usr/bin/node
 
 RUN chown -R deploy.deploy /var/lib/deploy/
 
@@ -40,6 +48,7 @@ RUN python -m spacy download en
 ARG TFVER=tensorflow
 RUN pip install $TFVER==1.12.0
 
+ENV HOME /var/lib/deploy
 
 #strange Theano problem
 #ENV MKL_THREADING_LAYER=GNU
@@ -52,23 +61,10 @@ ADD server.py /var/lib/deploy/
 ADD server_api.py /var/lib/deploy/
 ADD entrypoint.sh /var/lib/deploy/
 ADD robotreviewer /var/lib/deploy/robotreviewer
+COPY --from=build-stage /app/static /var/lib/deploy/robotreviewer/static
 RUN chown -R deploy.deploy /var/lib/deploy/robotreviewer
 
-USER deploy
-
-# compile client side assets
-RUN cd /var/lib/deploy/robotreviewer/ && \
-    r.js -o static/build.js && \
-    mv static static.bak && \
-    mv build static && \
-    rm -rf static.bak
-
-ENV HOME /var/lib/deploy
-
-USER root
-
 RUN pip install gunicorn gevent
-
 RUN chmod +x /var/lib/deploy/entrypoint.sh
 
 ENTRYPOINT [ "./var/lib/deploy/entrypoint.sh" ]
