@@ -81,4 +81,3 @@ services:
 configs:
   rr-config:
     file: ./robotreviewer/config.json
- 
