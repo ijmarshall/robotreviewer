@@ -7,9 +7,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        - OSVER=cuda:10.2-cudnn7-runtime
-        - TFVER=tensorflow-gpu
     env_file:
       - .env
     volumes:
@@ -29,9 +26,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        - OSVER=cuda:10.2-cudnn7-runtime
-        - TFVER=tensorflow-gpu
     env_file:
       - .env
     volumes:
@@ -52,7 +46,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - OSVER=cuda:10.2-cudnn7-runtime
+        - OSVER=nvidia/cuda:9.0-cudnn7-runtime
         - TFVER=tensorflow-gpu
     env_file:
       - .env
@@ -106,7 +100,7 @@ services:
           devices:
           - driver: nvidia
             count: 1
-            capabilities: [gpu]
+            capabilities: [ gpu ]
 configs:
   rr-config:
     file: ./robotreviewer/config.json

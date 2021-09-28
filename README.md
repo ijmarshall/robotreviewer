@@ -70,7 +70,7 @@ Afterwards, create a `config.json` file from `config.json.example`. When running
         "dont_delete": 0,
         "log": "log.txt",
         "api_keys": {
-            "secret_keys": {
+            "a_secret_key": {
                 "uid": 1
             }
         }
@@ -80,29 +80,49 @@ Afterwards, create a `config.json` file from `config.json.example`. When running
 Then, create an `.env` file from the `.envTemplate` file. Keep the `ROBOTREVIEWER_GROBID_HOST` value if the
 docker-compose files are not modified and th `grobid` service is running on port 8070.
 
-Then - to build and run, from within the code directory run:
+Then, to build, from within the code directory run:
 ```
-docker compose build
-```
-
-If the build is successful, you can then start the website locally by running:
-
-```
-docker compose up
+docker-compose build
 ```
 
-You can then access the website on any webbrowser on your local machine at: http://localhost:5050, while the
+If the build is successful, you can then start the services locally - in detached mode - by running:
+
+```
+docker-compose up -d
+```
+
+You can then access the website on any browser on your local machine at: http://localhost:5050, while the
 API server will be available at: http://localhost:5051 (consider using [Postman](https://www.postman.com/) for testing the endpoints.) 
 
 To stop the websever, run:
 ```
-docker compose down --remove-orphans
+docker-compose down --remove-orphans
 ```
 
-## Docker running Flask apps in development mode
+## Docker running with GPU support
 
-The `docker-compose.dev.yml` can be used when running the Flask development server is desired instead of running the servers with Gunicorn. 
-To run in development mode, use the same commands as before, specifying the compose file:
+The docker-compose file `docker-compose.gpu.yml` is provided including the necessary settings for making the GPU visible to docker containers.
+Before running the docker-compose command, it is necessary to install Nvidia Cuda drivers and `nvidia-container-runtime` following the instructions from https://docs.docker.com/config/containers/resource_constraints/#gpu and https://docs.docker.com/compose/gpu-support/.
+
+You can test that your GPU is visible within the docker container by running the following command:
+```
+docker run -it --rm --gpus all ubuntu nvidia-smi
+```
+
+To run RobotReviewer with GPU support, you must specify the GPU docker-compose file:
+```
+docker-compose -f docker-compose.gpu.yml build
+docker-compose -f docker-compose.gpu.yml up -d
+```
+To stop the services running with GPU support, use:
+```
+docker-compose -f docker-compose.gpu.yml down --remove-orphans
+```
+
+## Docker running in development mode
+
+The `docker-compose.dev.yml` compose file can be used when the Flask development server is desired instead of Gunicorn. 
+To run in development mode, use the same commands as before, specifying the development compose file:
 ```
 docker compose -f docker-compose.dev.yml build
 docker compose -f docker-compose.dev.yml up

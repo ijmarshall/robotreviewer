@@ -48,8 +48,6 @@ RUN python -m spacy download en
 ARG TFVER=tensorflow
 RUN pip install $TFVER==1.12.0
 
-ENV HOME /var/lib/deploy
-
 #strange Theano problem
 #ENV MKL_THREADING_LAYER=GNU
 
@@ -61,8 +59,15 @@ ADD server.py /var/lib/deploy/
 ADD server_api.py /var/lib/deploy/
 ADD entrypoint.sh /var/lib/deploy/
 ADD robotreviewer /var/lib/deploy/robotreviewer
-COPY --from=build-stage /app/static /var/lib/deploy/robotreviewer/static
 RUN chown -R deploy.deploy /var/lib/deploy/robotreviewer
+
+USER deploy
+
+COPY --from=build-stage /app/static /var/lib/deploy/robotreviewer/static
+
+ENV HOME /var/lib/deploy
+
+USER root
 
 RUN pip install gunicorn gevent
 RUN chmod +x /var/lib/deploy/entrypoint.sh
