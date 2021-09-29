@@ -71,7 +71,11 @@ services:
 
   bert:
     image: robotreviewer-bert
-    build: ./bert
+    build:
+      context: ./bert
+      dockerfile: Dockerfile
+      args:
+        - OSVER=tensorflow/tensorflow:1.12.0-gpu-py3
     environment:
       - SCIBERT_PATH_MODEL=/var/lib/deploy/robotreviewer/data/scibert_scivocab_uncased
     volumes:
