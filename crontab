@@ -1,0 +1,1 @@
+0 */12 * * * . /var/lib/deploy/cron.env && /var/lib/deploy/miniconda3/envs/robotreviewer/bin/python /var/lib/deploy/clean_uploaded_pdfs.py > /proc/1/fd/1 2>/proc/1/fd/2

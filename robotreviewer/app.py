@@ -319,35 +319,3 @@ def annotation_pipeline(bot_names, data):
         data = bots[bot_name].annotate(data)
         log.debug("{} done!".format(bots[bot_name].__class__.__name__))
     return data
-
-
-def cleanup_database(days=1):
-    """
-    remove any PDFs which have been here for more than
-    1 day, then compact the database
-    """
-    log.info('Cleaning up database')
-    conn = sqlite3.connect(robotreviewer.get_data('uploaded_pdfs/uploaded_pdfs.sqlite'),
-                           detect_types=sqlite3.PARSE_DECLTYPES)
-
-    d = datetime.now() - timedelta(days=days)
-    c = conn.cursor()
-    c.execute("DELETE FROM article WHERE timestamp < datetime(?) AND dont_delete=0", [d])
-    conn.commit()
-    conn.execute("VACUUM") # make the database smaller again
-    conn.commit()
-    conn.close()
-
-
-try:
-    from apscheduler.schedulers.background import BackgroundScheduler
-
-    @app.before_first_request
-    def initialize():
-        log.info("Initializing clean-up task")
-        scheduler = BackgroundScheduler()
-        scheduler.start()
-        scheduler.add_job(cleanup_database, 'interval', hours=12)
-
-except Exception:
-    log.warn("Could not start scheduled clean-up task")

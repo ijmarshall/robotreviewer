@@ -10,3 +10,4 @@ libxrender1
 libfontconfig1
 git
 sudo
+cron
