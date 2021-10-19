@@ -100,3 +100,6 @@ deploy.tar.gz
 !.gitkeep
 robotreviewer/config.json
 !robotreviewer/config.json.example
+
+.env
+!.envTemplate

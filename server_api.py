@@ -7,5 +7,7 @@ if FLASK_ENV != 'development':
     from gevent import monkey
     monkey.patch_all()
 
-from robotreviewer.app import app
+from robotreviewer.cnxapp import app
+
+flask_app = app.app     # When creating a Flask App from connexion
 

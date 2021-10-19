@@ -5,7 +5,7 @@ RobotReviewer configuration file
 import os
 import json
 
-CONFIG_KEY = "ROBOTREVIEWER";
+CONFIG_KEY = "ROBOTREVIEWER"
 
 def merge_dicts(*dict_args):
     '''

@@ -8,7 +8,10 @@
         "dont_delete": 0,
         "rest_api": false,
         "log": "log.txt",
-        "api_keys": {"secret_keys":
-                        {"uid": 1}}
+        "api_keys": {
+            "a_secret_key": {
+                "uid": 1
+            }
+        }
 	}
 }

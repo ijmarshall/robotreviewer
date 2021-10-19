@@ -1,0 +1,110 @@
+version: "3.9"
+
+services:
+
+  web:
+    image: robotreviewer
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
+    configs:
+      - source: rr-config
+        target: /var/lib/deploy/config.json
+    restart: unless-stopped
+    command: web
+    ports:
+      - 5050:5000
+    depends_on:
+      - celery
+
+  api:
+    image: robotreviewer
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
+    configs:
+      - source: rr-config
+        target: /var/lib/deploy/config.json
+    restart: unless-stopped
+    command: api
+    ports:
+      - 5051:5001
+    depends_on:
+      - celery
+
+  celery:
+    image: robotreviewer-gpu
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - OSVER=nvidia/cuda:9.0-cudnn7-runtime
+        - TFVER=tensorflow-gpu
+    env_file:
+      - .env
+    volumes:
+      - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    configs:
+      - source: rr-config
+        target: /var/lib/deploy/robotreviewer/config.json
+    restart: unless-stopped
+    command: celery
+    depends_on:
+      - rabbitmq
+      - bert
+      - grobid
+
+  bert:
+    image: robotreviewer-bert
+    build:
+      context: ./bert
+      dockerfile: Dockerfile
+      args:
+        - OSVER=tensorflow/tensorflow:1.12.0-gpu-py3
+    environment:
+      - SCIBERT_PATH_MODEL=/var/lib/deploy/robotreviewer/data/scibert_scivocab_uncased
+    volumes:
+      - ./robotreviewer/data:/var/lib/deploy/robotreviewer/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-alpine
+    restart: unless-stopped
+    volumes:
+      - ./rabbitmq/:/etc/rabbitmq/
+
+  grobid:
+    image: grobid/grobid:0.6.2
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [ gpu ]
+configs:
+  rr-config:
+    file: ./robotreviewer/config.json

@@ -39,58 +39,32 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 log = logging.getLogger(__name__)
 
-class Grobid():
-    """
-    starts up Grobid as a service on default port (should be 8080)
-    checks to see if it's working before returning the open process
-    """
-    def __init__(self):
-        self.devnull = open(os.devnull, 'wb')
-        atexit.register(self.cleanup)
-        log.info('Launching Grobid process... (from {0})'.format(config.GROBID_PATH))
-        self.connection = subprocess.Popen(['./gradlew', 'run'], cwd=config.GROBID_PATH, stdout=self.devnull, stderr=subprocess.STDOUT) # skip tests since they will not run properly from python subprocess
 
-    def connect(self, check_delay=2):
-        connected = False
-
-        log.info('Checking if Grobid live...')
-        while connected == False:
-            try:
-                r = requests.get(config.GROBID_HOST)
-                print (r)
-                r.raise_for_status() # raise error if not HTTP: 200
-                connected = True
-            except:
-                time.sleep(check_delay)
-
-        log.info('Grobid connection success :)')
-
-
-    def cleanup(self):
-        self.connection.kill()
-        self.devnull.close()
-
-
-
-class PdfReader():
+class PdfReader:
 
     def __init__(self):
         self.url = urlparse.urljoin(config.GROBID_HOST, 'api/processFulltextDocument')
-        log.info('Attempting to start Grobid sever...')
-        self.grobid_process = Grobid()
-        log.info('Success! :)')
         self.reg_ids_regex = re.compile(r"((?:ACTRN|CTRI\/|ChiCTR\-|DRKS|EUCTR|IRCT|ISRCTN|JPRN\-|KCT|NCT|RBR\-|RPCEC|TCTR)[0-9a-zA-z\-\/]+)")
 
-    def connect(self):
-        self.grobid_process.connect()
-
-    def cleanup(self):
-        self.grobid_process.cleanup()
+    def connect(self, check_delay=2):
+        #self.grobid_process.connect()
+        connected = False
+        log.info('Connecting to Grobid...')
+        while connected == False:
+            try:
+                r = requests.get(config.GROBID_HOST)
+                log.info(r)
+                r.raise_for_status()  # raise error if not HTTP: 200
+                connected = True
+            except:
+                time.sleep(check_delay)
+        log.info('Connected to Grobid service.')
 
     def convert(self, pdf_binary):
         """
         returns MultiDict containing document information
         """
+        log.debug('Running PdfReader.convert')
         try:
             out = self.parse_xml(self.run_grobid(pdf_binary))
         except Exception as e:
@@ -107,6 +81,7 @@ class PdfReader():
         """
         threaded version
         """
+        log.debug(f'Running PdfReader.convert_batch with pdf_binary_list containing {len(pdf_binary_list)} blobs')
         if num_threads is None:
             num_threads = config.GROBID_THREADS
         pool = ThreadPool(num_threads)

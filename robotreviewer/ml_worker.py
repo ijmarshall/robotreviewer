@@ -21,6 +21,8 @@ import sqlite3
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
+import robotreviewer
+from robotreviewer import config
 
 DEBUG_MODE = str2bool(os.environ.get("DEBUG", "true"))
 LOCAL_PATH = "robotreviewer/uploads"
@@ -28,8 +30,7 @@ LOG_LEVEL = (logging.DEBUG if DEBUG_MODE else logging.INFO)
 # determined empirically by Edward; covers 90% of abstracts
 # (crudely and unscientifically adjusted for grobid)
 NUM_WORDS_IN_ABSTRACT = 450
-import robotreviewer
-from robotreviewer import config
+
 logging.basicConfig(level=LOG_LEVEL, format='[%(levelname)s] %(name)s %(asctime)s: %(message)s', filename=robotreviewer.get_data(config.LOG))
 log = logging.getLogger(__name__)
 
@@ -84,8 +85,13 @@ log.info("Robots loaded successfully! Ready...")
 # lastly wait until Grobid is connected
 pdf_reader.connect()
 
-# start up Celery service
-app = Celery('ml_worker', backend='amqp://', broker='amqp://')
+# create Celery app
+app = Celery(
+    'robotreviewer.ml_worker',
+    backend='amqp://guest:guest@rabbitmq:5672//',
+    broker='amqp://guest:guest@rabbitmq:5672//',
+)
+
 
 #####
 ## connect to and set up database
@@ -145,6 +151,7 @@ def pdf_annotate(report_uuid):
     then saves annotations in database
     """
     pdf_uuids, pdf_hashes, filenames, blobs, timestamps = [], [], [], [], []
+    log.debug(f"Running pdf_annotate task for report: {report_uuid}")
 
     c = rr_sql_conn.cursor()
 
@@ -165,18 +172,18 @@ def pdf_annotate(report_uuid):
 
     current_task.update_state(state='PROGRESS', meta={'process_percentage': 50, 'task': 'parsing text'})
     # tokenize full texts here
+    log.debug(f'Tokenizing full texts (parsing {len(articles)} articles)')
     for doc in nlp.pipe((d.get('text', u'') for d in articles), batch_size=1, n_threads=config.SPACY_THREADS):
         parsed_articles.append(doc)
 
-
-
     # adjust the tag, parse, and entity values if these are needed later
+    log.debug('Adjusting parsed text')
     for article, parsed_text in zip(articles, parsed_articles):
         article._spacy['parsed_text'] = parsed_text
 
     current_task.update_state(state='PROGRESS',meta={'process_percentage': 75, 'task': 'doing machine learning'})
 
-
+    log.debug('Processing pdf with machine learning')
     for pdf_uuid, pdf_hash, filename, blob, data, timestamp in zip(pdf_uuids, pdf_hashes, filenames, blobs, articles, timestamps):
 
 
@@ -185,6 +192,7 @@ def pdf_annotate(report_uuid):
 
 
         #  "punchline_bot",
+        log.debug('Annotating study (robots)')
         data = pdf_annotate_study(data, bot_names=["rct_bot", "pubmed_bot", "bias_bot", "pico_bot", "pico_span_bot", "punchline_bot", "sample_size_bot"])
 
 
@@ -195,17 +203,15 @@ def pdf_annotate(report_uuid):
         c.execute("INSERT INTO article (report_uuid, pdf_uuid, pdf_hash, pdf_file, annotations, timestamp, dont_delete) VALUES(?, ?, ?, ?, ?, ?, ?)", (report_uuid, pdf_uuid, pdf_hash, sqlite3.Binary(blob), data.to_json(), timestamp, config.DONT_DELETE))
         rr_sql_conn.commit()
         c.close()
-
+    log.debug('Deleting queued pdfs from database')
     # finally delete the PDFs from the queue
     c = rr_sql_conn.cursor()
     c.execute("DELETE FROM doc_queue WHERE report_uuid=?", (report_uuid, ))
     rr_sql_conn.commit()
     c.close()
+    log.debug('Task completed.')
     current_task.update_state(state='SUCCESS', meta={'process_percentage': 100, 'task': 'done!'})
     return {"process_percentage": 100, "task": "completed"}
-
-
-
 
 
 @app.task
@@ -220,21 +226,27 @@ def api_annotate(report_uuid):
         'position': "received request, fetching data"}
     )
 
-
     c = rr_sql_conn.cursor()
-
+    log.info(f'Fetching data for report_uuid = {report_uuid}')
     c.execute("SELECT uploaded_data, timestamp FROM api_queue WHERE report_uuid=?", (report_uuid, ))
     result = c.fetchone()
+    if result is None:
+        log.error(f'Failed to fetch data for report_uuid = {report_uuid}')
+        current_task.update_state(
+            state='FAILURE', 
+            meta=
+            {
+                'status': "failure",
+                'position': "fetching data"
+            },
+        )
+        return {"status": -1, "task": "failed"}   
     uploaded_data_s, timestamp = result
     uploaded_data = json.loads(uploaded_data_s)
-
-
 
     articles = uploaded_data["articles"]
     target_robots = uploaded_data["robots"]
     filter_rcts = uploaded_data.get("filter_rcts", "is_rct_balanced")
-
-
 
     # now do the ML
     if filter_rcts != 'none':
@@ -261,7 +273,6 @@ def api_annotate(report_uuid):
         'position': "tokenizing data"}
     )
 
-
     for k in ["ti", "ab", "fullText"]:
 
         parsed = nlp.pipe((a.get(k, "") for a in articles if a.get('skip_annotation', False)==False))
@@ -276,8 +287,6 @@ def api_annotate(report_uuid):
                 continue
             else:
                 current_doc['parsed_{}'.format(k)] = parsed.__next__()
-
-
 
     for bot_name in target_robots:
         current_task.update_state(state='PROGRESS', meta={
@@ -313,7 +322,6 @@ def api_annotate(report_uuid):
     return {"status": 100, "task": "completed"}
 
 
-
 def pdf_annotate_study(data, bot_names=["bias_bot"]):
     #
     # ANNOTATION TAKES PLACE HERE
@@ -329,10 +337,8 @@ def pdf_annotation_pipeline(bot_names, data):
     # makes it here!
     log.info("STARTING PIPELINE (made it to annotation_pipeline)")
 
-
     # DEBUG
     current_task.update_state(state='PROGRESS',meta={'process_percentage': 78, 'task': 'starting annotation pipeline'})
-
 
     for bot_name in bot_names:
         log.info("STARTING {} BOT (annotation_pipeline)".format(bot_name))
@@ -343,5 +349,7 @@ def pdf_annotation_pipeline(bot_names, data):
         log.debug("{} done!".format(bots[bot_name].__class__.__name__))
         log.info("COMPLETED {} BOT (annotation_pipeline)".format(bot_name))
         # current_task.update_state(state='PROGRESS',meta={'process_percentage': 79, 'task': 'Bot {} complete!'.format(bot_name)})
+
+    log.info("running inference...")
 
     return data

@@ -54,7 +54,7 @@ class TestMiniClassifier(unittest.TestCase):
 
     def test_predict_proba(self):
         ''' tests for MiniClassifier.predict_proba(X) '''
-        with open(ex_path + "rationale_robot_data.json") as data:
+        with open(ex_path + "rationale_robot_data.json", "r", encoding="utf-8") as data:
             data = json.load(data)
         bpl = data["bias_prob_linear"]
         X = self.util.load_sparse_csr("X_data.npz")
@@ -137,7 +137,7 @@ class TestVectorizer(unittest.TestCase):
         
     def test_fit(self):
         ''' test for Vectorizer.fit(texts) '''
-        with open(ex_path + "vector_tests.json") as data:
+        with open(ex_path + "vector_tests.json", "r", encoding="utf-8") as data:
             data = json.load(data)
         v = Vectorizer()
         v.fit(data["text"])

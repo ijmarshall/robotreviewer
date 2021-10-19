@@ -1,5 +1,20 @@
 ARG OSVER=ubuntu:16.04
-FROM $OSVER
+FROM node:12-alpine as build-stage
+
+WORKDIR /app
+# node.js and utils
+RUN npm update
+RUN npm install -g requirejs
+COPY ./robotreviewer/static/ static/
+
+# compile client side assets
+RUN r.js -o static/build.js && \
+    mv static static.bak && \
+    mv build static && \
+    rm -rf static.bak
+
+FROM $OSVER as production-stage
+ARG OSVER
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -9,39 +24,11 @@ RUN useradd --create-home --home /var/lib/deploy deploy
 # install apt-get requirements
 ADD apt-requirements.txt /tmp/apt-requirements.txt
 RUN apt-get -qq update -y
-RUN xargs -a /tmp/apt-requirements.txt apt-get install -y --no-install-recommends && apt-get clean
+RUN xargs -a /tmp/apt-requirements.txt apt-get install -y --no-install-recommends && apt-get clean && rm -rf /etc/cron.*/*
 
 # Certs
 RUN mkdir -p /etc/pki/tls/certs && \
     ln -s /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
-
-# node.js and utils
-RUN add-apt-repository ppa:chris-lea/node.js
-RUN apt-get install -y nodejs npm && npm update
-ENV NODE_PATH $NODE_PATH:/usr/local/lib/node_modules
-RUN npm install -g requirejs
-RUN ln -s /usr/bin/nodejs /usr/bin/node
-
-# Gradle requires jdk to work! Java incoming!
-RUN apt-get -y install openjdk-8-jdk wget unzip
-RUN java -version # check that java works
-
-# install gradle the annoying thing
-RUN mkdir /opt/gradle
-RUN curl -L https://services.gradle.org/distributions/gradle-4.10.2-bin.zip -o gradle-4.10.2.zip && \
-    unzip -d /opt/gradle gradle-4.10.2.zip && \
-    rm gradle-4.10.2.zip
-#ENV GRADLE_HOME=/usr/local/gradle-4.10.2
-ENV PATH=/opt/gradle/gradle-4.10.2/bin:$PATH
-#ENV PATH=$PATH:$GRADLE_HOME/bin
-RUN gradle -v # check that gradle works
-
-RUN cd /var/lib/deploy/ && wget https://github.com/kermitt2/grobid/archive/0.5.1.zip -O grobid.zip && \
-    unzip grobid.zip && \
-    cd /var/lib/deploy/grobid-0.5.1 && \
-    gradle clean install && \
-#    mvn -Dmaven.test.skip=true clean install && \
-    rm -f /var/lib/deploy/grobid.zip
 
 RUN chown -R deploy.deploy /var/lib/deploy/
 
@@ -61,7 +48,6 @@ RUN python -m spacy download en
 ARG TFVER=tensorflow
 RUN pip install $TFVER==1.12.0
 
-
 #strange Theano problem
 #ENV MKL_THREADING_LAYER=GNU
 
@@ -70,22 +56,21 @@ USER root
 
 RUN mkdir -p /var/lib/deploy/robotreviewer/data
 ADD server.py /var/lib/deploy/
-ADD run /var/lib/deploy/
+ADD server_api.py /var/lib/deploy/
+ADD entrypoint.sh /var/lib/deploy/
+ADD crontab /etc/cron.d/crontab
 ADD robotreviewer /var/lib/deploy/robotreviewer
 RUN chown -R deploy.deploy /var/lib/deploy/robotreviewer
 
 USER deploy
-VOLUME /var/lib/deploy/src/robotreviewer/data
-# compile client side assets
-RUN cd /var/lib/deploy/robotreviewer/ && \
-    r.js -o static/build.js && \
-    mv static static.bak && \
-    mv build static && \
-    rm -rf static.bak
 
-EXPOSE 5000
+COPY --from=build-stage /app/static /var/lib/deploy/robotreviewer/static
+
 ENV HOME /var/lib/deploy
 
 USER root
 
-ENTRYPOINT ["/var/lib/deploy/run"]
+RUN pip install gunicorn gevent
+RUN chmod +x /var/lib/deploy/entrypoint.sh
+
+ENTRYPOINT [ "./var/lib/deploy/entrypoint.sh" ]
