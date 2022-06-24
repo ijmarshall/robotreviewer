@@ -16,8 +16,7 @@ services:
         target: /var/lib/deploy/config.json
     restart: unless-stopped
     command: web
-    ports:
-      - 5050:5000
+
     depends_on:
       - celery
 
@@ -35,8 +34,7 @@ services:
         target: /var/lib/deploy/config.json
     restart: unless-stopped
     command: api
-    ports:
-      - 5051:5001
+
     depends_on:
       - celery
 

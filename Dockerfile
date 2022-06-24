@@ -58,6 +58,7 @@ RUN mkdir -p /var/lib/deploy/robotreviewer/data
 ADD server.py /var/lib/deploy/
 ADD server_api.py /var/lib/deploy/
 ADD entrypoint.sh /var/lib/deploy/
+ADD clean_uploaded_pdfs.py /var/lib/deploy/
 ADD crontab /etc/cron.d/crontab
 ADD robotreviewer /var/lib/deploy/robotreviewer
 RUN chown -R deploy.deploy /var/lib/deploy/robotreviewer

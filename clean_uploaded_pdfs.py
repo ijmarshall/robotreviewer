@@ -22,8 +22,8 @@ def cleanup_database(days=1):
     c = conn.cursor()
     c.execute("DELETE FROM article WHERE timestamp < datetime(?) AND dont_delete=0", [d])
     conn.commit()
-    conn.execute("VACUUM")  # make the database smaller again
-    conn.commit()
+    # conn.execute("VACUUM")  # make the database smaller again
+    # conn.commit()
     conn.close()
 
 
